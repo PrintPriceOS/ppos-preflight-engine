@@ -1,0 +1,29 @@
+{
+    "name": "@ppos/preflight-engine",
+    "version": "1.0.0",
+    "description": "Standalone Product Kernel for PrintPrice Preflight Engine",
+    "main": "index.js",
+    "bin": {
+        "ppos-preflight": "bin/ppos-preflight.js"
+    },
+    "author": "drleuman",
+    "license": "ISC",
+    "exports": {
+        ".": "./index.js",
+        "./engine": "./engine/",
+        "./execution": "./execution/",
+        "./math": "./math/",
+        "./interpretation": "./interpretation/",
+        "./detection": "./detection/"
+    },
+    "scripts": {
+        "test": "node ./tests/run-tests.js",
+        "validate": "node -e \"require('./index.js')\""
+    },
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "commander": "^9.5.0",
+        "fs-extra": "^10.0.0",
+        "pdf-lib": "^1.17.1"
+    }
+}
