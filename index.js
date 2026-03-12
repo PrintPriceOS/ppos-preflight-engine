@@ -14,7 +14,7 @@ const AutofixExecutionEngine = require('./execution/AutofixExecutionEngine');
 const Ghostscript = require('./execution/Ghostscript');
 const SignatureEngine = require('./execution/SignatureEngine');
 const CoverSpreadDetector = require('./detection/CoverSpreadDetector');
-const { CODES: FindingCodes } = require('./interpretation/IndustrialFindingCodes');
+const { CODES: FindingCodes } = require('./interpretation/industrialFindingCodes');
 
 module.exports = {
     // Technical Engines

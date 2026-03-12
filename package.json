@@ -9,20 +9,27 @@
     "author": "drleuman",
     "license": "ISC",
     "exports": {
-        ".": "./index.js",
-        "./engine": "./engine/",
-        "./execution": "./execution/",
-        "./math": "./math/",
-        "./interpretation": "./interpretation/",
-        "./detection": "./detection/"
+        ".": {
+            "require": "./index.js",
+            "default": "./index.js"
+        },
+        "./engine": "./engine/index.js",
+        "./execution": "./execution/index.js",
+        "./math": "./math/index.js",
+        "./interpretation": "./interpretation/index.js",
+        "./detection": "./detection/index.js",
+        "./src/runtime/commands/*": "./src/runtime/commands/*",
+        "./src/cli/commands": "./src/cli/commands.js"
     },
     "scripts": {
         "test": "node ./tests/run-tests.js",
         "validate": "node -e \"require('./index.js')\""
     },
     "dependencies": {
+        "@fastify/multipart": "^9.4.0",
         "chalk": "^4.1.2",
         "commander": "^9.5.0",
+        "fastify": "^5.8.2",
         "fs-extra": "^10.0.0",
         "pdf-lib": "^1.17.1"
     }

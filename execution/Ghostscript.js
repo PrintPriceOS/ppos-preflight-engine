@@ -12,10 +12,24 @@ class Ghostscript {
         return process.platform === 'win32' ? 'gswin64c' : 'gs';
     }
 
-    async runGs(args) {
+    async runGs(args, opts = {}) {
         const cmd = this.resolveGsCmd();
         const commandLine = `${cmd} ${args.join(' ')}`;
-        return execAsync(commandLine);
+
+        try {
+            const { stdout, stderr } = await execAsync(commandLine, {
+                timeout: opts.timeout || 30000 // 30s industrial limit
+            });
+            return { ok: true, stdout, stderr };
+        } catch (err) {
+            const isTimeout = err.signal === 'SIGTERM' || err.code === 'ETIMEDOUT';
+            throw {
+                name: isTimeout ? 'GS_TIMEOUT' : 'GS_ERROR',
+                message: err.message,
+                code: err.code,
+                stderr: err.stderr
+            };
+        }
     }
 }
 

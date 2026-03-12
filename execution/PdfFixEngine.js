@@ -1,4 +1,4 @@
-const ghostscript = require('./ghostscript');
+const ghostscript = require('./Ghostscript');
 const { CODES } = require('../interpretation/industrialFindingCodes');
 
 /**
@@ -21,7 +21,11 @@ class PdfFixEngine {
         ];
 
         try {
-            const result = await ghostscript.runGs(args, { ...opts, reqId: 'fix-cmyk' });
+            const result = await ghostscript.runGs(args, {
+                ...opts,
+                reqId: 'fix-cmyk',
+                timeout: opts.timeout || 30000
+            });
             return { success: result.ok, output };
         } catch (e) {
             return { success: false, error: e.message };
@@ -43,7 +47,11 @@ class PdfFixEngine {
         ];
 
         try {
-            const result = await ghostscript.runGs(args, { ...opts, reqId: 'fix-bleed' });
+            const result = await ghostscript.runGs(args, {
+                ...opts,
+                reqId: 'fix-bleed',
+                timeout: opts.timeout || 30000
+            });
             return { success: result.ok, output };
         } catch (e) {
             return { success: false, error: e.message };

@@ -1,15 +1,12 @@
 /**
  * @ppos/preflight-engine CLI Command Handlers
  * 
- * Orchestrates engine execution based on parsed arguments and config.
+ * Orchestrates engine execution by delegating to the Shared Command Layer.
+ * Classification: RUNTIME_CLI_ADAPTER
  */
 const fs = require('fs-extra');
-const path = require('path');
-const {
-    PdfTechnicalEngine,
-    GeometryAuditEngine,
-    AutofixExecutionEngine
-} = require('../../index');
+const AnalyzeCommand = require('../runtime/commands/analyzeCommand');
+const AutofixCommand = require('../runtime/commands/autofixCommand');
 
 class CommandHandler {
     static async execute(args) {
@@ -22,13 +19,12 @@ class CommandHandler {
             console.error(`[CLI][DEBUG] Executing command: ${command} on ${input}`);
         }
 
-        switch (command) {
-            case 'analyze':
-                return this._handleAnalyze(input, config, options);
-            case 'autofix':
-                return this._handleAutofix(input, config, options);
-            default:
-                throw new Error(`Unknown command: ${command}`);
+        if (command === 'analyze') {
+            return this._handleAnalyze(input, config, options);
+        } else if (command === 'autofix') {
+            return this._handleAutofix(input, config, options);
+        } else {
+            throw new Error(`Unknown command: ${command}`);
         }
     }
 
@@ -38,31 +34,18 @@ class CommandHandler {
         }
 
         try {
-            // 1. Technical Execution
-            const technicalEngine = new PdfTechnicalEngine();
-            const techResult = await technicalEngine.analyze(input);
-
-            // 2. Technical Interpretation
-            const geometryEngine = new GeometryAuditEngine(config);
-            const findings = [];
-
-            if (techResult.geometry) {
-                const bleedFinding = geometryEngine.auditBleed(techResult.geometry);
-                if (bleedFinding.code) findings.push(bleedFinding);
-
-                const classFinding = geometryEngine.classifyDocument(techResult.geometry, techResult.info?.pages || 1);
-                findings.push(classFinding);
-            }
+            const result = await AnalyzeCommand.run(input, config);
 
             return {
-                exitCode: findings.filter(f => f.code && f.code.startsWith('IND_GEOM')).length > 0 ? 1 : 0,
+                exitCode: result.findings.filter(f => f.code && f.code.startsWith('IND_GEOM')).length > 0 ? 1 : 0,
                 data: {
                     operation: 'analyze',
                     file: input,
+                    wrapper_metadata: result.wrapper_metadata,
                     engine_result: {
-                        ok: techResult.ok,
-                        status: techResult.status,
-                        findings
+                        ok: result.ok,
+                        status: result.status,
+                        findings: result.findings
                     }
                 }
             };
@@ -78,26 +61,31 @@ class CommandHandler {
         }
 
         try {
-            const autofixEngine = new AutofixExecutionEngine(config);
-            const result = await autofixEngine.executeFix({
-                input_path: input,
-                output_path: output,
-                fix_hint: fix
-            });
+            const result = await AutofixCommand.run(input, output, config, fix);
 
-            const status = result.success ? 'SUCCESS' : 'NO_ACTION_TAKEN';
+            const status = result.wrapper_metadata.status;
+            const reason = result.success ? 'FIX_APPLIED' : 'DOCUMENT_ALREADY_COMPLIANT';
+
+            if (!options.json) {
+                if (result.success) {
+                    console.log(`[SUCCESS] Fix applied to ${output}`);
+                } else {
+                    console.log(`[INFO] Document already compliant, no action needed.`);
+                }
+            }
 
             return {
-                exitCode: 0, // No-op and Success both exit 0 per policy
+                exitCode: 0,
                 data: {
                     operation: 'autofix',
                     status,
                     file: input,
                     output: result.success ? output : null,
-                    reason: result.success ? 'FIX_APPLIED' : 'DOCUMENT_ALREADY_COMPLIANT',
+                    reason,
+                    wrapper_metadata: result.wrapper_metadata,
                     engine_result: {
                         ok: result.success,
-                        findings: result.findings || []
+                        findings: result.findings
                     }
                 }
             };
@@ -107,14 +95,12 @@ class CommandHandler {
     }
 
     static async _resolveConfig(options) {
-        // Defaults
         let config = {
             minBleedMm: 3.0,
             safeAreaMm: 5.0,
             standardSpinePerSheetMm: 0.1
         };
 
-        // Load from file if provided
         if (options.config) {
             if (await fs.pathExists(options.config)) {
                 try {
@@ -128,15 +114,12 @@ class CommandHandler {
             }
         }
 
-        // Environment Variables (Precedence over File)
         if (process.env.PPOS_MIN_BLEED) config.minBleedMm = parseFloat(process.env.PPOS_MIN_BLEED);
         if (process.env.PPOS_SAFE_AREA) config.safeAreaMm = parseFloat(process.env.PPOS_SAFE_AREA);
-
-        // CLI Flags (Highest Precedence - Example specific flags if we had them)
-        // For now we only support the --config flag, but individual flags would go here.
 
         return config;
     }
 }
 
 module.exports = { CommandHandler };
+坐
