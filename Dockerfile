@@ -48,4 +48,3 @@ USER ppos-user
 # 11. Execution Context
 ENTRYPOINT ["ppos-preflight"]
 CMD ["--help"]
-坐

@@ -51,4 +51,3 @@ class AutofixCommand {
 }
 
 module.exports = AutofixCommand;
-坐

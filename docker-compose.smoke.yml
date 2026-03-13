@@ -15,4 +15,3 @@ services:
         ppos-preflight analyze small_valid.pdf --json &&
         ppos-preflight autofix small_valid.pdf --output /tmp/fixed.pdf
       "
-坐
