@@ -18,7 +18,7 @@
         "./math": "./math/index.js",
         "./interpretation": "./interpretation/index.js",
         "./detection": "./detection/index.js",
-        "./src/runtime/commands/*": "./src/runtime/commands/*",
+        "./src/runtime/commands/*": "./src/runtime/commands/*.js",
         "./src/cli/commands": "./src/cli/commands.js"
     },
     "scripts": {
