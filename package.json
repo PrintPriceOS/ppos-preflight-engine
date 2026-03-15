@@ -1,36 +1,14 @@
 {
     "name": "@ppos/preflight-engine",
     "version": "1.0.0",
-    "description": "Standalone Product Kernel for PrintPrice Preflight Engine",
+    "description": "Deterministic Preflight Analysis & Fixing Core for PrintPrice OS",
     "main": "index.js",
-    "bin": {
-        "ppos-preflight": "bin/ppos-preflight.js"
-    },
-    "author": "drleuman",
-    "license": "ISC",
-    "exports": {
-        ".": {
-            "require": "./index.js",
-            "default": "./index.js"
-        },
-        "./engine": "./engine/index.js",
-        "./execution": "./execution/index.js",
-        "./math": "./math/index.js",
-        "./interpretation": "./interpretation/index.js",
-        "./detection": "./detection/index.js",
-        "./src/runtime/commands/*": "./src/runtime/commands/*.js",
-        "./src/cli/commands": "./src/cli/commands.js"
-    },
+    "private": true,
     "scripts": {
-        "test": "node ./tests/run-tests.js",
-        "validate": "node -e \"require('./index.js')\""
+        "test": "node run-tests.js"
     },
     "dependencies": {
-        "@fastify/multipart": "^9.4.0",
-        "chalk": "^4.1.2",
-        "commander": "^9.5.0",
-        "fastify": "^5.8.2",
-        "fs-extra": "^10.0.0",
-        "pdf-lib": "^1.17.1"
+        "fs-extra": "^11.1.0",
+        "pino": "^8.16.0"
     }
 }

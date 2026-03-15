@@ -1,41 +1,32 @@
 /**
- * @ppos/preflight-engine
- * Standalone Product Kernel Entrypoint
+ * PrintPrice OS — Preflight Engine
+ * 
+ * Canonical Entry Point.
  */
+const PreflightEngine = require('./core/PreflightEngine');
+const GeometryAnalyzer = require('./engine/GeometryAuditEngine');
+const HeuristicAnalyzer = require('./analyzers/HeuristicAnalyzer');
+const TechnicalEngine = require('./execution/PdfTechnicalEngine');
+const FixPlanner = require('./fixes/FixPlanner');
 
-const SpineCalculator = require('./engine/SpineCalculator');
-const GeometryAuditEngine = require('./engine/GeometryAuditEngine');
-const InkMath = require('./math/InkMath');
-const SignatureMath = require('./math/SignatureMath');
-const SpineEngine = require('./math/SpineEngine');
-const PdfFixEngine = require('./execution/PdfFixEngine');
-const PdfTechnicalEngine = require('./execution/PdfTechnicalEngine');
-const AutofixExecutionEngine = require('./execution/AutofixExecutionEngine');
-const Ghostscript = require('./execution/Ghostscript');
-const SignatureEngine = require('./execution/SignatureEngine');
-const CoverSpreadDetector = require('./detection/CoverSpreadDetector');
-const { CODES: FindingCodes } = require('./interpretation/industrialFindingCodes');
+// Pre-configured "Standard" Industrial Engine
+const createStandardEngine = () => {
+    return new PreflightEngine([
+        new GeometryAnalyzer(),
+        new HeuristicAnalyzer()
+    ]);
+};
 
 module.exports = {
-    // Technical Engines
-    GeometryAuditEngine,
-    SpineCalculator,
-    SignatureEngine,
-
-    // Execution Hubs
-    PdfTechnicalEngine,
-    PdfFixEngine,
-    AutofixExecutionEngine,
-
-    // Core Utilities
-    Ghostscript,
-    CoverSpreadDetector,
-
-    // Math Kernels
-    InkMath,
-    SignatureMath,
-    SpineEngine,
-
-    // Constants & Contracts
-    FindingCodes
+    PreflightEngine,
+    createStandardEngine,
+    FixPlanner,
+    analyzers: {
+        Geometry: require('./engine/GeometryAuditEngine'),
+        Heuristic: require('./analyzers/HeuristicAnalyzer')
+    },
+    execution: {
+        Technical: require('./execution/PdfTechnicalEngine'),
+        Fix: require('./execution/PdfFixEngine')
+    }
 };

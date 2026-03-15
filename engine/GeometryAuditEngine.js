@@ -95,6 +95,28 @@ class GeometryAuditEngine {
             }
         };
     }
+
+    /**
+     * Unified analyze entrypoint for PreflightEngine.
+     */
+    async analyze(filePath, options = {}) {
+        const metadata = options.metadata || {};
+        const geometry = metadata.geometry || {
+            trimBox: [0, 0, 595, 842],
+            bleedBox: [0, 0, 595, 842]
+        };
+        const pageCount = metadata.pages || 0;
+
+        const findings = [];
+        
+        const bleedResult = this.auditBleed(geometry);
+        if (bleedResult.code) findings.push(bleedResult);
+
+        const typeResult = this.classifyDocument(geometry, pageCount);
+        if (typeResult.code) findings.push(typeResult);
+
+        return { findings, metadata: { geometry, pageCount } };
+    }
 }
 
 module.exports = GeometryAuditEngine;
