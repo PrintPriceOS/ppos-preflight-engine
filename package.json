@@ -3,6 +3,9 @@
     "version": "1.9.2",
     "description": "Deterministic Preflight Analysis & Fixing Core for PrintPrice OS",
     "main": "index.js",
+    "bin": {
+        "ppos-preflight": "bin/ppos-preflight.js"
+    },
     "private": true,
     "scripts": {
         "test": "node run-tests.js"

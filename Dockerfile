@@ -1,50 +1,35 @@
 # @ppos/preflight-engine Dockerfile
-# Industrial Runtime for Printing Preflight
-
-# 1. Base Image (Slim for production efficiency - using Node 20 per spec)
 FROM node:20-bookworm-slim
 
-# 2. Install Industrial Dependencies (Ghostscript)
-# Non-interactive, clean up to keep image size small.
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ghostscript \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. Security: Create Non-Root User
-RUN groupadd -r ppos && useradd -r -g ppos ppos-user
-RUN mkdir -p /app /tmp/ppos-preflight && chown -R ppos-user:ppos /app /tmp/ppos-preflight
-
-# 4. Create Application Directory
 WORKDIR /app
 
-# 5. Copy Package Manifests
-COPY package.json package-lock.json ./
-
-# 6. Install Production Dependencies
+# Copy manifests from its repo folder
+COPY ppos-preflight-engine/package*.json ./
 RUN npm ci --only=production
 
-# 7. Copy Application Source
-COPY index.js ./
-COPY bin/ ./bin/
-COPY detection/ ./detection/
-COPY engine/ ./engine/
-COPY execution/ ./execution/
-COPY interpretation/ ./interpretation/
-COPY math/ ./math/
-COPY src/ ./src/
+# Copy source from its repo folder
+COPY ppos-preflight-engine/index.js ./
+COPY ppos-preflight-engine/bin/ ./bin/
+COPY ppos-preflight-engine/detection/ ./detection/
+COPY ppos-preflight-engine/engine/ ./engine/
+COPY ppos-preflight-engine/execution/ ./execution/
+COPY ppos-preflight-engine/interpretation/ ./interpretation/
+COPY ppos-preflight-engine/math/ ./math/
+COPY ppos-preflight-engine/src/ ./src/
 
-# 8. Symlink binary for global access
+# Link binary
 RUN npm link
 
-# 9. Environment Configuration
+# Environment
 ENV GS_COMMAND=gs
 ENV PPOS_TEMP_DIR=/tmp/ppos-preflight
-ENV PPOS_LOG_LEVEL=info
 
-# 10. Security: Switch to Non-Root User
-USER ppos-user
-
-# 11. Execution Context
+USER node
 ENTRYPOINT ["ppos-preflight"]
 CMD ["--help"]
