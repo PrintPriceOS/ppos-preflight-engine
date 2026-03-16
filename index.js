@@ -4,15 +4,17 @@
  * Canonical Entry Point.
  */
 const PreflightEngine = require('./core/PreflightEngine');
-const GeometryAnalyzer = require('./engine/GeometryAuditEngine');
+const GeometryAuditEngine = require('./engine/GeometryAuditEngine');
 const HeuristicAnalyzer = require('./analyzers/HeuristicAnalyzer');
 const TechnicalEngine = require('./execution/PdfTechnicalEngine');
 const FixPlanner = require('./fixes/FixPlanner');
+const SpineCalculator = require('./engine/SpineCalculator');
+const { CODES: FindingCodes } = require('./interpretation/IndustrialFindingCodes');
 
 // Pre-configured "Standard" Industrial Engine
 const createStandardEngine = () => {
     return new PreflightEngine([
-        new GeometryAnalyzer(),
+        new GeometryAuditEngine(),
         new HeuristicAnalyzer()
     ]);
 };
@@ -21,12 +23,15 @@ module.exports = {
     PreflightEngine,
     createStandardEngine,
     FixPlanner,
+    GeometryAuditEngine,
+    SpineCalculator,
+    FindingCodes,
     analyzers: {
-        Geometry: require('./engine/GeometryAuditEngine'),
-        Heuristic: require('./analyzers/HeuristicAnalyzer')
+        Geometry: GeometryAuditEngine,
+        Heuristic: HeuristicAnalyzer
     },
     execution: {
-        Technical: require('./execution/PdfTechnicalEngine'),
+        Technical: TechnicalEngine,
         Fix: require('./execution/PdfFixEngine')
     }
 };

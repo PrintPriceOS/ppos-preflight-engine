@@ -1,4 +1,4 @@
-const { CODES } = require('../interpretation/industrialFindingCodes');
+const { CODES } = require('../interpretation/IndustrialFindingCodes');
 
 /**
  * GeometryAuditEngine
