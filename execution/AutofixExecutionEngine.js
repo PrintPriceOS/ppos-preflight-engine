@@ -1,7 +1,7 @@
 const PdfFixEngine = require('./PdfFixEngine');
 const path = require('path');
 const fs = require('fs-extra');
-const { CODES: FindingCodes } = require('../interpretation/industrialFindingCodes');
+const { CODES: FindingCodes } = require('../interpretation/IndustrialFindingCodes');
 
 /**
  * AutofixExecutionEngine

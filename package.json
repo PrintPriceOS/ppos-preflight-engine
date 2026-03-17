@@ -11,6 +11,8 @@
         "test": "node run-tests.js"
     },
     "dependencies": {
+        "commander": "^9.5.0",
+        "chalk": "^4.1.2",
         "fs-extra": "^11.1.0",
         "pino": "^8.16.0"
     }
