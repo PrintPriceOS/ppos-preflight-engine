@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  preflight-engine:
+    build: .
+    image: ppos/preflight-engine:latest
+    volumes:
+      - ./tests/cli/fixtures:/fixtures
+    working_dir: /fixtures
+    # Example usage: docker-compose run preflight-engine analyze small_valid.pdf --json

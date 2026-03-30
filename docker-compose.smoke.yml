@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  # Smoke Test Service
+  preflight-smoke:
+    build: .
+    image: ppos/preflight-engine:smoke
+    volumes:
+      - ./tests/cli/fixtures:/fixtures
+    working_dir: /fixtures
+    # Run a full series of smoke tests
+    command: >
+      sh -c "
+        ppos-preflight --help &&
+        ppos-preflight analyze small_valid.pdf --json &&
+        ppos-preflight autofix small_valid.pdf --output /tmp/fixed.pdf
+      "
