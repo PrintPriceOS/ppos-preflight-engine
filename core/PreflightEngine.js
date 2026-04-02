@@ -26,7 +26,13 @@ class PreflightEngine {
 
         for (const analyzer of this.analyzers) {
             try {
+                const analyzerName = analyzer.constructor.name;
+                console.log(`[ENGINE][${analyzerName}] Running analysis stage...`);
+                const start = Date.now();
                 const result = await analyzer.analyze(filePath, options);
+                const elapsed = Date.now() - start;
+                console.log(`[ENGINE][${analyzerName}] Stage completed in ${elapsed}ms`);
+                
                 if (result.findings) rawFindings.push(...result.findings);
                 if (result.metadata) metadata = { ...metadata, ...result.metadata };
             } catch (err) {
