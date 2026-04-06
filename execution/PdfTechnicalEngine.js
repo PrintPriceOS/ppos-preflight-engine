@@ -50,6 +50,7 @@ class PdfTechnicalEngine {
         return {
             ok: true,
             status: 'SUCCESS',
+            source: 'FALLBACK_MOCK',
             geometry: {
                 trimBox: [0, 0, 595, 842],
                 bleedBox: [0, 0, 595, 842],

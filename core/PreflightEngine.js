@@ -22,7 +22,9 @@ class PreflightEngine {
 
         // 1. Run all registered analyzers
         const rawFindings = [];
+        const warnings = [];
         let metadata = {};
+        let partial = false;
 
         for (const analyzer of this.analyzers) {
             try {
@@ -37,6 +39,12 @@ class PreflightEngine {
                 if (result.metadata) metadata = { ...metadata, ...result.metadata };
             } catch (err) {
                 console.error(`[ENGINE] Analyzer ${analyzer.constructor.name} failed:`, err.message);
+                partial = true;
+                warnings.push({
+                    analyzer: analyzer.constructor.name,
+                    error: err.name || 'ANALYZER_ERROR',
+                    message: err.message
+                });
             }
         }
 
@@ -51,7 +59,9 @@ class PreflightEngine {
             issues: normalizedIssues,
             riskSummary,
             metadata,
-            filePath
+            filePath,
+            partial,
+            warnings
         });
     }
 

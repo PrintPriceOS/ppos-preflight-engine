@@ -4,15 +4,17 @@
  * Standardizes the output structure of the preflight engine.
  */
 class ReportBuilder {
-    build({ issues, riskSummary, metadata, filePath }) {
+    build({ issues, riskSummary, metadata, filePath, partial = false, warnings = [] }) {
         return {
             ok: riskSummary.level !== 'CRITICAL',
             timestamp: new Date().toISOString(),
+            partial,
             summary: {
                 risk_level: riskSummary.level,
                 risk_score: riskSummary.score,
                 issue_count: issues.length,
-                critical_count: riskSummary.criticals
+                critical_count: riskSummary.criticals,
+                analysis_warnings: warnings.length
             },
             document: {
                 name: metadata.filename || filePath.split('/').pop(),
@@ -27,10 +29,14 @@ class ReportBuilder {
                 page: i.page || null,
                 fixable: !!i.fix_method
             })),
+            analysis_warnings: warnings,
             engines: {
                 preflight_engine: 'v1.9.0-deterministic',
                 signature: process.env.GIT_COMMIT?.slice(0, 7) || 'local'
-            }
+            },
+            // Legacy/Upstream Compatibility Aliases
+            analysis: { issues },
+            forensics: { findings: issues }
         };
     }
 }
