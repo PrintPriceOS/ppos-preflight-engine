@@ -101,10 +101,32 @@ class PreflightEngine {
             if (result.success) {
                 console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${outputPath}`);
                 console.log(`[ENGINE][AUTOFIX][OUTPUT-PATH] ${outputPath}`);
-                return { success: true, outputPath, note: result.note };
+
+                return {
+                    ok: true,
+                    status: 'SUCCESS',
+                    fixedPath: outputPath,
+                    artifacts: {
+                        fixed_pdf: {
+                            path: outputPath,
+                            filename: path.basename(outputPath)
+                        }
+                    },
+                    note: result.note,
+                    wrapper_metadata: {
+                        timestamp: new Date().toISOString()
+                    }
+                };
             } else {
                 console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix stage failed: ${result.error}`);
-                return { success: false, error: result.error };
+                return { 
+                    ok: false, 
+                    status: 'FAILURE',
+                    error: result.error,
+                    wrapper_metadata: {
+                        timestamp: new Date().toISOString()
+                    }
+                };
             }
 
         } catch (err) {

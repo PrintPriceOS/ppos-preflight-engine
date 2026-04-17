@@ -32,29 +32,22 @@ class AutofixCommand {
                 fix_hint: fixHint
             });
 
-            console.log(`[RUNTIME][COMMAND] Autofix Complete [ID: ${jobId}]: Success=${result.success}`);
+            console.log(`[RUNTIME][COMMAND] Autofix Complete [ID: ${jobId}]: Success=${result.ok}`);
 
             const response = {
-                ok: result.success,
-                status: result.success ? 'SUCCESS' : 'NO_ACTION_TAKEN',
+                ok: result.ok,
+                status: result.ok ? 'SUCCESS' : (result.status || 'NO_ACTION_TAKEN'),
                 fixedPath: result.fixedPath,
                 findings: result.findings || [],
-                artifacts: result.success ? {
-                    fixed_pdf: {
-                        path: result.fixedPath,
-                        filename: require('path').basename(result.fixedPath)
-                    }
-                } : {},
+                artifacts: result.artifacts || {},
                 wrapper_metadata: {
                     job_id: jobId,
-                    status: result.success ? 'SUCCESS' : 'NO_ACTION_TAKEN',
+                    status: result.ok ? 'SUCCESS' : (result.status || 'NO_ACTION_TAKEN'),
                     timestamp: new Date().toISOString()
                 }
             };
 
-            if (result.success) {
-                console.log(`[ENGINE][AUTOFIX][OUTPUT-PATH] ${result.fixedPath}`);
-            } else {
+            if (!result.ok) {
                 console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Status: ${response.status}`);
             }
 

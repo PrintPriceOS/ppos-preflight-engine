@@ -36,14 +36,22 @@ class AutofixExecutionEngine {
         
         if (result.success) {
             console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${output_path}`);
+            console.log(`[ENGINE][AUTOFIX][OUTPUT-PATH] ${output_path}`);
         } else {
-            console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix engine failed: ${result.error}`);
+            console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix engine failed: ${result.error || 'Unknown error'}`);
         }
 
         return { 
-            success: result.success, 
+            ok: result.success,
+            status: result.success ? 'SUCCESS' : 'FAILURE',
+            fixedPath: result.success ? output_path : null,
             findings: result.findings || [],
-            fixedPath: result.success ? output_path : null 
+            artifacts: result.success ? {
+                fixed_pdf: {
+                    path: output_path,
+                    filename: path.basename(output_path)
+                }
+            } : {}
         };
     }
 
