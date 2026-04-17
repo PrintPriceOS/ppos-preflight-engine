@@ -64,10 +64,10 @@ class CommandHandler {
             const result = await AutofixCommand.run(input, output, config, fix);
 
             const status = result.wrapper_metadata.status;
-            const reason = result.success ? 'FIX_APPLIED' : 'DOCUMENT_ALREADY_COMPLIANT';
+            const reason = result.ok ? 'FIX_APPLIED' : 'DOCUMENT_ALREADY_COMPLIANT';
 
             if (!options.json) {
-                if (result.success) {
+                if (result.ok) {
                     console.log(`[SUCCESS] Fix applied to ${output}`);
                 } else {
                     console.log(`[INFO] Document already compliant, no action needed.`);
@@ -80,11 +80,11 @@ class CommandHandler {
                     operation: 'autofix',
                     status,
                     file: input,
-                    output: result.success ? output : null,
+                    output: result.ok ? output : null,
                     reason,
                     wrapper_metadata: result.wrapper_metadata,
                     engine_result: {
-                        ok: result.success,
+                        ok: result.ok,
                         findings: result.findings
                     }
                 }

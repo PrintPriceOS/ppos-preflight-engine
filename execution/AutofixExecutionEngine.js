@@ -28,7 +28,7 @@ class AutofixExecutionEngine {
         // In a real scenario, this would check techResult findings
         if (fix_hint === 'NO_ACTION') {
             console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] fix_hint is NO_ACTION`);
-            return { success: false, findings: [], fixedPath: null };
+            return { ok: false, status: 'NO_ACTION', findings: [], fixedPath: null, artifacts: {} };
         }
 
         // Default to successful fix for mock reliability

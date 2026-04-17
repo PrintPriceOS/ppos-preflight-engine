@@ -131,7 +131,7 @@ class PreflightEngine {
 
         } catch (err) {
             console.error('[ENGINE][AUTOFIX-FAILED][NO-OUTPUT]', err);
-            return { success: false, error: err.message };
+            return { ok: false, status: 'FAILURE', error: err.message, wrapper_metadata: { timestamp: new Date().toISOString() } };
         }
     }
 
