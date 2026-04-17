@@ -34,15 +34,33 @@ class AutofixCommand {
 
             console.log(`[RUNTIME][COMMAND] Autofix Complete [ID: ${jobId}]: Success=${result.success}`);
 
-            return {
-                success: result.success,
+            const response = {
+                ok: result.success,
+                status: result.success ? 'SUCCESS' : 'NO_ACTION_TAKEN',
+                fixedPath: result.fixedPath,
                 findings: result.findings || [],
+                artifacts: result.success ? {
+                    fixed_pdf: {
+                        path: result.fixedPath,
+                        filename: require('path').basename(result.fixedPath)
+                    }
+                } : {},
                 wrapper_metadata: {
                     job_id: jobId,
                     status: result.success ? 'SUCCESS' : 'NO_ACTION_TAKEN',
                     timestamp: new Date().toISOString()
                 }
             };
+
+            if (result.success) {
+                console.log(`[ENGINE][AUTOFIX][OUTPUT-PATH] ${result.fixedPath}`);
+            } else {
+                console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Status: ${response.status}`);
+            }
+
+            console.log(`[ENGINE][AUTOFIX][RETURN-SHAPE] ${JSON.stringify(Object.keys(response))}`);
+
+            return response;
         } catch (err) {
             console.error(`[RUNTIME][COMMAND] Autofix Failed [ID: ${jobId}]: ${err.message}`);
             throw err;

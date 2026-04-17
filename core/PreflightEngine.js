@@ -83,30 +83,32 @@ class PreflightEngine {
         // Handle different fix types based on the plan
         // This is where we implement 'grayscale', 'color', 'bleed', etc.
         try {
+            let result;
             if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') {
-                const result = await fixEngine.applyCmyk(filePath, outputPath, 'iso_grayscale_v2', options);
-                return result.success ? { success: true, outputPath } : { success: false, error: result.error };
-            }
-
-            if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') {
+                result = await fixEngine.applyCmyk(filePath, outputPath, 'iso_grayscale_v2', options);
+            } else if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') {
                 const profile = fixPlan.profile || 'iso_coated_v3';
-                // In a real setup, we'd resolve the profile path. For now assume it's a slug.
-                const result = await fixEngine.applyCmyk(filePath, outputPath, profile, options);
-                return result.success ? { success: true, outputPath } : { success: false, error: result.error };
-            }
-
-            if (fixPlan.type === 'bleed' || fixPlan.forceBleed) {
+                result = await fixEngine.applyCmyk(filePath, outputPath, profile, options);
+            } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed) {
                 const bleedMm = fixPlan.bleedMm || 3;
-                const result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
-                return result.success ? { success: true, outputPath } : { success: false, error: result.error };
+                result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
+            } else {
+                // Fallback: Copy if no specific fix requested
+                await fs.copy(filePath, outputPath);
+                result = { success: true, note: 'Copied' };
             }
 
-            // Fallback: Copy if no specific fix requested
-            await fs.copy(filePath, outputPath);
-            return { success: true, outputPath, note: 'Copied (no specific fix applied)' };
+            if (result.success) {
+                console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${outputPath}`);
+                console.log(`[ENGINE][AUTOFIX][OUTPUT-PATH] ${outputPath}`);
+                return { success: true, outputPath, note: result.note };
+            } else {
+                console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix stage failed: ${result.error}`);
+                return { success: false, error: result.error };
+            }
 
         } catch (err) {
-            console.error('[ENGINE][AUTOFIX-FAILED]', err);
+            console.error('[ENGINE][AUTOFIX-FAILED][NO-OUTPUT]', err);
             return { success: false, error: err.message };
         }
     }

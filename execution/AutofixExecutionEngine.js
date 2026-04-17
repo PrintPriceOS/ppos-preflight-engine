@@ -27,12 +27,24 @@ class AutofixExecutionEngine {
         // Simple No-Op logic for mock baseline
         // In a real scenario, this would check techResult findings
         if (fix_hint === 'NO_ACTION') {
-            return { success: false, findings: [] };
+            console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] fix_hint is NO_ACTION`);
+            return { success: false, findings: [], fixedPath: null };
         }
 
         // Default to successful fix for mock reliability
         const result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3);
-        return { success: result.success, findings: result.findings || [] };
+        
+        if (result.success) {
+            console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${output_path}`);
+        } else {
+            console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix engine failed: ${result.error}`);
+        }
+
+        return { 
+            success: result.success, 
+            findings: result.findings || [],
+            fixedPath: result.success ? output_path : null 
+        };
     }
 
     /**
