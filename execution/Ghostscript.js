@@ -14,12 +14,15 @@ class Ghostscript {
 
     async runGs(args, opts = {}) {
         const cmd = this.resolveGsCmd();
-        const commandLine = `${cmd} ${args.join(' ')}`;
+        const commandLine = `${cmd} ${args.map(a => a.includes(' ') ? `"${a}"` : a).join(' ')}`;
 
         try {
             const { stdout, stderr } = await execAsync(commandLine, {
                 timeout: opts.timeout || 30000 // 30s industrial limit
             });
+            if (stderr && /Error|Unrecoverable/i.test(stderr)) {
+                throw { name: 'GS_ERROR', message: stderr, code: 'GS_STDERR_ERROR', stderr };
+            }
             return { ok: true, stdout, stderr };
         } catch (err) {
             const isTimeout = err.signal === 'SIGTERM' || err.code === 'ETIMEDOUT';

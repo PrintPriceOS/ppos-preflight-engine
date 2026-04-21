@@ -77,18 +77,31 @@ class PreflightEngine {
         const PdfFixEngine = require('../execution/PdfFixEngine');
         const fixEngine = new PdfFixEngine();
 
+        const ICC_DIR = process.env.ICC_PROFILES_DIR || path.resolve(__dirname, '../../../icc-profiles');
+        const ICC_PROFILE_MAP = {
+            'iso_coated_v3':       'PSO_Coated_v3.icc',
+            'iso_uncoated_v3':     'PSOuncoated_v3_FOGRA52.icc',
+            'iso_coated_v2_to_v3': 'ISOcoated_v2_to_PSOcoated_v3_DeviceLink.icc',
+        };
+        const resolveIccPath = (name) => {
+            const filename = ICC_PROFILE_MAP[name];
+            return filename ? path.join(ICC_DIR, filename) : null;
+        };
+
         const ext = path.extname(filePath);
-        const outputPath = filePath.replace(ext, `_fixed_${Date.now()}${ext}`);
+        const basename = path.basename(filePath, ext);
+        const outDir = options.outputDir || path.dirname(filePath);
+        const outputPath = path.join(outDir, `${basename}_fixed_${Date.now()}${ext}`);
 
         // Handle different fix types based on the plan
         // This is where we implement 'grayscale', 'color', 'bleed', etc.
         try {
             let result;
             if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') {
-                result = await fixEngine.applyCmyk(filePath, outputPath, 'iso_grayscale_v2', options);
+                result = await fixEngine.applyCmyk(filePath, outputPath, null, options);
             } else if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') {
                 const profile = fixPlan.profile || 'iso_coated_v3';
-                result = await fixEngine.applyCmyk(filePath, outputPath, profile, options);
+                result = await fixEngine.applyCmyk(filePath, outputPath, resolveIccPath(profile), options);
             } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed) {
                 const bleedMm = fixPlan.bleedMm || 3;
                 result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);

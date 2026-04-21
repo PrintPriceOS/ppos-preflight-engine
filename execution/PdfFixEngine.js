@@ -14,8 +14,8 @@ class PdfFixEngine {
     async applyCmyk(input, output, iccPath, opts = {}) {
         const args = [
             '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite',
-            '-dColorConversionStrategy=CMYK',
-            `-sOutputICCProfile=${iccPath}`,
+            '-sColorConversionStrategy=CMYK',
+            ...(iccPath ? [`-sDefaultCMYKProfile=${iccPath}`] : []),
             '-dProcessColorModel=/DeviceCMYK',
             '-o', output, input
         ];

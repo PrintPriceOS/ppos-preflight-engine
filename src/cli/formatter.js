@@ -7,10 +7,10 @@ const chalk = require('chalk');
 
 class Formatter {
     static format(result, options) {
-        const { exitCode, data, error, message } = result;
+        const { exitCode, data, error, message, stack } = result;
 
         if (error) {
-            this._printError(error, message, options.verbose);
+            this._printError(error, message, stack, options.verbose);
             return;
         }
 
@@ -67,12 +67,12 @@ class Formatter {
         console.log(''); // Trailing newline
     }
 
-    static _printError(error, message, verbose) {
+    static _printError(error, message, stack, verbose) {
         // Operational errors go only to stderr
         process.stderr.write(chalk.red.bold(`\nERROR: ${error}\n`));
         process.stderr.write(chalk.red(`${message}\n`));
-        if (verbose && error.stack) {
-            process.stderr.write(chalk.dim(`${error.stack}\n`));
+        if (verbose && stack) {
+            process.stderr.write(chalk.dim(`${stack}\n`));
         }
     }
 }
