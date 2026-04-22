@@ -23,8 +23,7 @@ class PdfFixEngine {
         try {
             const result = await ghostscript.runGs(args, {
                 ...opts,
-                reqId: 'fix-cmyk',
-                timeout: opts.timeout || 30000
+                reqId: 'fix-cmyk'
             });
             return { success: result.ok, output };
         } catch (e) {
@@ -49,8 +48,7 @@ class PdfFixEngine {
         try {
             const result = await ghostscript.runGs(args, {
                 ...opts,
-                reqId: 'fix-bleed',
-                timeout: opts.timeout || 30000
+                reqId: 'fix-bleed'
             });
             return { success: result.ok, output };
         } catch (e) {

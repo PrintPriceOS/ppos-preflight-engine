@@ -74,7 +74,7 @@ class PdfTechnicalEngine {
             await fs.writeFile(tempPs, psContent);
             const gsResult = await ghostscript.runGs(
                 ['-q', '-dBATCH', '-dNOPAUSE', '-dNODISPLAY', `"${tempPs}"`],
-                { timeout: opts.timeout || 30000 }
+                { ...opts, reqId: 'analyze' }
             );
 
             const parsed = this._parseGsMetadata(gsResult.stdout || '');
