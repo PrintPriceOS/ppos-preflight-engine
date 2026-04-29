@@ -49,6 +49,8 @@ class GeometryAuditEngine {
 
         return {
             code,
+            page: 1,
+            severity: code ? 'warning' : null,
             context: {
                 bleedMm: bleed,
                 thresholdMm: minBleed,
@@ -62,7 +64,7 @@ class GeometryAuditEngine {
      */
     classifyDocument(geometry, pageCount) {
         const { trimBox } = geometry;
-        if (!trimBox) return { code: CODES.TYPE_UNKNOWN, context: { pageCount } };
+        if (!trimBox) return { code: CODES.TYPE_UNKNOWN, page: 1, context: { pageCount } };
 
         const widthMm = (trimBox[2] - trimBox[0]) * 0.3528;
         const heightMm = (trimBox[3] - trimBox[1]) * 0.3528;
@@ -87,6 +89,7 @@ class GeometryAuditEngine {
 
         return {
             code: typeCode,
+            page: 1,
             context: {
                 spineMm: Number(spineMm.toFixed(3)),
                 widthMm: Number(widthMm.toFixed(2)),
@@ -107,6 +110,7 @@ class GeometryAuditEngine {
         if (!trimBox) {
             findings.push({ 
                 code: CODES.GEOM_TRIMBOX_MISSING, 
+                page: 1,
                 context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
             });
             return findings;
@@ -118,6 +122,7 @@ class GeometryAuditEngine {
         if (!isFinite(trimBox) || !hasPositiveArea(trimBox)) {
             findings.push({ 
                 code: CODES.GEOM_TRIMBOX_INVALID, 
+                page: 1,
                 context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
             });
         }
@@ -129,14 +134,11 @@ class GeometryAuditEngine {
             if (isOutside) {
                 findings.push({ 
                     code: CODES.GEOM_TRIMBOX_OUTSIDE_MEDIABOX, 
+                    page: 1,
                     context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
                 });
             }
         }
-
-        // Vague anomalies/warnings (examples)
-        // If everything else is fine but maybe some business rule warning
-        // findings.push({ code: CODES.GEOM_TRIM_MARGIN_WARNING, context: { confidence: 0.5, fixRequired: false, safeToAutofix: false } });
 
         return findings;
     }

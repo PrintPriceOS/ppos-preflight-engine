@@ -30,19 +30,79 @@ class AutofixExecutionEngine {
      * Higher-level fix execution (Standardized for CLI/Monolith).
      */
     async executeFix({ input_path, output_path, fix_hint }) {
-        // Simple No-Op logic for mock baseline
-        // In a real scenario, this would check techResult findings
-        if (fix_hint === 'NO_ACTION') {
-            console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] fix_hint is NO_ACTION`);
-            return { ok: false, status: 'NO_ACTION', findings: [], fixedPath: null, artifacts: {} };
+        const { PDFDocument, PDFName } = require('pdf-lib');
+        
+        // 1. Technical No-Op Detection (Selective)
+        if (fix_hint === 'REBUILD_TRIMBOX' || fix_hint === 'NO_ACTION') {
+            try {
+                const bytes = await fs.readFile(input_path);
+                const pdfDoc = await PDFDocument.load(bytes);
+                const pages = pdfDoc.getPages();
+                let allValid = true;
+
+                for (const page of pages) {
+                    const trimBox = page.node.lookup(PDFName.of('TrimBox'));
+                    const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
+                    if (!trimBox || !mediaBox) { allValid = false; break; }
+                    
+                    const trimArray = trimBox.asArray().map(v => v.asNumber());
+                    const mediaArray = mediaBox.asArray().map(v => v.asNumber());
+                    const width = trimArray[2] - trimArray[0];
+                    const height = trimArray[3] - trimArray[1];
+                    const isFinite = trimArray.every(n => Number.isFinite(n));
+                    const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
+                                    trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
+
+                    if (!isFinite || width <= 0 || height <= 0 || !isInside) { allValid = false; break; }
+                }
+
+                if (allValid) {
+                    console.log(`[ENGINE][AUTOFIX] No-op detected: Document already compliant.`);
+                    return {
+                        ok: true,
+                        status: 'SUCCESS',
+                        noopFix: true,
+                        fixApplied: false,
+                        rewritten: false,
+                        certificationMode: "CERTIFIED_WITHOUT_MODIFICATION",
+                        fixedPath: input_path, // Fallback to input
+                        artifacts: {
+                            certified_pdf: {
+                                source_preserved: true,
+                                rewrite: false,
+                                path: input_path,
+                                filename: path.basename(input_path)
+                            },
+                            // Add fixed_pdf as alias to prevent frontend hangs if it strictly expects it
+                            fixed_pdf: {
+                                path: input_path,
+                                filename: path.basename(input_path),
+                                is_certified_original: true
+                            }
+                        },
+                        findings: []
+                    };
+                }
+            } catch (err) {
+                console.warn(`[AUTOFIX-ENGINE] Pre-fix validation failed, proceeding with fix: ${err.message}`);
+            }
         }
 
-        // Default to successful fix for mock reliability
-        const result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3);
+        // 2. Technical Execution
+        const method = this.fixStrategies[fix_hint] || 'applyBleed';
+        console.log(`[AUTOFIX-ENGINE] executeFix: resolving ${fix_hint} to ${method}`);
+
+        let result;
+        if (method === 'rebuildTrimBox') {
+            result = await this.pdfFixEngine.rebuildTrimBox(input_path, output_path);
+        } else if (method === 'applyBleed') {
+            result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3);
+        } else {
+            result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3);
+        }
         
         if (result.success) {
             console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${output_path}`);
-            console.log(`[ENGINE][AUTOFIX][OUTPUT-PATH] ${output_path}`);
         } else {
             console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix engine failed: ${result.error || 'Unknown error'}`);
         }
@@ -50,6 +110,9 @@ class AutofixExecutionEngine {
         return { 
             ok: result.success,
             status: result.success ? 'SUCCESS' : 'FAILURE',
+            noopFix: false,
+            fixApplied: result.success,
+            rewritten: result.success,
             fixedPath: result.success ? output_path : null,
             findings: result.findings || [],
             artifacts: result.success ? {

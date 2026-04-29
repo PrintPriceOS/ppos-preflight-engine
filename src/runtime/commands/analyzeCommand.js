@@ -33,6 +33,9 @@ class AnalyzeCommand {
             const findings = [];
 
             if (techResult.geometry) {
+                const geomFindings = geometryEngine.auditGeometry(techResult.geometry);
+                findings.push(...geomFindings);
+
                 const bleedFinding = geometryEngine.auditBleed(techResult.geometry);
                 if (bleedFinding.code) findings.push(bleedFinding);
 
