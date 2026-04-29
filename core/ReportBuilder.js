@@ -30,7 +30,11 @@ class ReportBuilder {
                 fixable: !!(i.fixable || i.fix_method || i.repairStrategy),
                 fix_method: i.fix_method || null,
                 repairStrategy: i.repairStrategy || i.fix_method || null,
-                category: i.category || null
+                category: i.category || null,
+                confidence: i.confidence,
+                fixRequired: i.fixRequired,
+                safeToAutofix: i.safeToAutofix,
+                destructiveFixRisk: i.destructiveFixRisk
             })),
             analysis_warnings: warnings,
             engines: {

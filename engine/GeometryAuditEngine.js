@@ -97,18 +97,67 @@ class GeometryAuditEngine {
     }
 
     /**
+     * Technical Geometry Audit.
+     * Validates TrimBox vs MediaBox.
+     */
+    auditGeometry(geometry) {
+        const { trimBox, mediaBox } = geometry;
+        const findings = [];
+
+        if (!trimBox) {
+            findings.push({ 
+                code: CODES.GEOM_TRIMBOX_MISSING, 
+                context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
+            });
+            return findings;
+        }
+
+        const isFinite = (box) => box && box.every(n => typeof n === 'number' && Number.isFinite(n));
+        const hasPositiveArea = (box) => box && (box[2] - box[0]) > 0 && (box[3] - box[1]) > 0;
+
+        if (!isFinite(trimBox) || !hasPositiveArea(trimBox)) {
+            findings.push({ 
+                code: CODES.GEOM_TRIMBOX_INVALID, 
+                context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
+            });
+        }
+
+        if (mediaBox && isFinite(mediaBox)) {
+            const isOutside = trimBox[0] < mediaBox[0] || trimBox[1] < mediaBox[1] || 
+                             trimBox[2] > mediaBox[2] || trimBox[3] > mediaBox[3];
+            
+            if (isOutside) {
+                findings.push({ 
+                    code: CODES.GEOM_TRIMBOX_OUTSIDE_MEDIABOX, 
+                    context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
+                });
+            }
+        }
+
+        // Vague anomalies/warnings (examples)
+        // If everything else is fine but maybe some business rule warning
+        // findings.push({ code: CODES.GEOM_TRIM_MARGIN_WARNING, context: { confidence: 0.5, fixRequired: false, safeToAutofix: false } });
+
+        return findings;
+    }
+
+    /**
      * Unified analyze entrypoint for PreflightEngine.
      */
     async analyze(filePath, options = {}) {
         const metadata = options.metadata || {};
         const geometry = metadata.geometry || {
             trimBox: [0, 0, 595, 842],
-            bleedBox: [0, 0, 595, 842]
+            bleedBox: [0, 0, 595, 842],
+            mediaBox: [0, 0, 595, 842]
         };
         const pageCount = metadata.pages || 0;
 
         const findings = [];
         
+        const geomFindings = this.auditGeometry(geometry);
+        findings.push(...geomFindings);
+
         const bleedResult = this.auditBleed(geometry);
         if (bleedResult.code) findings.push(bleedResult);
 

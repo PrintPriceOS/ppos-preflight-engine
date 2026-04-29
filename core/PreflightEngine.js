@@ -76,6 +76,7 @@ class PreflightEngine {
         const fs = require('fs-extra');
         const PdfFixEngine = require('../execution/PdfFixEngine');
         const fixEngine = new PdfFixEngine();
+        const { PDFDocument, PDFName } = require('pdf-lib');
 
         const ICC_DIR = process.env.ICC_PROFILES_DIR || path.resolve(__dirname, '../../../icc-profiles');
         const ICC_PROFILE_MAP = {
@@ -93,15 +94,72 @@ class PreflightEngine {
         const outDir = options.outputDir || path.dirname(filePath);
         const outputPath = path.join(outDir, `${basename}_fixed_${Date.now()}${ext}`);
 
-        // Handle different fix types based on the plan
-        // This is where we implement 'grayscale', 'color', 'bleed', etc.
         try {
+            // Pre-fix validation for NO-OP detection (specifically for TrimBox)
+            if (fixPlan.strategy === 'REBUILD_TRIMBOX' || fixPlan.repairStrategy === 'REBUILD_TRIMBOX') {
+                const bytes = await fs.readFile(filePath);
+                const pdfDoc = await PDFDocument.load(bytes);
+                const pages = pdfDoc.getPages();
+                let allValid = true;
+
+                for (const page of pages) {
+                    const trimBox = page.node.lookup(PDFName.of('TrimBox'));
+                    const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
+                    
+                    if (!trimBox || !mediaBox) {
+                        allValid = false;
+                        break;
+                    }
+
+                    const trimArray = trimBox.asArray().map(v => v.asNumber());
+                    const mediaArray = mediaBox.asArray().map(v => v.asNumber());
+
+                    const width = trimArray[2] - trimArray[0];
+                    const height = trimArray[3] - trimArray[1];
+                    const isFinite = trimArray.every(n => Number.isFinite(n));
+
+                    const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
+                                    trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
+
+                    if (!isFinite || width <= 0 || height <= 0 || !isInside) {
+                        allValid = false;
+                        break;
+                    }
+                }
+
+                if (allValid) {
+                    console.log(`[ENGINE][AUTOFIX] No-op detected: TrimBox already valid.`);
+                    return {
+                        ok: true,
+                        status: 'SUCCESS',
+                        noopFix: true,
+                        fixApplied: false,
+                        rewritten: false,
+                        certificationMode: "CERTIFIED_WITHOUT_MODIFICATION",
+                        repairs: [],
+                        artifacts: {
+                            certified_pdf: {
+                                source_preserved: true,
+                                rewrite: false,
+                                path: filePath,
+                                filename: path.basename(filePath)
+                            }
+                        },
+                        message: "No structural changes were required. Document already complied with geometry requirements."
+                    };
+                }
+            }
+
             let result;
+            let destructiveFixRisk = "LOW";
+
             if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') {
                 result = await fixEngine.applyCmyk(filePath, outputPath, null, options);
+                destructiveFixRisk = "HIGH";
             } else if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') {
                 const profile = fixPlan.profile || 'iso_coated_v3';
                 result = await fixEngine.applyCmyk(filePath, outputPath, resolveIccPath(profile), options);
+                destructiveFixRisk = "HIGH";
             } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed) {
                 const bleedMm = fixPlan.bleedMm || 3;
                 result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
@@ -115,11 +173,19 @@ class PreflightEngine {
 
             if (result.success) {
                 console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${outputPath}`);
-                console.log(`[ENGINE][AUTOFIX][OUTPUT-PATH] ${outputPath}`);
+                
+                const repairs = (result.repairs || []).map(r => ({
+                    ...r,
+                    destructiveFixRisk: r.destructiveFixRisk || destructiveFixRisk,
+                    rewritten: true
+                }));
 
                 return {
                     ok: true,
                     status: 'SUCCESS',
+                    noopFix: false,
+                    fixApplied: true,
+                    rewritten: true,
                     fixedPath: outputPath,
                     artifacts: {
                         fixed_pdf: {
@@ -127,7 +193,7 @@ class PreflightEngine {
                             filename: path.basename(outputPath)
                         }
                     },
-                    repairs: result.repairs || [],
+                    repairs,
                     note: result.note,
                     wrapper_metadata: {
                         timestamp: new Date().toISOString()

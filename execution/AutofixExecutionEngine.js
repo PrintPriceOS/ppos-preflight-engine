@@ -18,6 +18,8 @@ class AutofixExecutionEngine {
             [FindingCodes.GEOM_BLEED_MISSING]: 'applyBleed',
             [FindingCodes.GEOM_BLEED_INSUFFICIENT]: 'applyBleed',
             [FindingCodes.GEOM_TRIMBOX_MISSING]: 'rebuildTrimBox',
+            [FindingCodes.GEOM_TRIMBOX_INVALID]: 'rebuildTrimBox',
+            [FindingCodes.GEOM_TRIMBOX_OUTSIDE_MEDIABOX]: 'rebuildTrimBox',
             'TRIMBOX_MISSING': 'rebuildTrimBox',
             'IND_GEOM_003': 'rebuildTrimBox',
             'TRIM_BOX_ANOMALY': 'rebuildTrimBox'
