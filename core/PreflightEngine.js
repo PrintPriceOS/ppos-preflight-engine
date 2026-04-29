@@ -105,6 +105,8 @@ class PreflightEngine {
             } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed) {
                 const bleedMm = fixPlan.bleedMm || 3;
                 result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
+            } else if (fixPlan.type === 'geometry' || fixPlan.strategy === 'REBUILD_TRIMBOX' || fixPlan.repairStrategy === 'REBUILD_TRIMBOX') {
+                result = await fixEngine.rebuildTrimBox(filePath, outputPath, options);
             } else {
                 // Fallback: Copy if no specific fix requested
                 await fs.copy(filePath, outputPath);
@@ -125,6 +127,7 @@ class PreflightEngine {
                             filename: path.basename(outputPath)
                         }
                     },
+                    repairs: result.repairs || [],
                     note: result.note,
                     wrapper_metadata: {
                         timestamp: new Date().toISOString()

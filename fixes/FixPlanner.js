@@ -9,7 +9,11 @@ class FixPlanner {
         this.strategyMap = {
             'BLEED_MISSING': 'ADD_BLEED',
             'COLOR_PROFILE_MISMATCH': 'CONVERT_CMYK',
-            'TRANSPARENCY_PRESENT': 'FLATTEN_PDF'
+            'TRANSPARENCY_PRESENT': 'FLATTEN_PDF',
+            'TRIMBOX_MISSING': 'REBUILD_TRIMBOX',
+            'GEOM_TRIMBOX_MISSING': 'REBUILD_TRIMBOX',
+            'IND_GEOM_003': 'REBUILD_TRIMBOX',
+            'TRIM_BOX_ANOMALY': 'REBUILD_TRIMBOX'
         };
     }
 

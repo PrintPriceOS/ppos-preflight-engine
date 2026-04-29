@@ -27,7 +27,10 @@ class ReportBuilder {
                 severity: i.severity,
                 message: i.message,
                 page: i.page || null,
-                fixable: !!i.fix_method
+                fixable: !!(i.fixable || i.fix_method || i.repairStrategy),
+                fix_method: i.fix_method || null,
+                repairStrategy: i.repairStrategy || i.fix_method || null,
+                category: i.category || null
             })),
             analysis_warnings: warnings,
             engines: {

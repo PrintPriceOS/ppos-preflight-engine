@@ -1,5 +1,6 @@
 const ghostscript = require('./Ghostscript');
 const { CODES } = require('../interpretation/IndustrialFindingCodes');
+const fs = require('fs-extra');
 
 /**
  * PdfFixEngine
@@ -51,6 +52,54 @@ class PdfFixEngine {
                 reqId: 'fix-bleed'
             });
             return { success: result.ok, output };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    }
+
+    /**
+     * Rebuilds TrimBox from MediaBox without scaling or rasterizing.
+     */
+    async rebuildTrimBox(inputPath, outputPath, options = {}) {
+        const { PDFDocument, PDFName } = require('pdf-lib');
+        
+        try {
+            const bytes = await fs.readFile(inputPath);
+            const pdfDoc = await PDFDocument.load(bytes);
+            
+            const pages = pdfDoc.getPages();
+            for (const page of pages) {
+                // PDF-lib's getSize() inherently returns the CropBox or MediaBox
+                // We fetch the raw MediaBox coordinates to be mathematically accurate
+                let mediaBox = page.node.lookup(PDFName.of('MediaBox'));
+                if (!mediaBox) {
+                    // Fallback if missing (very rare)
+                    const { width, height } = page.getSize();
+                    mediaBox = pdfDoc.context.obj([0, 0, width, height]);
+                }
+                
+                // Assign to TrimBox
+                page.node.set(PDFName.of('TrimBox'), mediaBox);
+                
+                // Normalize ArtBox and CropBox
+                page.node.set(PDFName.of('CropBox'), mediaBox);
+                page.node.set(PDFName.of('ArtBox'), mediaBox);
+            }
+            
+            const modifiedBytes = await pdfDoc.save();
+            await fs.writeFile(outputPath, modifiedBytes);
+            
+            return {
+                success: true,
+                output: outputPath,
+                repairs: [
+                    {
+                        code: 'REBUILD_TRIMBOX',
+                        status: 'APPLIED',
+                        description: 'TrimBox rebuilt from MediaBox without scaling content.'
+                    }
+                ]
+            };
         } catch (e) {
             return { success: false, error: e.message };
         }

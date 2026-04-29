@@ -16,7 +16,11 @@ class AutofixExecutionEngine {
         // Technical mapping of finding codes to engine methods
         this.fixStrategies = {
             [FindingCodes.GEOM_BLEED_MISSING]: 'applyBleed',
-            [FindingCodes.GEOM_BLEED_INSUFFICIENT]: 'applyBleed'
+            [FindingCodes.GEOM_BLEED_INSUFFICIENT]: 'applyBleed',
+            [FindingCodes.GEOM_TRIMBOX_MISSING]: 'rebuildTrimBox',
+            'TRIMBOX_MISSING': 'rebuildTrimBox',
+            'IND_GEOM_003': 'rebuildTrimBox',
+            'TRIM_BOX_ANOMALY': 'rebuildTrimBox'
         };
     }
 
