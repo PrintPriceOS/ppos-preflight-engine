@@ -26,6 +26,16 @@ class PdfFixEngine {
                 ...opts,
                 reqId: 'fix-cmyk'
             });
+
+            // v2.4.121: Validate output integrity even if GS reported success
+            if (!(await fs.pathExists(output))) {
+                return { success: false, error: 'Ghostscript finished but output file is missing' };
+            }
+            const stats = await fs.stat(output);
+            if (stats.size === 0) {
+                return { success: false, error: 'Ghostscript finished but output file is empty (0 bytes)' };
+            }
+
             return { success: result.ok, output };
         } catch (e) {
             return { success: false, error: e.message };
@@ -51,6 +61,16 @@ class PdfFixEngine {
                 ...opts,
                 reqId: 'fix-bleed'
             });
+
+            // v2.4.121: Validate output integrity
+            if (!(await fs.pathExists(output))) {
+                return { success: false, error: 'Ghostscript finished but output file is missing' };
+            }
+            const stats = await fs.stat(output);
+            if (stats.size === 0) {
+                return { success: false, error: 'Ghostscript finished but output file is empty (0 bytes)' };
+            }
+
             return { success: result.ok, output };
         } catch (e) {
             return { success: false, error: e.message };

@@ -31,7 +31,14 @@ class Ghostscript {
 
             console.log(`[ENGINE][GS][OK][${reqId}] Duration: ${duration}ms`);
             
-            if (stderr && /Error|Unrecoverable/i.test(stderr)) {
+            // v2.4.121: Tolerate repair warnings if exit code is 0
+            const hasFatalError = stderr && (
+                /Unrecoverable error/i.test(stderr) || 
+                /Error: \//i.test(stderr) ||
+                (stderr.includes('Error') && !/repaired|ignored|warnings encountered|notify the author/i.test(stderr))
+            );
+
+            if (hasFatalError) {
                 console.error(`[ENGINE][GS][ERROR-CONTENT][${reqId}] Stderr: ${stderr}`);
                 throw { 
                     name: 'GS_ERROR', 
@@ -41,6 +48,10 @@ class Ghostscript {
                     stdout,
                     duration
                 };
+            }
+
+            if (stderr && stderr.trim()) {
+                console.warn(`[ENGINE][GS][WARN][${reqId}] for tolerated stderr: ${stderr.substring(0, 200).replace(/\r?\n|\r/g, ' ')}...`);
             }
 
             return { ok: true, stdout, stderr, duration };
