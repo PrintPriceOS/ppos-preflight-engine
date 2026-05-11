@@ -17,16 +17,16 @@ class HeuristicAnalyzer {
             findings.push({
                 id: 'INTENT_BOOK',
                 severity: 'info',
-                message: 'Document classified as Book/Catalog based on page count'
+                message: 'Book / Catalog Intent Detected'
             });
         }
 
         // 2. Vector Text Risk
-        if (metadata.pages > 0 && (!metadata.fonts || metadata.fonts.length === 0)) {
+        if (metadata.pages > 0 && Array.isArray(metadata.fonts) && metadata.fonts.length === 0) {
             findings.push({
                 id: 'HEURISTIC_TEXT_OUTLINED',
                 severity: 'warning',
-                message: 'No fonts detected. Text may be converted to outlines/paths.'
+                message: 'Text Possibly Converted to Outlines'
             });
         }
 

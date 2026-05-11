@@ -18,7 +18,7 @@ class IssueNormalizer {
             const normalized = {
                 id: mappedCode,
                 severity: f.severity || (mappedCode.endsWith('_WARNING') ? 'warning' : 'error'),
-                message: f.message || 'Technical preflight finding',
+                message: this.MESSAGES[mappedCode] || f.message || 'Technical preflight finding',
                 page: f.page,
                 source: f.source,
                 geometry: f.geometry,
@@ -41,6 +41,17 @@ class IssueNormalizer {
                 normalized.destructiveFixRisk = "LOW";
             }
 
+            if (['BLEED_MISSING', 'BLEED_INSUFFICIENT'].includes(mappedCode)) {
+                normalized.category = 'GEOMETRY';
+                normalized.fixable = true;
+                normalized.fix_method = 'APPLY_BLEED';
+                normalized.repairStrategy = 'APPLY_BLEED';
+                normalized.confidence = 0.9;
+                normalized.fixRequired = false;
+                normalized.safeToAutofix = true;
+                normalized.destructiveFixRisk = 'MEDIUM';
+            }
+
             if (mappedCode === 'TRIM_MARGIN_WARNING' || mappedCode === 'TRIM_MARKS_NEAR_LIVE_AREA') {
                 normalized.category = 'GEOMETRY';
                 normalized.fixable = false;
@@ -53,9 +64,26 @@ class IssueNormalizer {
         });
     }
 
+    static get MESSAGES() {
+        return {
+            'BLEED_MISSING':               'Bleed Zone Missing',
+            'BLEED_INSUFFICIENT':          'Insufficient Bleed (< 3mm)',
+            'TRIMBOX_MISSING':             'TrimBox Not Defined',
+            'TRIMBOX_INVALID':             'Invalid TrimBox Dimensions',
+            'TRIMBOX_OUTSIDE_MEDIABOX':    'TrimBox Extends Outside MediaBox',
+            'TRIM_MARGIN_WARNING':         'Trim Margin Too Narrow',
+            'TRIM_MARKS_NEAR_LIVE_AREA':   'Trim Marks Overlap Live Area',
+            'COLOR_PROFILE_MISMATCH':      'Color Profile Mismatch',
+            'IMAGE_LOW_RESOLUTION':        'Low Resolution Image',
+        };
+    }
+
     static mapCode(code) {
         const map = {
             'GEOM_BLEED_MISSING': 'BLEED_MISSING',
+            'IND_GEOM_001': 'BLEED_INSUFFICIENT',
+            'IND_GEOM_002': 'BLEED_MISSING',
+            'IND_GEOM_004': 'BLEED_MISSING',
             'GEOM_TRIMBOX_MISSING': 'TRIMBOX_MISSING',
             'IND_GEOM_003': 'TRIMBOX_MISSING',
             'IND_GEOM_005': 'TRIMBOX_INVALID',

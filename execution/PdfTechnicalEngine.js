@@ -47,8 +47,8 @@ class PdfTechnicalEngine {
     }
 
     /**
-     * Technical Analysis: Retrieves PDF metadata and geometry via Ghostscript.
-     * Falls back to a mock geometry if GS extraction fails.
+     * Technical Analysis: Retrieves PDF metadata and geometry via pdf-lib.
+     * Falls back to a default A4 geometry if parsing fails.
      */
     async analyze(input, opts = {}) {
         let sizeBytes = 0;
@@ -57,47 +57,52 @@ class PdfTechnicalEngine {
             sizeBytes = stat.size;
         } catch (_) {}
 
-        const escapedPath = input.replace(/\\/g, '/').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-        const psContent = [
-            `(${escapedPath}) (r) file runpdfbegin`,
-            `pdfpagecount =`,
-            `1 pdfgetpage`,
-            `dup /MediaBox pget { == } { [0 0 595 842] == } ifelse`,
-            `dup /TrimBox pget { == } { (NONE) = } ifelse`,
-            `dup /BleedBox pget { == } { (NONE) = } ifelse`,
-            `quit`
-        ].join('\n');
-
-        const tempPs = path.join(os.tmpdir(), `ppos_meta_${Date.now()}.ps`);
-
         try {
-            await fs.writeFile(tempPs, psContent);
-            const gsResult = await ghostscript.runGs(
-                ['-q', '-dBATCH', '-dNOPAUSE', '-dNODISPLAY', `"${tempPs}"`],
-                { ...opts, reqId: 'analyze' }
-            );
+            const { PDFDocument, PDFName } = require('pdf-lib');
+            const bytes = await fs.readFile(input);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
 
-            const parsed = this._parseGsMetadata(gsResult.stdout || '');
-            const refBox = parsed.trimBox || parsed.mediaBox || [0, 0, 595, 842];
+            const pageCount = pdfDoc.getPageCount();
+            const firstPage = pdfDoc.getPage(0);
+
+            const getBox = (page, boxName) => {
+                const node = page.node;
+                const boxRef = node.lookup(PDFName.of(boxName));
+                if (!boxRef) return null;
+                try {
+                    return boxRef.asArray().map(v => v.asNumber());
+                } catch (_) {
+                    return null;
+                }
+            };
+
+            const mediaBox = getBox(firstPage, 'MediaBox') || firstPage.getMediaBox && (() => {
+                const mb = firstPage.getMediaBox();
+                return [mb.x, mb.y, mb.x + mb.width, mb.y + mb.height];
+            })();
+            const trimBox  = getBox(firstPage, 'TrimBox');
+            const bleedBox = getBox(firstPage, 'BleedBox');
+
+            const refBox = trimBox || mediaBox || [0, 0, 595, 842];
 
             return {
                 ok: true,
                 status: 'SUCCESS',
-                source: 'GHOSTSCRIPT',
+                source: 'PDF_LIB',
                 geometry: {
-                    mediaBox: parsed.mediaBox,
-                    trimBox: parsed.trimBox || parsed.mediaBox,
-                    bleedBox: parsed.bleedBox || parsed.trimBox || parsed.mediaBox,
-                    widthMm: Number(((refBox[2] - refBox[0]) * 0.3528).toFixed(2)),
+                    mediaBox: mediaBox || [0, 0, 595, 842],
+                    trimBox:  trimBox  || mediaBox || [0, 0, 595, 842],
+                    bleedBox: bleedBox || trimBox  || mediaBox || [0, 0, 595, 842],
+                    widthMm:  Number(((refBox[2] - refBox[0]) * 0.3528).toFixed(2)),
                     heightMm: Number(((refBox[3] - refBox[1]) * 0.3528).toFixed(2))
                 },
                 info: {
-                    pages: parsed.pages,
+                    pages: pageCount,
                     size: sizeBytes
                 }
             };
         } catch (err) {
-            console.warn(`[TECH-ENGINE][ANALYZE] GS extraction failed, using fallback: ${err.message}`);
+            console.warn(`[TECH-ENGINE][ANALYZE] pdf-lib extraction failed, using fallback: ${err.message}`);
             return {
                 ok: true,
                 status: 'SUCCESS',
@@ -114,8 +119,6 @@ class PdfTechnicalEngine {
                     size: sizeBytes
                 }
             };
-        } finally {
-            await fs.remove(tempPs).catch(() => {});
         }
     }
 

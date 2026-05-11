@@ -6,12 +6,14 @@
 const RiskAnalyzer = require('./RiskAnalyzer');
 const ReportBuilder = require('./ReportBuilder');
 const IssueNormalizer = require('./IssueNormalizer');
+const PdfTechnicalEngine = require('../execution/PdfTechnicalEngine');
 
 class PreflightEngine {
     constructor(analyzers = []) {
         this.analyzers = analyzers;
         this.riskAnalyzer = new RiskAnalyzer();
         this.reportBuilder = new ReportBuilder();
+        this.technicalEngine = new PdfTechnicalEngine();
     }
 
     /**
@@ -20,18 +22,40 @@ class PreflightEngine {
     async analyzePdf(filePath, options = {}) {
         console.log(`[ENGINE] Starting deterministic analysis for: ${filePath}`);
 
-        // 1. Run all registered analyzers
+        // 1. Extract real PDF metadata via Ghostscript before running analyzers
         const rawFindings = [];
         const warnings = [];
         let metadata = {};
         let partial = false;
 
+        try {
+            const techResult = await this.technicalEngine.analyze(filePath, options);
+            if (techResult.ok) {
+                metadata = {
+                    geometry: techResult.geometry,
+                    pages: techResult.info?.pages || 0,
+                    size: techResult.info?.size || 0,
+                    source: techResult.source
+                };
+                console.log(`[ENGINE] PDF metadata extracted (source=${techResult.source}): pages=${metadata.pages}, ${metadata.geometry?.widthMm}x${metadata.geometry?.heightMm}mm`);
+                if (techResult.source === 'FALLBACK_MOCK') {
+                    partial = true;
+                    warnings.push({ analyzer: 'PdfTechnicalEngine', error: 'GS_EXTRACTION_FAILED', message: 'Using fallback geometry' });
+                }
+            }
+        } catch (err) {
+            console.warn(`[ENGINE] Technical extraction failed, analyzers will use defaults: ${err.message}`);
+            partial = true;
+            warnings.push({ analyzer: 'PdfTechnicalEngine', error: err.name || 'EXTRACTION_ERROR', message: err.message });
+        }
+
+        // 2. Run all registered analyzers with real metadata
         for (const analyzer of this.analyzers) {
             try {
                 const analyzerName = analyzer.constructor.name;
                 console.log(`[ENGINE][${analyzerName}] Running analysis stage...`);
                 const start = Date.now();
-                const result = await analyzer.analyze(filePath, options);
+                const result = await analyzer.analyze(filePath, { ...options, metadata });
                 const elapsed = Date.now() - start;
                 console.log(`[ENGINE][${analyzerName}] Stage completed in ${elapsed}ms`);
                 
@@ -48,13 +72,13 @@ class PreflightEngine {
             }
         }
 
-        // 2. Normalize issues
+        // 3. Normalize issues
         const normalizedIssues = IssueNormalizer.normalize(rawFindings);
 
-        // 3. Score Risk
+        // 4. Score Risk
         const riskSummary = this.riskAnalyzer.score(normalizedIssues, metadata);
 
-        // 4. Build Final Report
+        // 5. Build Final Report
         return this.reportBuilder.build({
             issues: normalizedIssues,
             riskSummary,
@@ -160,7 +184,7 @@ class PreflightEngine {
                 const profile = fixPlan.profile || 'iso_coated_v3';
                 result = await fixEngine.applyCmyk(filePath, outputPath, resolveIccPath(profile), options);
                 destructiveFixRisk = "HIGH";
-            } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed) {
+            } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed || fixPlan.repairStrategy === 'APPLY_BLEED' || fixPlan.fix_method === 'APPLY_BLEED') {
                 const bleedMm = fixPlan.bleedMm || 3;
                 result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
             } else if (fixPlan.type === 'geometry' || fixPlan.strategy === 'REBUILD_TRIMBOX' || fixPlan.repairStrategy === 'REBUILD_TRIMBOX') {

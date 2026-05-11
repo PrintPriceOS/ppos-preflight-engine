@@ -164,9 +164,8 @@ class GeometryAuditEngine {
         if (bleedResult.code) findings.push(bleedResult);
 
         const typeResult = this.classifyDocument(geometry, pageCount);
-        if (typeResult.code) findings.push(typeResult);
 
-        return { findings, metadata: { geometry, pageCount } };
+        return { findings, metadata: { geometry, pageCount, documentType: typeResult } };
     }
 }
 

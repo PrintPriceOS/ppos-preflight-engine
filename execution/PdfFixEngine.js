@@ -46,32 +46,42 @@ class PdfFixEngine {
      * Applies a bleed canvas to the PDF.
      */
     async applyBleed(input, output, bleedMm, opts = {}) {
-        // Logic would involve calling internal canvas expansion (e.g. via pdf-lib or GS)
-        // Simplified for this kernel baseline
-        const args = [
-            '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite',
-            `-dDEVICEWIDTHPOINTS=${(210 + bleedMm * 2) * 2.8346}`, // A4 example
-            `-dDEVICEHEIGHTPOINTS=${(297 + bleedMm * 2) * 2.8346}`,
-            '-dFIXEDMEDIA', '-dPDFFitPage',
-            '-o', output, input
-        ];
-
+        const { PDFDocument, PDFName } = require('pdf-lib');
         try {
-            const result = await ghostscript.runGs(args, {
-                ...opts,
-                reqId: 'fix-bleed'
-            });
+            const bytes = await fs.readFile(input);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+            const bleedPts = bleedMm * 2.8346;
 
-            // v2.4.121: Validate output integrity
-            if (!(await fs.pathExists(output))) {
-                return { success: false, error: 'Ghostscript finished but output file is missing' };
+            for (const page of pdfDoc.getPages()) {
+                const mb = page.getMediaBox();
+                const newWidth  = mb.width  + bleedPts * 2;
+                const newHeight = mb.height + bleedPts * 2;
+
+                const fullBox = pdfDoc.context.obj([0, 0, newWidth, newHeight]);
+                page.node.set(PDFName.of('MediaBox'), fullBox);
+                page.node.set(PDFName.of('BleedBox'), fullBox);
+                page.node.set(PDFName.of('CropBox'),  fullBox);
+
+                const trimBox = pdfDoc.context.obj([bleedPts, bleedPts, mb.width + bleedPts, mb.height + bleedPts]);
+                page.node.set(PDFName.of('TrimBox'), trimBox);
             }
+
+            const modified = await pdfDoc.save();
+            await fs.writeFile(output, modified);
+
+            if (!(await fs.pathExists(output))) return { success: false, error: 'Output file missing' };
             const stats = await fs.stat(output);
-            if (stats.size === 0) {
-                return { success: false, error: 'Ghostscript finished but output file is empty (0 bytes)' };
-            }
+            if (stats.size === 0) return { success: false, error: 'Output file is empty' };
 
-            return { success: result.ok, output };
+            return {
+                success: true,
+                output,
+                repairs: [{
+                    code: 'APPLY_BLEED',
+                    status: 'APPLIED',
+                    description: `BleedBox expanded ${bleedMm}mm on all sides via page box adjustment.`
+                }]
+            };
         } catch (e) {
             return { success: false, error: e.message };
         }
