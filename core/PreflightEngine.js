@@ -187,8 +187,30 @@ class PreflightEngine {
             } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed || fixPlan.repairStrategy === 'APPLY_BLEED' || fixPlan.fix_method === 'APPLY_BLEED') {
                 const bleedMm = fixPlan.bleedMm || 3;
                 result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
+                // Chain CMYK conversion after bleed fix when both are needed
+                if (result.success && fixPlan.target === 'cmyk') {
+                    const cmykOutputPath = outputPath.replace(/\.pdf$/i, '_cmyk.pdf');
+                    const profile = fixPlan.profile || 'iso_coated_v3';
+                    const cmykResult = await fixEngine.applyCmyk(outputPath, cmykOutputPath, resolveIccPath(profile), options);
+                    if (cmykResult.success) {
+                        await fs.move(cmykOutputPath, outputPath, { overwrite: true });
+                        result.repairs = [...(result.repairs || []), { code: 'CONVERT_CMYK', status: 'APPLIED', description: 'Colorspace converted to CMYK after bleed fix.' }];
+                        destructiveFixRisk = "HIGH";
+                    }
+                }
             } else if (fixPlan.type === 'geometry' || fixPlan.strategy === 'REBUILD_TRIMBOX' || fixPlan.repairStrategy === 'REBUILD_TRIMBOX') {
                 result = await fixEngine.rebuildTrimBox(filePath, outputPath, options);
+                // Chain CMYK conversion after geometry fix when both are needed
+                if (result.success && fixPlan.target === 'cmyk') {
+                    const cmykOutputPath = outputPath.replace(/\.pdf$/i, '_cmyk.pdf');
+                    const profile = fixPlan.profile || 'iso_coated_v3';
+                    const cmykResult = await fixEngine.applyCmyk(outputPath, cmykOutputPath, resolveIccPath(profile), options);
+                    if (cmykResult.success) {
+                        await fs.move(cmykOutputPath, outputPath, { overwrite: true });
+                        result.repairs = [...(result.repairs || []), { code: 'CONVERT_CMYK', status: 'APPLIED', description: 'Colorspace converted to CMYK after TrimBox rebuild.' }];
+                        destructiveFixRisk = "HIGH";
+                    }
+                }
             } else {
                 // Fallback: Copy if no specific fix requested
                 await fs.copy(filePath, outputPath);

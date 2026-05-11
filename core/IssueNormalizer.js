@@ -66,6 +66,8 @@ class IssueNormalizer {
 
     static get MESSAGES() {
         return {
+            'INTENT_BOOK':                 'Book / Catalog Intent Detected',
+            'HEURISTIC_TEXT_OUTLINED':     'Text Possibly Converted to Outlines',
             'BLEED_MISSING':               'Bleed Zone Missing',
             'BLEED_INSUFFICIENT':          'Insufficient Bleed (< 3mm)',
             'TRIMBOX_MISSING':             'TrimBox Not Defined',
