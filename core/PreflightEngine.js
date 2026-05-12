@@ -164,14 +164,25 @@ class PreflightEngine {
 
                 if (allValid) {
                     console.log(`[ENGINE][AUTOFIX] No-op detected: TrimBox already valid.`);
+                    const fixHint = fixPlan.repairStrategy || fixPlan.strategy || fixPlan.type || 'REBUILD_TRIMBOX';
                     return {
-                        ok: true,
-                        status: 'SUCCESS',
+                        ok: false, // Mandatory Rule 3: Nunca devolver ok: true si no se ha modificado realmente el PDF
+                        status: 'NO_CHANGE', // Mandatory Rule 5: status:NO_CHANGE
+                        fix_id: options.jobId || `fix_${Date.now()}`,
+                        input_issue_codes: [fixHint],
+                        strategy: fixHint,
+                        applied: false, // Mandatory Rule 5
+                        modified: false, // Mandatory Rule 5
+                        output_path: filePath,
+                        warnings: ['Document copied or preserved without modification.'],
+                        verification_status: 'VERIFIED',
+                        // Legacy keys preserved for backward compatibility:
                         noopFix: true,
                         fixApplied: false,
                         rewritten: false,
                         certificationMode: "CERTIFIED_WITHOUT_MODIFICATION",
                         repairs: [],
+                        fixedPath: filePath,
                         artifacts: {
                             certified_pdf: {
                                 source_preserved: true,
@@ -187,6 +198,7 @@ class PreflightEngine {
 
             let result;
             let destructiveFixRisk = "LOW";
+            const requestedStrategy = fixPlan.repairStrategy || fixPlan.strategy || fixPlan.type;
 
             if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') {
                 result = await fixEngine.applyCmyk(filePath, outputPath, null, options);
@@ -223,7 +235,33 @@ class PreflightEngine {
                 result = await fixEngine.applyCmyk(filePath, outputPath, resolveIccPath(profile), options);
                 destructiveFixRisk = "HIGH";
             } else {
-                // Fallback: Copy if no specific fix requested
+                // Fallback copying or unsupported fix
+                const isExplicitNoAction = requestedStrategy === 'NO_ACTION' || !requestedStrategy;
+                if (!isExplicitNoAction) {
+                    console.log(`[ENGINE][AUTOFIX] Unrecognized fix strategy '${requestedStrategy}', returning FIX_UNSUPPORTED.`);
+                    return {
+                        ok: false,
+                        status: 'FIX_UNSUPPORTED',
+                        error: 'NO_SAFE_FIX_AVAILABLE',
+                        fix_id: options.jobId || `fix_${Date.now()}`,
+                        input_issue_codes: [requestedStrategy || 'UNKNOWN'],
+                        strategy: requestedStrategy || 'UNKNOWN',
+                        applied: false,
+                        modified: false,
+                        output_path: null,
+                        warnings: ['Requested fix strategy is not recognized or supported.'],
+                        verification_status: 'FAILED',
+                        // Legacy compatibility fields:
+                        noopFix: false,
+                        fixApplied: false,
+                        rewritten: false,
+                        fixedPath: null,
+                        repairs: [],
+                        artifacts: {},
+                        wrapper_metadata: { timestamp: new Date().toISOString() }
+                    };
+                }
+
                 await fs.copy(filePath, outputPath);
                 result = { success: true, note: 'Copied' };
             }
@@ -231,15 +269,60 @@ class PreflightEngine {
             if (result.success) {
                 console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${outputPath}`);
 
+                // If copied without changes as a fallback, report honest no-change contract
+                if (result.note === 'Copied') {
+                    return {
+                        ok: false, // Mandatory Rule 3
+                        status: 'NO_CHANGE', // Mandatory Rule 5
+                        fix_id: options.jobId || `fix_${Date.now()}`,
+                        input_issue_codes: [requestedStrategy || 'NO_ACTION'],
+                        strategy: requestedStrategy || 'NO_ACTION',
+                        applied: false, // Mandatory Rule 5
+                        modified: false, // Mandatory Rule 5
+                        output_path: outputPath,
+                        warnings: ['Document copied without modification.'],
+                        verification_status: 'VERIFIED',
+                        // Legacy keys:
+                        noopFix: true,
+                        fixApplied: false,
+                        rewritten: false,
+                        fixedPath: outputPath,
+                        artifacts: {
+                            fixed_pdf: {
+                                path: outputPath,
+                                filename: path.basename(outputPath)
+                            }
+                        },
+                        repairs: [],
+                        note: result.note,
+                        wrapper_metadata: { timestamp: new Date().toISOString() }
+                    };
+                }
+
                 const repairs = (result.repairs || []).map(r => ({
                     ...r,
                     destructiveFixRisk: r.destructiveFixRisk || destructiveFixRisk,
                     rewritten: true
                 }));
 
+                const stratUsed = result.strategy || requestedStrategy || 'UNKNOWN';
+                const isBleedLimited = result.industrial_quality === 'LIMITED';
+
                 return {
                     ok: true,
-                    status: 'SUCCESS',
+                    status: result.status || 'SUCCESS',
+                    fix_id: options.jobId || `fix_${Date.now()}`,
+                    input_issue_codes: [requestedStrategy || stratUsed],
+                    strategy: stratUsed,
+                    industrial_quality: result.industrial_quality || 'STANDARD',
+                    requires_human_review: result.requires_human_review || false,
+                    bleed_fix_mode: result.bleed_fix_mode || null,
+                    applied: true,
+                    modified: true,
+                    output_path: outputPath,
+                    warnings: result.warnings || [],
+                    verification_status: result.requires_human_review ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED',
+                    // Legacy keys:
                     noopFix: false,
                     fixApplied: true,
                     rewritten: true,

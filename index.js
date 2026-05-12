@@ -53,6 +53,7 @@ module.exports = {
     FindingCodes,
     AutofixExecutionEngine,
     MagicFixEngine,
+    AutofixCommand: require('./src/runtime/commands/autofixCommand'),
     PdfTechnicalEngine: TechnicalEngine,
     analyzers: {
         Geometry: GeometryAnalyzer,

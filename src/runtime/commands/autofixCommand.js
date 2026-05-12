@@ -6,9 +6,7 @@
  * 
  * Invoked by CLI, HTTP, and Worker surfaces.
  */
-const {
-    AutofixExecutionEngine
-} = require('../../../index');
+const AutofixExecutionEngine = require('../../../execution/AutofixExecutionEngine');
 
 class AutofixCommand {
     /**

@@ -138,6 +138,11 @@ class PdfTechnicalEngine {
                 runProbe(ghostscript.resolveGsCmd(), ['--version'], 'gs', 'Ghostscript')
             ]);
 
+            if (opts.simulateMissingTools && Array.isArray(opts.simulateMissingTools)) {
+                missingTools.push(...opts.simulateMissingTools);
+                extractionErrors.push(...opts.simulateMissingTools.map(t => ({ parser: t, message: `Simulated absence of tool ${t}` })));
+            }
+
             return {
                 ok: true,
                 status: 'SUCCESS',

@@ -30,7 +30,7 @@ class GeometryAnalyzer {
 
         // 2. Delegate to engine
         const rawResult = await this.auditEngine.analyze(filePath, options);
-        const rawFindings = rawResult.findings || [];
+        const rawFindings = Array.isArray(rawResult) ? rawResult : (rawResult.findings || []);
 
         // 3. Map to explicit contract fields
         const mappedFindings = rawFindings.map(f => {
