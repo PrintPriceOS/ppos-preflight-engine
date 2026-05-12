@@ -6,8 +6,6 @@
  */
 class HeuristicAnalyzer {
     async analyze(filePath, options = {}) {
-        // In a real implementation, we would probe the PDF for metadata
-        // For now, we use the passed metadata if available or mock
         const metadata = options.metadata || { pages: 0, fonts: [] };
         
         const findings = [];
@@ -16,7 +14,11 @@ class HeuristicAnalyzer {
         if (metadata.pages >= 48) {
             findings.push({
                 id: 'INTENT_BOOK',
+                code: 'INTENT_BOOK',
+                page: 1,
                 severity: 'info',
+                analyzer: 'HeuristicAnalyzer',
+                confidence: 0.98,
                 message: 'Book / Catalog Intent Detected'
             });
         }
@@ -25,7 +27,11 @@ class HeuristicAnalyzer {
         if (metadata.pages > 0 && Array.isArray(metadata.fonts) && metadata.fonts.length === 0) {
             findings.push({
                 id: 'HEURISTIC_TEXT_OUTLINED',
+                code: 'HEURISTIC_TEXT_OUTLINED',
+                page: 1,
                 severity: 'warning',
+                analyzer: 'HeuristicAnalyzer',
+                confidence: 0.98,
                 message: 'Text Possibly Converted to Outlines'
             });
         }

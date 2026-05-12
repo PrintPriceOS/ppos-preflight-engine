@@ -8,8 +8,7 @@
  * Respects Industrial DTO contracts.
  */
 const {
-    PdfTechnicalEngine,
-    GeometryAuditEngine
+    createStandardEngine
 } = require('../../../index');
 
 class AnalyzeCommand {
@@ -24,40 +23,12 @@ class AnalyzeCommand {
         console.log(`[RUNTIME][COMMAND] Starting Analyze for ${input} [ID: ${requestId}]`);
 
         try {
-            // 1. Technical Execution (Kernel)
-            const technicalEngine = new PdfTechnicalEngine();
-            const techResult = await technicalEngine.analyze(input);
+            const engine = createStandardEngine();
+            const result = await engine.analyzePdf(input, { ...config, requestId });
+            
+            console.log(`[RUNTIME][COMMAND] Analyze Success [ID: ${requestId}]: ${result.issues?.length || 0} issues normalized.`);
 
-            // 2. Technical Interpretation (Kernel)
-            const geometryEngine = new GeometryAuditEngine(config);
-            const findings = [];
-
-            if (techResult.geometry) {
-                const auditRes = await geometryEngine.analyze(input, {
-                    metadata: {
-                        geometry: techResult.geometry,
-                        pages: techResult.info?.pages || 1
-                    }
-                });
-                findings.push(...auditRes.findings);
-                if (auditRes.metadata?.documentType) {
-                    findings.push(auditRes.metadata.documentType);
-                }
-            }
-
-            console.log(`[RUNTIME][COMMAND] Analyze Success [ID: ${requestId}]: ${findings.length} findings.`);
-
-            return {
-                ok: techResult.ok,
-                status: techResult.status,
-                findings,
-                wrapper_metadata: {
-                    request_id: requestId,
-                    timestamp: new Date().toISOString(),
-                    pages: techResult.info?.pages || 0,
-                    size_bytes: techResult.info?.size || 0
-                }
-            };
+            return result;
         } catch (err) {
             console.error(`[RUNTIME][COMMAND] Analyze Failed [ID: ${requestId}]: ${err.message}`);
             throw err;

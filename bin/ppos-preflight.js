@@ -12,6 +12,11 @@ async function main() {
 
     if (!args) return; // Help was shown
 
+    if (args.options?.json) {
+        // Enforce stdout discipline: send operational logs to stderr so stdout is pure JSON
+        console.log = (...msgs) => console.error(...msgs);
+    }
+
     try {
         const result = await CommandHandler.execute(args);
 

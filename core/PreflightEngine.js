@@ -35,7 +35,8 @@ class PreflightEngine {
                 pages: techResult.info?.pages || 0,
                 size: techResult.info?.size || 0,
                 source: techResult.source,
-                analysisIntegrity: techResult.analysisIntegrity
+                analysisIntegrity: techResult.analysisIntegrity,
+                toolOutputs: techResult.toolOutputs || {}
             };
 
             if (techResult.ok) {
@@ -68,7 +69,7 @@ class PreflightEngine {
                 const result = await analyzer.analyze(filePath, { ...options, metadata });
                 const elapsed = Date.now() - start;
                 console.log(`[ENGINE][${analyzerName}] Stage completed in ${elapsed}ms`);
-                
+
                 if (result.findings) rawFindings.push(...result.findings);
                 if (result.metadata) metadata = { ...metadata, ...result.metadata };
             } catch (err) {
@@ -105,7 +106,7 @@ class PreflightEngine {
      */
     async autofixPdf(filePath, fixPlan = {}, options = {}) {
         console.log(`[ENGINE] Executing specialized autofix for: ${filePath} | Plan: ${JSON.stringify(fixPlan)}`);
-        
+
         const path = require('path');
         const fs = require('fs-extra');
         const PdfFixEngine = require('../execution/PdfFixEngine');
@@ -114,8 +115,8 @@ class PreflightEngine {
 
         const ICC_DIR = process.env.ICC_PROFILES_DIR || path.resolve(__dirname, '../../../icc-profiles');
         const ICC_PROFILE_MAP = {
-            'iso_coated_v3':       'PSO_Coated_v3.icc',
-            'iso_uncoated_v3':     'PSOuncoated_v3_FOGRA52.icc',
+            'iso_coated_v3': 'PSO_Coated_v3.icc',
+            'iso_uncoated_v3': 'PSOuncoated_v3_FOGRA52.icc',
             'iso_coated_v2_to_v3': 'ISOcoated_v2_to_PSOcoated_v3_DeviceLink.icc',
         };
         const resolveIccPath = (name) => {
@@ -139,7 +140,7 @@ class PreflightEngine {
                 for (const page of pages) {
                     const trimBox = page.node.lookup(PDFName.of('TrimBox'));
                     const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
-                    
+
                     if (!trimBox || !mediaBox) {
                         allValid = false;
                         break;
@@ -153,7 +154,7 @@ class PreflightEngine {
                     const isFinite = trimArray.every(n => Number.isFinite(n));
 
                     const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
-                                    trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
+                        trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
 
                     if (!isFinite || width <= 0 || height <= 0 || !isInside) {
                         allValid = false;
@@ -229,7 +230,7 @@ class PreflightEngine {
 
             if (result.success) {
                 console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${outputPath}`);
-                
+
                 const repairs = (result.repairs || []).map(r => ({
                     ...r,
                     destructiveFixRisk: r.destructiveFixRisk || destructiveFixRisk,
@@ -257,8 +258,8 @@ class PreflightEngine {
                 };
             } else {
                 console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix stage failed: ${result.error}`);
-                return { 
-                    ok: false, 
+                return {
+                    ok: false,
                     status: 'FAILURE',
                     error: result.error,
                     wrapper_metadata: {

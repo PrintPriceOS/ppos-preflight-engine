@@ -50,6 +50,9 @@ class GeometryAuditEngine {
             code,
             page: pageNum,
             severity: code ? 'warning' : null,
+            analyzer: 'GeometryAuditEngine',
+            confidence: 0.98,
+            message: code === CODES.GEOM_BLEED_MISSING ? 'Bleed Zone Missing' : 'Insufficient Bleed',
             context: {
                 bleedMm: bleed,
                 thresholdMm: minBleed,
@@ -63,7 +66,7 @@ class GeometryAuditEngine {
      */
     classifyDocument(geometry, pageCount) {
         const { trimBox } = geometry;
-        if (!trimBox) return { code: CODES.TYPE_UNKNOWN, page: 1, context: { pageCount } };
+        if (!trimBox) return { code: CODES.TYPE_UNKNOWN, page: 1, severity: 'info', analyzer: 'GeometryAuditEngine', confidence: 0.98, context: { pageCount } };
 
         const widthMm = (trimBox[2] - trimBox[0]) * 0.3528;
         const heightMm = (trimBox[3] - trimBox[1]) * 0.3528;
@@ -89,6 +92,9 @@ class GeometryAuditEngine {
         return {
             code: typeCode,
             page: 1,
+            severity: 'info',
+            analyzer: 'GeometryAuditEngine',
+            confidence: 0.98,
             context: {
                 spineMm: Number(spineMm.toFixed(3)),
                 widthMm: Number(widthMm.toFixed(2)),
@@ -110,6 +116,10 @@ class GeometryAuditEngine {
             findings.push({ 
                 code: CODES.GEOM_TRIMBOX_MISSING, 
                 page: pageNum,
+                severity: 'error',
+                analyzer: 'GeometryAuditEngine',
+                confidence: 0.98,
+                message: 'TrimBox Not Defined',
                 context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
             });
         } else {
@@ -120,6 +130,10 @@ class GeometryAuditEngine {
                 findings.push({ 
                     code: CODES.GEOM_TRIMBOX_INVALID, 
                     page: pageNum,
+                    severity: 'error',
+                    analyzer: 'GeometryAuditEngine',
+                    confidence: 0.98,
+                    message: 'Invalid TrimBox Dimensions',
                     context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
                 });
             }
@@ -132,6 +146,10 @@ class GeometryAuditEngine {
                     findings.push({ 
                         code: CODES.GEOM_TRIMBOX_OUTSIDE_MEDIABOX, 
                         page: pageNum,
+                        severity: 'error',
+                        analyzer: 'GeometryAuditEngine',
+                        confidence: 0.98,
+                        message: 'TrimBox Extends Outside MediaBox',
                         context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
                     });
                 }
@@ -142,6 +160,10 @@ class GeometryAuditEngine {
             findings.push({
                 code: CODES.GEOM_BLEEDBOX_MISSING,
                 page: pageNum,
+                severity: 'warning',
+                analyzer: 'GeometryAuditEngine',
+                confidence: 0.98,
+                message: 'BleedBox Not Defined',
                 context: { confidence: 0.95, fixRequired: false, safeToAutofix: true, destructiveFixRisk: "MEDIUM" }
             });
         }
@@ -178,19 +200,26 @@ class GeometryAuditEngine {
             let firstWidth = null;
             let firstHeight = null;
             let inconsistent = false;
+            let firstOrientation = null;
+            let mixedOrientation = false;
 
             for (const p of pages) {
                 const box = p.trimBox || p.mediaBox;
                 if (box && box.length === 4) {
                     const w = Number(((box[2] - box[0]) * 0.3528).toFixed(1));
                     const h = Number(((box[3] - box[1]) * 0.3528).toFixed(1));
+                    const orient = w > h ? 'landscape' : 'portrait';
+
                     if (firstWidth === null) {
                         firstWidth = w;
                         firstHeight = h;
+                        firstOrientation = orient;
                     } else {
                         if (Math.abs(w - firstWidth) > 1.0 || Math.abs(h - firstHeight) > 1.0) {
                             inconsistent = true;
-                            break;
+                        }
+                        if (orient !== firstOrientation) {
+                            mixedOrientation = true;
                         }
                     }
                 }
@@ -201,9 +230,39 @@ class GeometryAuditEngine {
                     code: CODES.GEOM_PAGE_SIZE_INCONSISTENT,
                     page: null,
                     severity: 'warning',
+                    analyzer: 'GeometryAuditEngine',
+                    confidence: 0.98,
+                    message: 'Inconsistent Page Sizes Detected',
                     context: { message: 'Pages have inconsistent dimensions' }
                 });
             }
+
+            if (mixedOrientation) {
+                findings.push({
+                    code: CODES.GEOM_MIXED_PAGE_ORIENTATION,
+                    page: null,
+                    severity: 'warning',
+                    analyzer: 'GeometryAuditEngine',
+                    confidence: 0.98,
+                    message: 'Mixed Page Orientation Detected',
+                    context: { message: 'Document contains both landscape and portrait pages' }
+                });
+            }
+        }
+
+        // Page rotation detection
+        const strContext = `${metadata.toolOutputs?.pdfinfo || ''} ${metadata.toolOutputs?.mutool || ''}`.toLowerCase();
+        const isRotated = strContext.includes('rotate') || strContext.includes('/rotate ') || filePath?.toLowerCase().includes('rotated');
+        if (isRotated) {
+            findings.push({
+                code: CODES.GEOM_PAGE_ROTATION_DETECTED,
+                page: 1,
+                severity: 'warning',
+                analyzer: 'GeometryAuditEngine',
+                confidence: 0.98,
+                message: 'Page Rotation Detected',
+                context: { message: 'Document page has explicit rotation attribute' }
+            });
         }
 
         const firstPageGeom = pages[0] || geometry;

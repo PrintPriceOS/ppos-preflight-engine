@@ -6,7 +6,8 @@
 class ReportBuilder {
     build({ issues, riskSummary, metadata, filePath, partial = false, warnings = [] }) {
         let analysis_type = 'REAL_INDUSTRIAL';
-        const isDegraded = partial || warnings.some(w => w.error?.includes('DEGRADED') || w.error?.includes('FAILED'));
+        const hasExtractionErrors = metadata.analysisIntegrity?.extractionErrors?.length > 0;
+        const isDegraded = partial || hasExtractionErrors || warnings.some(w => w.error?.includes('DEGRADED') || w.error?.includes('FAILED'));
         if (metadata.source === 'FALLBACK_MOCK' || isDegraded) {
             analysis_type = (metadata.pages === 0 && !metadata.geometry?.pages?.length) ? 'FAILED' : 'DEGRADED';
         } else if (partial) {
@@ -14,9 +15,13 @@ class ReportBuilder {
         }
 
         const strictMode = process.env.STRICT_FORENSIC_MODE === 'true';
-        const fallbackUsed = analysis_type !== 'REAL_INDUSTRIAL';
+        const fallbackUsed = analysis_type !== 'REAL_INDUSTRIAL' || metadata.analysisIntegrity?.realExtraction === false;
+        const finalPartial = partial || hasExtractionErrors || fallbackUsed;
 
-        // In strict forensic mode, any fallback invalidates the entire analysis
+        // Rule #16: Never return ok: true if there was no real extraction or fallback/mock data was used
+        const isOk = fallbackUsed ? false : (riskSummary.level !== 'CRITICAL');
+        
+        // In strict forensic mode, any fallback invalidates the entire analysis certification
         const isCertifiable = strictMode && fallbackUsed ? false : riskSummary.level !== 'CRITICAL';
         const allowAutofix = !(strictMode && fallbackUsed);
 
@@ -25,18 +30,49 @@ class ReportBuilder {
             forensic_events.push('FORENSIC_DEGRADED_ANALYSIS');
         }
 
+        const mappedIssues = issues.map(i => ({
+            id: i.id,
+            code: i.code || i.id,
+            analyzer: i.analyzer || 'PreflightEngine',
+            severity: i.severity,
+            message: i.message,
+            page: i.page || null,
+            fixable: allowAutofix ? !!(i.fixable || i.fix_method || i.repairStrategy) : false,
+            fix_method: allowAutofix ? (i.fix_method || null) : null,
+            repairStrategy: allowAutofix ? (i.repairStrategy || i.fix_method || null) : null,
+            category: i.category || null,
+            confidence: fallbackUsed ? 0 : (i.confidence !== undefined ? i.confidence : 0.98),
+            fixRequired: i.fixRequired || false,
+            safeToAutofix: allowAutofix ? (i.safeToAutofix || false) : false,
+            destructiveFixRisk: i.destructiveFixRisk || "LOW"
+        }));
+
+        const mappedFindings = issues.map(i => ({
+            page: i.page || null,
+            code: i.code || i.id,
+            id: i.id,
+            severity: i.severity,
+            analyzer: i.analyzer || 'PreflightEngine',
+            confidence: fallbackUsed ? 0 : (i.confidence !== undefined ? i.confidence : 0.98),
+            message: i.message
+        }));
+
+        const analysisIntegrity = metadata.analysisIntegrity || {
+            realExtraction: !fallbackUsed,
+            fallbackUsed,
+            degradedMode: analysis_type === 'DEGRADED' || analysis_type === 'FAILED',
+            extractionErrors: [],
+            extractionPipeline: [],
+            parserVersions: {}
+        };
+
         return {
-            ok: strictMode && fallbackUsed ? false : riskSummary.level !== 'CRITICAL',
+            ok: isOk,
             analysis_type,
             certifiable: isCertifiable,
             timestamp: new Date().toISOString(),
-            partial,
-            analysisIntegrity: metadata.analysisIntegrity || {
-                realExtraction: !fallbackUsed,
-                fallbackUsed,
-                degradedMode: analysis_type === 'DEGRADED',
-                extractionErrors: []
-            },
+            partial: finalPartial,
+            analysisIntegrity,
             forensic_events,
             summary: {
                 risk_level: riskSummary.level,
@@ -51,20 +87,8 @@ class ReportBuilder {
                 page_count: metadata.pages || metadata.pageCount || 0,
                 pdf_version: metadata.pdfVersion || 'unknown'
             },
-            issues: issues.map(i => ({
-                id: i.id,
-                severity: i.severity,
-                message: i.message,
-                page: i.page || null,
-                fixable: allowAutofix ? !!(i.fixable || i.fix_method || i.repairStrategy) : false,
-                fix_method: allowAutofix ? (i.fix_method || null) : null,
-                repairStrategy: allowAutofix ? (i.repairStrategy || i.fix_method || null) : null,
-                category: i.category || null,
-                confidence: fallbackUsed ? 0 : i.confidence,
-                fixRequired: i.fixRequired,
-                safeToAutofix: allowAutofix ? i.safeToAutofix : false,
-                destructiveFixRisk: i.destructiveFixRisk
-            })),
+            issues: mappedIssues,
+            findings: mappedFindings,
             analysis_warnings: warnings,
             engines: {
                 preflight_engine: 'v1.9.0-deterministic',
@@ -72,8 +96,8 @@ class ReportBuilder {
                 strict_forensic_mode: strictMode
             },
             // Legacy/Upstream Compatibility Aliases
-            analysis: { issues },
-            forensics: { findings: issues, events: forensic_events }
+            analysis: { issues: mappedIssues },
+            forensics: { findings: mappedFindings, events: forensic_events }
         };
     }
 }

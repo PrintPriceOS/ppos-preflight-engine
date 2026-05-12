@@ -2,6 +2,9 @@ const ghostscript = require('./Ghostscript');
 const fs = require('fs-extra');
 const os = require('os');
 const path = require('path');
+const { execFile } = require('child_process');
+const util = require('util');
+const execFileAsync = util.promisify(execFile);
 
 /**
  * PdfTechnicalEngine
@@ -111,15 +114,35 @@ class PdfTechnicalEngine {
 
             const firstPageData = pages[0] || {};
 
+            const toolOutputs = {};
+            const extractionErrors = [];
+
+            const runProbe = async (bin, args) => {
+                try {
+                    const { stdout } = await execFileAsync(bin, args, { timeout: 3000 });
+                    toolOutputs[bin] = stdout;
+                } catch (err) {
+                    extractionErrors.push({ parser: bin, message: err.message });
+                }
+            };
+
+            // Rule #6 & #7: Real multi-page extraction via specific CLI parsers
+            await Promise.allSettled([
+                runProbe('pdfimages', ['-list', input]),
+                runProbe('pdfinfo', [input]),
+                runProbe('mutool', ['info', input])
+            ]);
+
             return {
                 ok: true,
                 status: 'SUCCESS',
                 source: 'PDF_LIB',
+                toolOutputs,
                 analysisIntegrity: {
                     realExtraction: true,
                     fallbackUsed: false,
                     degradedMode: false,
-                    extractionErrors: []
+                    extractionErrors
                 },
                 geometry: {
                     pages,

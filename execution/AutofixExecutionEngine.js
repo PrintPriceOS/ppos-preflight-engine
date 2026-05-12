@@ -38,22 +38,25 @@ class AutofixExecutionEngine {
                 const bytes = await fs.readFile(input_path);
                 const pdfDoc = await PDFDocument.load(bytes);
                 const pages = pdfDoc.getPages();
-                let allValid = true;
+                let allValid = fix_hint === 'NO_ACTION';
 
-                for (const page of pages) {
-                    const trimBox = page.node.lookup(PDFName.of('TrimBox'));
-                    const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
-                    if (!trimBox || !mediaBox) { allValid = false; break; }
-                    
-                    const trimArray = trimBox.asArray().map(v => v.asNumber());
-                    const mediaArray = mediaBox.asArray().map(v => v.asNumber());
-                    const width = trimArray[2] - trimArray[0];
-                    const height = trimArray[3] - trimArray[1];
-                    const isFinite = trimArray.every(n => Number.isFinite(n));
-                    const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
-                                    trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
+                if (!allValid) {
+                    allValid = true;
+                    for (const page of pages) {
+                        const trimBox = page.node.lookup(PDFName.of('TrimBox'));
+                        const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
+                        if (!trimBox || !mediaBox) { allValid = false; break; }
+                        
+                        const trimArray = trimBox.asArray().map(v => v.asNumber());
+                        const mediaArray = mediaBox.asArray().map(v => v.asNumber());
+                        const width = trimArray[2] - trimArray[0];
+                        const height = trimArray[3] - trimArray[1];
+                        const isFinite = trimArray.every(n => Number.isFinite(n));
+                        const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
+                                        trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
 
-                    if (!isFinite || width <= 0 || height <= 0 || !isInside) { allValid = false; break; }
+                        if (!isFinite || width <= 0 || height <= 0 || !isInside) { allValid = false; break; }
+                    }
                 }
 
                 if (allValid) {

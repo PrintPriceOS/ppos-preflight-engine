@@ -35,17 +35,25 @@ class CommandHandler {
 
         try {
             const result = await AnalyzeCommand.run(input, config);
+            const findings = result.findings || result.issues || [];
 
             return {
-                exitCode: result.findings.filter(f => f.code && f.code.startsWith('IND_GEOM')).length > 0 ? 1 : 0,
+                exitCode: findings.length > 0 ? 1 : 0,
                 data: {
                     operation: 'analyze',
                     file: input,
-                    wrapper_metadata: result.wrapper_metadata,
+                    wrapper_metadata: {
+                        request_id: result.wrapper_metadata?.request_id || `req_${Date.now()}`,
+                        timestamp: result.timestamp || new Date().toISOString(),
+                        pages: result.document?.page_count || 0,
+                        size_bytes: result.document?.size || 0
+                    },
                     engine_result: {
                         ok: result.ok,
-                        status: result.status,
-                        findings: result.findings
+                        status: result.ok ? 'SUCCESS' : 'FAILED',
+                        findings,
+                        issues: result.issues,
+                        analysisIntegrity: result.analysisIntegrity
                     }
                 }
             };

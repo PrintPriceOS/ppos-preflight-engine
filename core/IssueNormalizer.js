@@ -17,12 +17,14 @@ class IssueNormalizer {
             
             const normalized = {
                 id: mappedCode,
+                code: rawCode,
+                analyzer: f.analyzer || 'PreflightEngine',
                 severity: f.severity || (mappedCode.endsWith('_WARNING') ? 'warning' : 'error'),
-                message: this.MESSAGES[mappedCode] || f.message || 'Technical preflight finding',
-                page: f.page,
+                message: this.MESSAGES[mappedCode] || this.MESSAGES[rawCode] || f.message || 'Technical preflight finding',
+                page: f.page !== undefined ? f.page : null,
                 source: f.source,
                 geometry: f.geometry,
-                confidence: f.confidence || (f.context && f.context.confidence) || 0.8,
+                confidence: f.confidence !== undefined ? f.confidence : ((f.context && f.context.confidence) || 0.98),
                 fixRequired: f.fixRequired !== undefined ? f.fixRequired : (f.context && f.context.fixRequired) || false,
                 safeToAutofix: f.safeToAutofix !== undefined ? f.safeToAutofix : (f.context && f.context.safeToAutofix) || false,
                 destructiveFixRisk: f.destructiveFixRisk || (f.context && f.context.destructiveFixRisk) || null,
@@ -34,7 +36,6 @@ class IssueNormalizer {
                 normalized.fixable = true;
                 normalized.fix_method = 'REBUILD_TRIMBOX';
                 normalized.repairStrategy = 'REBUILD_TRIMBOX';
-                // Override with standard industrial values if not provided
                 if (normalized.confidence === 0.8) normalized.confidence = 0.95;
                 normalized.fixRequired = true;
                 normalized.safeToAutofix = true;
@@ -52,7 +53,7 @@ class IssueNormalizer {
                 normalized.destructiveFixRisk = 'MEDIUM';
             }
 
-            if (mappedCode === 'PAGE_SIZE_INCONSISTENT') {
+            if (mappedCode === 'PAGE_SIZE_INCONSISTENT' || rawCode === 'IND_GEOM_009' || rawCode === 'IND_GEOM_010' || rawCode === 'IND_GEOM_011') {
                 normalized.category = 'GEOMETRY';
                 normalized.fixable = false;
                 normalized.confidence = 0.95;
@@ -67,6 +68,13 @@ class IssueNormalizer {
                 normalized.fixRequired = false;
                 normalized.safeToAutofix = false;
             }
+
+            if (rawCode?.startsWith('IND_COLOR')) normalized.category = 'COLOR';
+            if (rawCode?.startsWith('IND_FONT')) normalized.category = 'FONT';
+            if (rawCode?.startsWith('IND_IMG')) normalized.category = 'IMAGE';
+            if (rawCode?.startsWith('IND_TRANS')) normalized.category = 'TRANSPARENCY';
+            if (rawCode?.startsWith('IND_OVERPRINT')) normalized.category = 'OVERPRINT';
+            if (rawCode?.startsWith('IND_MARK')) normalized.category = 'MARK';
 
             return normalized;
         });
@@ -87,6 +95,29 @@ class IssueNormalizer {
             'IMAGE_LOW_RESOLUTION':        'Low Resolution Image',
             'BLEEDBOX_MISSING':            'BleedBox Not Defined',
             'PAGE_SIZE_INCONSISTENT':      'Inconsistent Page Sizes Detected',
+            
+            // New Industrial Mappings
+            'IND_COLOR_001': 'RGB Objects Detected',
+            'IND_COLOR_002': 'ICC Profile Missing',
+            'IND_COLOR_003': 'Mixed Color Spaces Detected',
+            'IND_COLOR_004': 'Spot Color Detected',
+            'IND_COLOR_005': 'Total Ink Coverage (TAC) Exceeded',
+            'IND_FONT_001': 'Font Not Embedded',
+            'IND_FONT_002': 'Font Subset Detected',
+            'IND_FONT_003': 'Type3 Font Detected',
+            'IND_FONT_004': 'Missing Glyph Detected',
+            'IND_IMG_001': 'Image Low Resolution',
+            'IND_IMG_002': 'Image Excessive Resolution',
+            'IND_IMG_003': 'JPEG Artifacts Detected',
+            'IND_TRANS_001': 'Live Transparency Detected',
+            'IND_TRANS_002': 'Blend Mode Detected',
+            'IND_OVERPRINT_001': 'Overprint Detected',
+            'IND_OVERPRINT_002': 'Knockout Conflict',
+            'IND_MARK_001': 'Crop Marks Missing',
+            'IND_MARK_002': 'Registration Marks Present',
+            'IND_MARK_003': 'Color Bar Detected',
+            'IND_GEOM_010': 'Page Rotation Detected',
+            'IND_GEOM_011': 'Mixed Page Orientation',
         };
     }
 
