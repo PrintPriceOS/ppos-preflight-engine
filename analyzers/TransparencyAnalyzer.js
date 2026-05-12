@@ -15,9 +15,11 @@ class TransparencyAnalyzer {
         if (!hasTransData && metadata.analysisIntegrity?.realExtraction === false) {
             return {
                 findings: [],
+                partial: true,
+                status: "PARTIAL",
                 metadata: {
                     transparency: {
-                        status: "UNKNOWN",
+                        status: "PARTIAL",
                         confidence: 0,
                         reason: "REAL_EXTRACTION_NOT_AVAILABLE"
                     }
@@ -26,35 +28,71 @@ class TransparencyAnalyzer {
         }
 
         const strContext = `${toolOutputs.pdfinfo || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''}`.toLowerCase();
-        const baseLower = filePath.toLowerCase();
 
-        // Transparency detected
-        const hasTrans = strContext.includes('transparency') || strContext.includes('ca:') || strContext.includes('/ca ') || baseLower.includes('transparency');
+        const findEvidence = (keywords) => {
+            for (const [tool, output] of Object.entries(toolOutputs)) {
+                if (!output) continue;
+                const lower = output.toLowerCase();
+                for (const kw of keywords) {
+                    if (lower.includes(kw)) {
+                        const lines = output.split('\n');
+                        const matchingLine = lines.find(l => l.toLowerCase().includes(kw)) || kw;
+                        return { tool, source: 'CLI_PROBE', raw: matchingLine.trim() };
+                    }
+                }
+            }
+            return { tool: 'composite_probe', source: metadata.source || 'CLI_PROBE', raw: keywords[0] };
+        };
+
+        // Transparency detected (Eliminated filename heuristics)
+        const hasTrans = strContext.includes('transparency') || strContext.includes('ca:') || strContext.includes('/ca ');
         if (hasTrans) {
+            const ev = findEvidence(['transparency', 'ca:', '/ca ']);
             findings.push({
                 page: 1,
                 code: CODES.TRANS_TRANSPARENCY_DETECTED,
                 severity: "warning",
+                category: "TRANSPARENCY",
                 analyzer: "TransparencyAnalyzer",
                 confidence: 0.98,
-                message: "Live transparency detected in document."
+                fixable: false,
+                recommended_fix: null,
+                message: "Live transparency detected in document.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
             });
         }
 
         // Blend mode detected
         const hasBlend = strContext.includes('blend mode') || strContext.includes('/bm ') || strContext.includes('multiply') || strContext.includes('screen') || strContext.includes('overlay');
         if (hasBlend) {
+            const ev = findEvidence(['blend mode', '/bm ', 'multiply', 'screen', 'overlay']);
             findings.push({
                 page: 1,
                 code: CODES.TRANS_BLEND_MODE_DETECTED,
                 severity: "warning",
+                category: "TRANSPARENCY",
                 analyzer: "TransparencyAnalyzer",
                 confidence: 0.98,
-                message: "Non-normal blend mode detected."
+                fixable: false,
+                recommended_fix: null,
+                message: "Non-normal blend mode detected.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
             });
         }
 
-        return { findings };
+        return { findings, status: "SUCCESS" };
     }
 }
 

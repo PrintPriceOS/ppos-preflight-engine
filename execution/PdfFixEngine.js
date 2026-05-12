@@ -48,6 +48,20 @@ class PdfFixEngine {
     async applyBleed(input, output, bleedMm, opts = {}) {
         const { PDFDocument, PDFName } = require('pdf-lib');
         try {
+            // Rule: Distinguir entre BLEED_BOX_EXPANSION, TRUE_ARTWORK_BLEED_EXTENSION, UNSAFE_BLEED_FIX_NOT_APPLIED
+            // If true artwork outpainting/extension is explicitly required but unavailable, abort safely
+            if (opts.requireTrueArtworkExtension || opts.strictForensicBleed) {
+                return {
+                    success: false,
+                    status: 'UNSAFE_BLEED_FIX_NOT_APPLIED',
+                    bleed_fix_mode: 'UNSAFE_BLEED_FIX_NOT_APPLIED',
+                    strategy: 'UNSAFE_BLEED_FIX_NOT_APPLIED',
+                    industrial_quality: 'UNSAFE',
+                    error: 'True graphic content outpainting extension is required but only box expansion is supported.',
+                    warnings: ['Artwork was not extended; only PDF boxes were adjusted.', 'Bleed fix aborted: TRUE_ARTWORK_BLEED_EXTENSION is not available.']
+                };
+            }
+
             const bytes = await fs.readFile(input);
             const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
             const bleedPts = bleedMm * 2.8346;
@@ -73,12 +87,30 @@ class PdfFixEngine {
             const stats = await fs.stat(output);
             if (stats.size === 0) return { success: false, error: 'Output file is empty' };
 
+            // Determine if external true graphic extension occurred or if it's pure box expansion
+            const isTrueArtwork = opts.artworkExtended === true;
+            const bleedFixMode = isTrueArtwork ? 'TRUE_ARTWORK_BLEED_EXTENSION' : 'BLEED_BOX_EXPANSION';
+            const strategyVal = isTrueArtwork ? 'TRUE_ARTWORK_BLEED_EXTENSION' : 'BOX_EXPANSION_ONLY';
+            const qualityVal = isTrueArtwork ? 'PREMIUM' : 'LIMITED';
+            const humanReview = !isTrueArtwork; // Rule: requires_human_review:true cuando solo se expanden cajas
+            const warningMsg = isTrueArtwork ? null : 'Artwork was not extended; only PDF boxes were adjusted.';
+            const warnings = warningMsg ? [warningMsg] : [];
+
             return {
                 success: true,
                 output,
+                bleed_fix_mode: bleedFixMode,
+                strategy: strategyVal,
+                industrial_quality: qualityVal,
+                requires_human_review: humanReview,
+                warnings,
                 repairs: [{
                     code: 'APPLY_BLEED',
                     status: 'APPLIED',
+                    bleed_fix_mode: bleedFixMode,
+                    strategy: strategyVal,
+                    industrial_quality: qualityVal,
+                    requires_human_review: humanReview,
                     description: `BleedBox expanded ${bleedMm}mm on all sides via page box adjustment.`
                 }]
             };

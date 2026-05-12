@@ -116,21 +116,26 @@ class PdfTechnicalEngine {
 
             const toolOutputs = {};
             const extractionErrors = [];
+            const missingTools = [];
 
-            const runProbe = async (bin, args) => {
+            const runProbe = async (bin, args, outputKey, toolAlias) => {
+                const key = outputKey || bin;
+                const alias = toolAlias || key;
                 try {
                     const { stdout } = await execFileAsync(bin, args, { timeout: 3000 });
-                    toolOutputs[bin] = stdout;
+                    toolOutputs[key] = stdout;
                 } catch (err) {
-                    extractionErrors.push({ parser: bin, message: err.message });
+                    extractionErrors.push({ parser: alias, message: err.message });
+                    missingTools.push(alias);
                 }
             };
 
-            // Rule #6 & #7: Real multi-page extraction via specific CLI parsers
+            // Rule #6 & #7: Real multi-page extraction via specific CLI parsers including Ghostscript
             await Promise.allSettled([
-                runProbe('pdfimages', ['-list', input]),
-                runProbe('pdfinfo', [input]),
-                runProbe('mutool', ['info', input])
+                runProbe('pdfimages', ['-list', input], 'pdfimages', 'pdfimages'),
+                runProbe('pdfinfo', [input], 'pdfinfo', 'pdfinfo'),
+                runProbe('mutool', ['info', input], 'mutool', 'mutool'),
+                runProbe(ghostscript.resolveGsCmd(), ['--version'], 'gs', 'Ghostscript')
             ]);
 
             return {
@@ -142,7 +147,8 @@ class PdfTechnicalEngine {
                     realExtraction: true,
                     fallbackUsed: false,
                     degradedMode: false,
-                    extractionErrors
+                    extractionErrors,
+                    missingTools
                 },
                 geometry: {
                     pages,
@@ -178,7 +184,8 @@ class PdfTechnicalEngine {
                         parser: 'pdf-lib',
                         message: err.message,
                         stack: err.stack
-                    }]
+                    }],
+                    missingTools: ['pdfimages', 'pdfinfo', 'mutool', 'Ghostscript']
                 },
                 geometry: {
                     pages: [],

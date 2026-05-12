@@ -35,14 +35,15 @@ class AutofixCommand {
             console.log(`[RUNTIME][COMMAND] Autofix Complete [ID: ${jobId}]: Success=${result.ok}`);
 
             const response = {
+                ...result,
                 ok: result.ok,
-                status: result.ok ? 'SUCCESS' : (result.status || 'NO_ACTION_TAKEN'),
+                status: result.status || (result.ok ? 'SUCCESS' : 'NO_ACTION_TAKEN'),
                 fixedPath: result.fixedPath,
                 findings: result.findings || [],
                 artifacts: result.artifacts || {},
                 wrapper_metadata: {
                     job_id: jobId,
-                    status: result.ok ? 'SUCCESS' : (result.status || 'NO_ACTION_TAKEN'),
+                    status: result.status || (result.ok ? 'SUCCESS' : 'NO_ACTION_TAKEN'),
                     timestamp: new Date().toISOString()
                 }
             };

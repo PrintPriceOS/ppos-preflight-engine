@@ -20,21 +20,26 @@ class IssueNormalizer {
                 code: rawCode,
                 analyzer: f.analyzer || 'PreflightEngine',
                 severity: f.severity || (mappedCode.endsWith('_WARNING') ? 'warning' : 'error'),
+                category: f.category || null,
                 message: this.MESSAGES[mappedCode] || this.MESSAGES[rawCode] || f.message || 'Technical preflight finding',
                 page: f.page !== undefined ? f.page : null,
                 source: f.source,
                 geometry: f.geometry,
                 confidence: f.confidence !== undefined ? f.confidence : ((f.context && f.context.confidence) || 0.98),
+                fixable: f.fixable !== undefined ? f.fixable : false,
+                recommended_fix: f.recommended_fix || f.fix_method || null,
                 fixRequired: f.fixRequired !== undefined ? f.fixRequired : (f.context && f.context.fixRequired) || false,
                 safeToAutofix: f.safeToAutofix !== undefined ? f.safeToAutofix : (f.context && f.context.safeToAutofix) || false,
                 destructiveFixRisk: f.destructiveFixRisk || (f.context && f.context.destructiveFixRisk) || null,
-                fix_method: f.fix_method || null
+                fix_method: f.fix_method || f.recommended_fix || null,
+                evidence: f.evidence || null
             };
 
             if (fixableGeometry) {
                 normalized.category = 'GEOMETRY';
                 normalized.fixable = true;
                 normalized.fix_method = 'REBUILD_TRIMBOX';
+                normalized.recommended_fix = 'REBUILD_TRIMBOX';
                 normalized.repairStrategy = 'REBUILD_TRIMBOX';
                 if (normalized.confidence === 0.8) normalized.confidence = 0.95;
                 normalized.fixRequired = true;
@@ -46,6 +51,7 @@ class IssueNormalizer {
                 normalized.category = 'GEOMETRY';
                 normalized.fixable = true;
                 normalized.fix_method = 'APPLY_BLEED';
+                normalized.recommended_fix = 'APPLY_BLEED';
                 normalized.repairStrategy = 'APPLY_BLEED';
                 normalized.confidence = 0.9;
                 normalized.fixRequired = false;
@@ -75,6 +81,7 @@ class IssueNormalizer {
             if (rawCode?.startsWith('IND_TRANS')) normalized.category = 'TRANSPARENCY';
             if (rawCode?.startsWith('IND_OVERPRINT')) normalized.category = 'OVERPRINT';
             if (rawCode?.startsWith('IND_MARK')) normalized.category = 'MARK';
+            if (rawCode?.includes('INTEGRITY')) normalized.category = 'INTEGRITY';
 
             return normalized;
         });
@@ -118,6 +125,9 @@ class IssueNormalizer {
             'IND_MARK_003': 'Color Bar Detected',
             'IND_GEOM_010': 'Page Rotation Detected',
             'IND_GEOM_011': 'Mixed Page Orientation',
+            'IND_INTEGRITY_DEGRADED': 'Forensic Extraction Degraded',
+            'IND_INTEGRITY_EXTRACTION_ERROR': 'Extraction Probe Failure',
+            'IND_INTEGRITY_MISSING_TOOL': 'Required Industrial Tool Missing'
         };
     }
 

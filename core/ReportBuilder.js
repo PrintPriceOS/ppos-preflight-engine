@@ -44,7 +44,8 @@ class ReportBuilder {
             confidence: fallbackUsed ? 0 : (i.confidence !== undefined ? i.confidence : 0.98),
             fixRequired: i.fixRequired || false,
             safeToAutofix: allowAutofix ? (i.safeToAutofix || false) : false,
-            destructiveFixRisk: i.destructiveFixRisk || "LOW"
+            destructiveFixRisk: i.destructiveFixRisk || "LOW",
+            evidence: i.evidence || null
         }));
 
         const mappedFindings = issues.map(i => ({
@@ -54,7 +55,8 @@ class ReportBuilder {
             severity: i.severity,
             analyzer: i.analyzer || 'PreflightEngine',
             confidence: fallbackUsed ? 0 : (i.confidence !== undefined ? i.confidence : 0.98),
-            message: i.message
+            message: i.message,
+            evidence: i.evidence || null
         }));
 
         const analysisIntegrity = metadata.analysisIntegrity || {
@@ -66,14 +68,42 @@ class ReportBuilder {
             parserVersions: {}
         };
 
+        let analysis_status = 'COMPLETE';
+        if (analysis_type === 'FAILED') analysis_status = 'FAILED';
+        else if (analysis_type === 'DEGRADED') analysis_status = 'DEGRADED';
+        else if (analysis_type === 'PARTIAL') analysis_status = 'PARTIAL';
+
+        const missing_tools = analysisIntegrity.missingTools || [];
+        const degraded_reasons = [];
+        if (metadata.source === 'FALLBACK_MOCK') {
+            degraded_reasons.push('FALLBACK_MOCK_USED');
+        }
+        if (hasExtractionErrors) {
+            analysisIntegrity.extractionErrors?.forEach(err => {
+                degraded_reasons.push(`TOOL_EXTRACTION_FAILED:${err.parser}`);
+            });
+        }
+        warnings.forEach(w => {
+            if (typeof w === 'string') degraded_reasons.push(w);
+            else if (w.error) degraded_reasons.push(w.error);
+            else if (w.message) degraded_reasons.push(w.message);
+        });
+        if (missing_tools.length > 0) {
+            missing_tools.forEach(t => degraded_reasons.push(`MISSING_TOOL:${t}`));
+        }
+        const uniqueDegradedReasons = [...new Set(degraded_reasons)];
+
         return {
             ok: isOk,
             analysis_type,
+            analysis_status,
             certifiable: isCertifiable,
             timestamp: new Date().toISOString(),
             partial: finalPartial,
             analysisIntegrity,
             forensic_events,
+            degraded_reasons: uniqueDegradedReasons,
+            missing_tools,
             summary: {
                 risk_level: riskSummary.level,
                 risk_score: riskSummary.score,

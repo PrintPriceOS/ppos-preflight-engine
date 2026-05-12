@@ -22,15 +22,52 @@ class AutofixExecutionEngine {
             [FindingCodes.GEOM_TRIMBOX_OUTSIDE_MEDIABOX]: 'rebuildTrimBox',
             'TRIMBOX_MISSING': 'rebuildTrimBox',
             'IND_GEOM_003': 'rebuildTrimBox',
-            'TRIM_BOX_ANOMALY': 'rebuildTrimBox'
+            'TRIM_BOX_ANOMALY': 'rebuildTrimBox',
+            'APPLY_BLEED': 'applyBleed',
+            'ADD_BLEED': 'applyBleed',
+            'REBUILD_TRIMBOX': 'rebuildTrimBox',
+            'CONVERT_CMYK': 'applyCmyk',
+            'CONVERT_TO_CMYK': 'applyCmyk',
+            'FLATTEN_PDF': 'flattenPdf',
+            'NO_ACTION': 'noop'
         };
     }
 
     /**
      * Higher-level fix execution (Standardized for CLI/Monolith).
      */
-    async executeFix({ input_path, output_path, fix_hint }) {
+    async executeFix(paramsObj) {
+        const { input_path, output_path, fix_hint } = paramsObj;
         const { PDFDocument, PDFName } = require('pdf-lib');
+        
+        const fixId = paramsObj.fix_id || paramsObj.jobId || `fix_${Date.now()}`;
+        const issueCodes = Array.isArray(paramsObj.issue_codes) ? paramsObj.issue_codes : [fix_hint || 'UNKNOWN'];
+
+        // MANDATORY RULE 1: Si el fix no está reconocido, devolver error explícito
+        const method = this.fixStrategies[fix_hint];
+        if (!method) {
+            console.log(`[AUTOFIX-ENGINE] executeFix: Unrecognized fix hint '${fix_hint}', returning FIX_UNSUPPORTED.`);
+            return {
+                ok: false,
+                status: 'FIX_UNSUPPORTED',
+                error: 'NO_SAFE_FIX_AVAILABLE',
+                fix_id: fixId,
+                input_issue_codes: issueCodes,
+                strategy: fix_hint || 'UNKNOWN',
+                applied: false,
+                modified: false,
+                output_path: null,
+                warnings: ['Requested fix strategy is not recognized or supported.'],
+                verification_status: 'FAILED',
+                // legacy compatibility fields:
+                noopFix: false,
+                fixApplied: false,
+                rewritten: false,
+                fixedPath: null,
+                findings: [],
+                artifacts: {}
+            };
+        }
         
         // 1. Technical No-Op Detection (Selective)
         if (fix_hint === 'REBUILD_TRIMBOX' || fix_hint === 'NO_ACTION') {
@@ -60,26 +97,43 @@ class AutofixExecutionEngine {
                 }
 
                 if (allValid) {
-                    console.log(`[ENGINE][AUTOFIX] No-op detected: Document already compliant.`);
+                    console.log(`[ENGINE][AUTOFIX] No-op detected: Document already compliant or copied without changes.`);
+                    if (output_path && input_path !== output_path) {
+                        try {
+                            await fs.copy(input_path, output_path);
+                        } catch (err) {
+                            console.warn(`[AUTOFIX-ENGINE] Failed to copy unmodified source: ${err.message}`);
+                        }
+                    }
+                    const finalPath = (output_path && input_path !== output_path && await fs.pathExists(output_path)) ? output_path : input_path;
+
                     return {
-                        ok: true,
-                        status: 'SUCCESS',
+                        ok: false, // MANDATORY RULE 3: Nunca devolver ok: true si no se ha modificado realmente el PDF
+                        status: 'NO_CHANGE', // MANDATORY RULE 5: status:NO_CHANGE
+                        fix_id: fixId,
+                        input_issue_codes: issueCodes,
+                        strategy: fix_hint,
+                        applied: false, // MANDATORY RULE 5: applied:false
+                        modified: false, // MANDATORY RULE 5: modified:false
+                        output_path: finalPath,
+                        warnings: ['Document copied without modification.'],
+                        verification_status: 'VERIFIED',
+                        // legacy compatibility fields:
                         noopFix: true,
                         fixApplied: false,
                         rewritten: false,
                         certificationMode: "CERTIFIED_WITHOUT_MODIFICATION",
-                        fixedPath: input_path, // Fallback to input
+                        fixedPath: finalPath,
                         artifacts: {
                             certified_pdf: {
                                 source_preserved: true,
                                 rewrite: false,
-                                path: input_path,
-                                filename: path.basename(input_path)
+                                path: finalPath,
+                                filename: path.basename(finalPath)
                             },
-                            // Add fixed_pdf as alias to prevent frontend hangs if it strictly expects it
                             fixed_pdf: {
-                                path: input_path,
-                                filename: path.basename(input_path),
+                                path: finalPath,
+                                filename: path.basename(finalPath),
                                 is_certified_original: true
                             }
                         },
@@ -92,16 +146,17 @@ class AutofixExecutionEngine {
         }
 
         // 2. Technical Execution
-        const method = this.fixStrategies[fix_hint] || 'applyBleed';
         console.log(`[AUTOFIX-ENGINE] executeFix: resolving ${fix_hint} to ${method}`);
 
         let result;
         if (method === 'rebuildTrimBox') {
             result = await this.pdfFixEngine.rebuildTrimBox(input_path, output_path);
         } else if (method === 'applyBleed') {
-            result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3);
+            result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3, this.config);
+        } else if (method === 'applyCmyk') {
+            result = await this.pdfFixEngine.applyCmyk(input_path, output_path, this.config.iccPath);
         } else {
-            result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3);
+            result = { success: false, error: `Strategy method ${method} not implemented` };
         }
         
         if (result.success) {
@@ -110,9 +165,24 @@ class AutofixExecutionEngine {
             console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix engine failed: ${result.error || 'Unknown error'}`);
         }
 
+        const warnings = result.error ? [result.error] : (result.warnings || []);
+        const returnStatus = result.status || (result.success ? 'SUCCESS' : 'FAILURE');
+
         return { 
             ok: result.success,
-            status: result.success ? 'SUCCESS' : 'FAILURE',
+            status: returnStatus,
+            fix_id: fixId,
+            input_issue_codes: issueCodes,
+            strategy: result.strategy || fix_hint,
+            industrial_quality: result.industrial_quality || 'STANDARD',
+            requires_human_review: result.requires_human_review || false,
+            bleed_fix_mode: result.bleed_fix_mode || null,
+            applied: result.success,
+            modified: result.success,
+            output_path: result.success ? output_path : null,
+            warnings,
+            verification_status: result.success ? (result.requires_human_review ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED') : 'FAILED',
+            // legacy compatibility fields:
             noopFix: false,
             fixApplied: result.success,
             rewritten: result.success,

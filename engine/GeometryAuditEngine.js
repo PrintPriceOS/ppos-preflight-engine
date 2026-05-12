@@ -250,9 +250,9 @@ class GeometryAuditEngine {
             }
         }
 
-        // Page rotation detection
+        // Page rotation detection (Eliminated filename heuristics)
         const strContext = `${metadata.toolOutputs?.pdfinfo || ''} ${metadata.toolOutputs?.mutool || ''}`.toLowerCase();
-        const isRotated = strContext.includes('rotate') || strContext.includes('/rotate ') || filePath?.toLowerCase().includes('rotated');
+        const isRotated = strContext.includes('rotate') || strContext.includes('/rotate ');
         if (isRotated) {
             findings.push({
                 code: CODES.GEOM_PAGE_ROTATION_DETECTED,
@@ -261,7 +261,14 @@ class GeometryAuditEngine {
                 analyzer: 'GeometryAuditEngine',
                 confidence: 0.98,
                 message: 'Page Rotation Detected',
-                context: { message: 'Document page has explicit rotation attribute' }
+                context: { message: 'Document page has explicit rotation attribute' },
+                evidence: {
+                    tool: 'pdfinfo / mutool',
+                    source: metadata.source || 'CLI_PROBE',
+                    page: 1,
+                    confidence: 0.98,
+                    raw: 'Explicit rotation attribute detected in tool metadata'
+                }
             });
         }
 
