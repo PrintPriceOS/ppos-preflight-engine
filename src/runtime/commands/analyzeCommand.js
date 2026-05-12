@@ -33,14 +33,16 @@ class AnalyzeCommand {
             const findings = [];
 
             if (techResult.geometry) {
-                const geomFindings = geometryEngine.auditGeometry(techResult.geometry);
-                findings.push(...geomFindings);
-
-                const bleedFinding = geometryEngine.auditBleed(techResult.geometry);
-                if (bleedFinding.code) findings.push(bleedFinding);
-
-                const classFinding = geometryEngine.classifyDocument(techResult.geometry, techResult.info?.pages || 1);
-                findings.push(classFinding);
+                const auditRes = await geometryEngine.analyze(input, {
+                    metadata: {
+                        geometry: techResult.geometry,
+                        pages: techResult.info?.pages || 1
+                    }
+                });
+                findings.push(...auditRes.findings);
+                if (auditRes.metadata?.documentType) {
+                    findings.push(auditRes.metadata.documentType);
+                }
             }
 
             console.log(`[RUNTIME][COMMAND] Analyze Success [ID: ${requestId}]: ${findings.length} findings.`);

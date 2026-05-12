@@ -30,21 +30,31 @@ class PreflightEngine {
 
         try {
             const techResult = await this.technicalEngine.analyze(filePath, options);
+            metadata = {
+                geometry: techResult.geometry,
+                pages: techResult.info?.pages || 0,
+                size: techResult.info?.size || 0,
+                source: techResult.source,
+                analysisIntegrity: techResult.analysisIntegrity
+            };
+
             if (techResult.ok) {
-                metadata = {
-                    geometry: techResult.geometry,
-                    pages: techResult.info?.pages || 0,
-                    size: techResult.info?.size || 0,
-                    source: techResult.source
-                };
                 console.log(`[ENGINE] PDF metadata extracted (source=${techResult.source}): pages=${metadata.pages}, ${metadata.geometry?.widthMm}x${metadata.geometry?.heightMm}mm`);
                 if (techResult.source === 'FALLBACK_MOCK') {
                     partial = true;
-                    warnings.push({ analyzer: 'PdfTechnicalEngine', error: 'GS_EXTRACTION_FAILED', message: 'Using fallback geometry' });
+                    warnings.push({ analyzer: 'PdfTechnicalEngine', error: 'PDF_EXTRACTION_DEGRADED', message: 'Using fallback geometry' });
                 }
+            } else {
+                console.warn(`[ENGINE] Technical extraction failed or returned fallback partial payload.`);
+                partial = true;
+                warnings.push({
+                    analyzer: 'PdfTechnicalEngine',
+                    error: techResult.warning || 'PDF_EXTRACTION_DEGRADED',
+                    message: 'Real PDF geometry extraction failed. Using null/empty structural markers.'
+                });
             }
         } catch (err) {
-            console.warn(`[ENGINE] Technical extraction failed, analyzers will use defaults: ${err.message}`);
+            console.warn(`[ENGINE] Technical extraction threw error, analyzers will use defaults: ${err.message}`);
             partial = true;
             warnings.push({ analyzer: 'PdfTechnicalEngine', error: err.name || 'EXTRACTION_ERROR', message: err.message });
         }

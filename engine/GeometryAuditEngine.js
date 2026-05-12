@@ -17,12 +17,11 @@ class GeometryAuditEngine {
 
     /**
      * Technical Bleed Audit.
-     * Returns codes and deltas.
+     * Only audits bleed dimensions if both TrimBox and BleedBox are defined.
      */
-    auditBleed(geometry) {
+    auditBleed(geometry, pageNum = 1) {
         const { trimBox, bleedBox } = geometry;
-        if (!trimBox) return { code: CODES.GEOM_TRIMBOX_MISSING, context: {} };
-        if (!bleedBox) return { code: CODES.GEOM_BLEEDBOX_MISSING, context: {} };
+        if (!trimBox || !bleedBox) return { code: null };
 
         // [x1, y1, x2, y2]
         const bleedTop = bleedBox[3] - trimBox[3];
@@ -40,8 +39,8 @@ class GeometryAuditEngine {
         };
 
         const minBleed = this.config.minBleedMm;
-        const isInsufficient = bleed.top < minBleed || bleed.bottom < minBleed || bleed.left < minBleed || bleed.right < minBleed;
-        const isMissing = bleed.top <= 0 && bleed.bottom <= 0 && bleed.left <= 0 && bleed.right <= 0;
+        const isMissing = bleed.top <= 0.01 && bleed.bottom <= 0.01 && bleed.left <= 0.01 && bleed.right <= 0.01;
+        const isInsufficient = !isMissing && (bleed.top < minBleed || bleed.bottom < minBleed || bleed.left < minBleed || bleed.right < minBleed);
 
         let code = null;
         if (isMissing) code = CODES.GEOM_BLEED_MISSING;
@@ -49,7 +48,7 @@ class GeometryAuditEngine {
 
         return {
             code,
-            page: 1,
+            page: pageNum,
             severity: code ? 'warning' : null,
             context: {
                 bleedMm: bleed,
@@ -101,43 +100,50 @@ class GeometryAuditEngine {
 
     /**
      * Technical Geometry Audit.
-     * Validates TrimBox vs MediaBox.
+     * Validates TrimBox vs MediaBox and checks BleedBox existence per page.
      */
-    auditGeometry(geometry) {
-        const { trimBox, mediaBox } = geometry;
+    auditGeometry(geometry, pageNum = 1) {
+        const { trimBox, mediaBox, bleedBox } = geometry;
         const findings = [];
 
         if (!trimBox) {
             findings.push({ 
                 code: CODES.GEOM_TRIMBOX_MISSING, 
-                page: 1,
+                page: pageNum,
                 context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
             });
-            return findings;
-        }
+        } else {
+            const isFinite = (box) => box && box.every(n => typeof n === 'number' && Number.isFinite(n));
+            const hasPositiveArea = (box) => box && (box[2] - box[0]) > 0 && (box[3] - box[1]) > 0;
 
-        const isFinite = (box) => box && box.every(n => typeof n === 'number' && Number.isFinite(n));
-        const hasPositiveArea = (box) => box && (box[2] - box[0]) > 0 && (box[3] - box[1]) > 0;
-
-        if (!isFinite(trimBox) || !hasPositiveArea(trimBox)) {
-            findings.push({ 
-                code: CODES.GEOM_TRIMBOX_INVALID, 
-                page: 1,
-                context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
-            });
-        }
-
-        if (mediaBox && isFinite(mediaBox)) {
-            const isOutside = trimBox[0] < mediaBox[0] || trimBox[1] < mediaBox[1] || 
-                             trimBox[2] > mediaBox[2] || trimBox[3] > mediaBox[3];
-            
-            if (isOutside) {
+            if (!isFinite(trimBox) || !hasPositiveArea(trimBox)) {
                 findings.push({ 
-                    code: CODES.GEOM_TRIMBOX_OUTSIDE_MEDIABOX, 
-                    page: 1,
+                    code: CODES.GEOM_TRIMBOX_INVALID, 
+                    page: pageNum,
                     context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
                 });
             }
+
+            if (mediaBox && isFinite(mediaBox)) {
+                const isOutside = trimBox[0] < mediaBox[0] || trimBox[1] < mediaBox[1] || 
+                                 trimBox[2] > mediaBox[2] || trimBox[3] > mediaBox[3];
+                
+                if (isOutside) {
+                    findings.push({ 
+                        code: CODES.GEOM_TRIMBOX_OUTSIDE_MEDIABOX, 
+                        page: pageNum,
+                        context: { confidence: 0.95, fixRequired: true, safeToAutofix: true, destructiveFixRisk: "LOW" } 
+                    });
+                }
+            }
+        }
+
+        if (!bleedBox) {
+            findings.push({
+                code: CODES.GEOM_BLEEDBOX_MISSING,
+                page: pageNum,
+                context: { confidence: 0.95, fixRequired: false, safeToAutofix: true, destructiveFixRisk: "MEDIUM" }
+            });
         }
 
         return findings;
@@ -145,25 +151,63 @@ class GeometryAuditEngine {
 
     /**
      * Unified analyze entrypoint for PreflightEngine.
+     * Performs multi-page geometry consistency audits.
      */
     async analyze(filePath, options = {}) {
         const metadata = options.metadata || {};
-        const geometry = metadata.geometry || {
-            trimBox: [0, 0, 595, 842],
-            bleedBox: [0, 0, 595, 842],
-            mediaBox: [0, 0, 595, 842]
-        };
+        const geometry = metadata.geometry || {};
         const pageCount = metadata.pages || 0;
 
         const findings = [];
-        
-        const geomFindings = this.auditGeometry(geometry);
-        findings.push(...geomFindings);
+        const pages = Array.isArray(geometry.pages) && geometry.pages.length > 0 
+            ? geometry.pages 
+            : [{ page: 1, trimBox: geometry.trimBox, bleedBox: geometry.bleedBox, mediaBox: geometry.mediaBox }];
 
-        const bleedResult = this.auditBleed(geometry);
-        if (bleedResult.code) findings.push(bleedResult);
+        for (const pageGeom of pages) {
+            const pageNum = pageGeom.page || 1;
+            const geomFindings = this.auditGeometry(pageGeom, pageNum);
+            findings.push(...geomFindings);
 
-        const typeResult = this.classifyDocument(geometry, pageCount);
+            const bleedResult = this.auditBleed(pageGeom, pageNum);
+            if (bleedResult && bleedResult.code) {
+                findings.push(bleedResult);
+            }
+        }
+
+        if (pages.length > 1) {
+            let firstWidth = null;
+            let firstHeight = null;
+            let inconsistent = false;
+
+            for (const p of pages) {
+                const box = p.trimBox || p.mediaBox;
+                if (box && box.length === 4) {
+                    const w = Number(((box[2] - box[0]) * 0.3528).toFixed(1));
+                    const h = Number(((box[3] - box[1]) * 0.3528).toFixed(1));
+                    if (firstWidth === null) {
+                        firstWidth = w;
+                        firstHeight = h;
+                    } else {
+                        if (Math.abs(w - firstWidth) > 1.0 || Math.abs(h - firstHeight) > 1.0) {
+                            inconsistent = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (inconsistent) {
+                findings.push({
+                    code: CODES.GEOM_PAGE_SIZE_INCONSISTENT,
+                    page: null,
+                    severity: 'warning',
+                    context: { message: 'Pages have inconsistent dimensions' }
+                });
+            }
+        }
+
+        const firstPageGeom = pages[0] || geometry;
+        const typeResult = this.classifyDocument(firstPageGeom, pageCount);
 
         return { findings, metadata: { geometry, pageCount, documentType: typeResult } };
     }

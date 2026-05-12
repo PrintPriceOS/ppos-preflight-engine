@@ -48,7 +48,7 @@ class PdfTechnicalEngine {
 
     /**
      * Technical Analysis: Retrieves PDF metadata and geometry via pdf-lib.
-     * Falls back to a default A4 geometry if parsing fails.
+     * Iterates all pages without masking missing TrimBox/BleedBox.
      */
     async analyze(input, opts = {}) {
         let sizeBytes = 0;
@@ -63,7 +63,6 @@ class PdfTechnicalEngine {
             const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
 
             const pageCount = pdfDoc.getPageCount();
-            const firstPage = pdfDoc.getPage(0);
 
             const getBox = (page, boxName) => {
                 const node = page.node;
@@ -76,25 +75,62 @@ class PdfTechnicalEngine {
                 }
             };
 
-            const mediaBox = getBox(firstPage, 'MediaBox') || firstPage.getMediaBox && (() => {
-                const mb = firstPage.getMediaBox();
-                return [mb.x, mb.y, mb.x + mb.width, mb.y + mb.height];
-            })();
-            const trimBox  = getBox(firstPage, 'TrimBox');
-            const bleedBox = getBox(firstPage, 'BleedBox');
+            const pages = [];
+            for (let i = 0; i < pageCount; i++) {
+                const p = pdfDoc.getPage(i);
+                const pMediaBox = getBox(p, 'MediaBox') || (p.getMediaBox && (() => {
+                    try {
+                        const mb = p.getMediaBox();
+                        return [mb.x, mb.y, mb.x + mb.width, mb.y + mb.height];
+                    } catch (_) { return null; }
+                })()) || null;
+                const pTrimBox  = getBox(p, 'TrimBox');
+                const pBleedBox = getBox(p, 'BleedBox');
+                const pCropBox  = getBox(p, 'CropBox');
+                const pArtBox   = getBox(p, 'ArtBox');
 
-            const refBox = trimBox || mediaBox || [0, 0, 595, 842];
+                const refBox = pTrimBox || pMediaBox;
+                let widthMm = null;
+                let heightMm = null;
+                if (refBox && refBox.length === 4) {
+                    widthMm = Number(((refBox[2] - refBox[0]) * 0.3528).toFixed(2));
+                    heightMm = Number(((refBox[3] - refBox[1]) * 0.3528).toFixed(2));
+                }
+
+                pages.push({
+                    page: i + 1,
+                    mediaBox: pMediaBox,
+                    trimBox: pTrimBox,
+                    bleedBox: pBleedBox,
+                    cropBox: pCropBox,
+                    artBox: pArtBox,
+                    widthMm,
+                    heightMm
+                });
+            }
+
+            const firstPageData = pages[0] || {};
 
             return {
                 ok: true,
                 status: 'SUCCESS',
                 source: 'PDF_LIB',
+                analysisIntegrity: {
+                    realExtraction: true,
+                    fallbackUsed: false,
+                    degradedMode: false,
+                    extractionErrors: []
+                },
                 geometry: {
-                    mediaBox: mediaBox || [0, 0, 595, 842],
-                    trimBox:  trimBox  || mediaBox || [0, 0, 595, 842],
-                    bleedBox: bleedBox || trimBox  || mediaBox || [0, 0, 595, 842],
-                    widthMm:  Number(((refBox[2] - refBox[0]) * 0.3528).toFixed(2)),
-                    heightMm: Number(((refBox[3] - refBox[1]) * 0.3528).toFixed(2))
+                    pages,
+                    firstPage: firstPageData,
+                    mediaBox: firstPageData.mediaBox,
+                    trimBox: firstPageData.trimBox,
+                    bleedBox: firstPageData.bleedBox,
+                    cropBox: firstPageData.cropBox,
+                    artBox: firstPageData.artBox,
+                    widthMm: firstPageData.widthMm,
+                    heightMm: firstPageData.heightMm
                 },
                 info: {
                     pages: pageCount,
@@ -102,20 +138,38 @@ class PdfTechnicalEngine {
                 }
             };
         } catch (err) {
-            console.warn(`[TECH-ENGINE][ANALYZE] pdf-lib extraction failed, using fallback: ${err.message}`);
+            console.warn(`[TECH-ENGINE][ANALYZE] pdf-lib extraction failed, returning failure payload: ${err.message}`);
             return {
-                ok: true,
-                status: 'SUCCESS',
+                ok: false,
+                status: 'UNKNOWN',
+                confidence: 0,
                 source: 'FALLBACK_MOCK',
                 partial: true,
+                warning: 'PDF_EXTRACTION_DEGRADED',
+                forensic_event: 'FORENSIC_DEGRADED_ANALYSIS',
+                analysisIntegrity: {
+                    realExtraction: false,
+                    fallbackUsed: true,
+                    degradedMode: true,
+                    extractionErrors: [{
+                        parser: 'pdf-lib',
+                        message: err.message,
+                        stack: err.stack
+                    }]
+                },
                 geometry: {
-                    trimBox: [0, 0, 595, 842],
-                    bleedBox: [0, 0, 595, 842],
-                    widthMm: 210,
-                    heightMm: 297
+                    pages: [],
+                    firstPage: null,
+                    mediaBox: null,
+                    trimBox: null,
+                    bleedBox: null,
+                    cropBox: null,
+                    artBox: null,
+                    widthMm: null,
+                    heightMm: null
                 },
                 info: {
-                    pages: 1,
+                    pages: 0,
                     size: sizeBytes
                 }
             };

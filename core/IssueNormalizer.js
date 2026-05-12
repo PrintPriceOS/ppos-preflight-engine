@@ -41,7 +41,7 @@ class IssueNormalizer {
                 normalized.destructiveFixRisk = "LOW";
             }
 
-            if (['BLEED_MISSING', 'BLEED_INSUFFICIENT'].includes(mappedCode)) {
+            if (['BLEED_MISSING', 'BLEED_INSUFFICIENT', 'BLEEDBOX_MISSING'].includes(mappedCode)) {
                 normalized.category = 'GEOMETRY';
                 normalized.fixable = true;
                 normalized.fix_method = 'APPLY_BLEED';
@@ -50,6 +50,14 @@ class IssueNormalizer {
                 normalized.fixRequired = false;
                 normalized.safeToAutofix = true;
                 normalized.destructiveFixRisk = 'MEDIUM';
+            }
+
+            if (mappedCode === 'PAGE_SIZE_INCONSISTENT') {
+                normalized.category = 'GEOMETRY';
+                normalized.fixable = false;
+                normalized.confidence = 0.95;
+                normalized.fixRequired = false;
+                normalized.safeToAutofix = false;
             }
 
             if (mappedCode === 'TRIM_MARGIN_WARNING' || mappedCode === 'TRIM_MARKS_NEAR_LIVE_AREA') {
@@ -77,6 +85,8 @@ class IssueNormalizer {
             'TRIM_MARKS_NEAR_LIVE_AREA':   'Trim Marks Overlap Live Area',
             'COLOR_PROFILE_MISMATCH':      'Color Profile Mismatch',
             'IMAGE_LOW_RESOLUTION':        'Low Resolution Image',
+            'BLEEDBOX_MISSING':            'BleedBox Not Defined',
+            'PAGE_SIZE_INCONSISTENT':      'Inconsistent Page Sizes Detected',
         };
     }
 
@@ -85,7 +95,10 @@ class IssueNormalizer {
             'GEOM_BLEED_MISSING': 'BLEED_MISSING',
             'IND_GEOM_001': 'BLEED_INSUFFICIENT',
             'IND_GEOM_002': 'BLEED_MISSING',
-            'IND_GEOM_004': 'BLEED_MISSING',
+            'IND_GEOM_004': 'BLEEDBOX_MISSING',
+            'GEOM_BLEEDBOX_MISSING': 'BLEEDBOX_MISSING',
+            'IND_GEOM_009': 'PAGE_SIZE_INCONSISTENT',
+            'GEOM_PAGE_SIZE_INCONSISTENT': 'PAGE_SIZE_INCONSISTENT',
             'GEOM_TRIMBOX_MISSING': 'TRIMBOX_MISSING',
             'IND_GEOM_003': 'TRIMBOX_MISSING',
             'IND_GEOM_005': 'TRIMBOX_INVALID',

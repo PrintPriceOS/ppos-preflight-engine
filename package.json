@@ -8,7 +8,7 @@
     },
     "private": true,
     "scripts": {
-        "test": "node run-tests.js"
+        "test": "node tests/run-tests.js"
     },
     "dependencies": {
         "chalk": "^4.1.2",
