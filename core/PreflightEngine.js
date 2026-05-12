@@ -180,10 +180,6 @@ class PreflightEngine {
             if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') {
                 result = await fixEngine.applyCmyk(filePath, outputPath, null, options);
                 destructiveFixRisk = "HIGH";
-            } else if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') {
-                const profile = fixPlan.profile || 'iso_coated_v3';
-                result = await fixEngine.applyCmyk(filePath, outputPath, resolveIccPath(profile), options);
-                destructiveFixRisk = "HIGH";
             } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed || fixPlan.repairStrategy === 'APPLY_BLEED' || fixPlan.fix_method === 'APPLY_BLEED') {
                 const bleedMm = fixPlan.bleedMm || 3;
                 result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
@@ -211,6 +207,10 @@ class PreflightEngine {
                         destructiveFixRisk = "HIGH";
                     }
                 }
+            } else if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') {
+                const profile = fixPlan.profile || 'iso_coated_v3';
+                result = await fixEngine.applyCmyk(filePath, outputPath, resolveIccPath(profile), options);
+                destructiveFixRisk = "HIGH";
             } else {
                 // Fallback: Copy if no specific fix requested
                 await fs.copy(filePath, outputPath);
