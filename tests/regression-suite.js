@@ -288,7 +288,7 @@ async function runRegressionSuite() {
             strict_forensic_mode: true,
             policy: 'OFFSET_MODERN_COATED_F51',
             simulateOutputStrings: {
-                pdfinfo: 'OutputIntent: None | DeviceRGB detected | /JS /JavaScript embedded action | stroke width < 0.05',
+                pdfinfo: 'OutputIntent: None | DeviceRGB detected | JavaScript: yes | stroke width < 0.05',
                 mutool: 'GTS_PDFX version missing | Broken xref error | Tac exceeded 340%'
             }
         });
@@ -316,6 +316,41 @@ async function runRegressionSuite() {
         const hasJs = report.issues.some(i => i.code === FindingCodes.STRUCT_JAVASCRIPT_DETECTED);
         if (!hasJs) {
             throw new Error("No se detectaron secuencias de JavaScript embebido.");
+        }
+    });
+
+    // ---------------------------------------------------------
+    // TEST 13: JavaScript False Positive Elimination
+    // ---------------------------------------------------------
+    await test('13. Eliminación de falsos positivos de JavaScript: Evita emitir ante JavaScript: no / false / none', async () => {
+        const fp = await createPdfFixture('js_false_positive.pdf');
+        const engine = createStandardEngine();
+        
+        // Caso A: pdfinfo reporta JavaScript: no => NO debe emitir IND_STRUCT_003
+        const reportNo = await engine.analyzePdf(fp, {
+            strict_forensic_mode: true,
+            simulateOutputStrings: {
+                pdfinfo: 'Pages: 12\nJavaScript:      no\nPage size: 595 x 842 pts'
+            }
+        });
+        const hasJsNo = reportNo.issues.some(i => i.code === FindingCodes.STRUCT_JAVASCRIPT_DETECTED);
+        if (hasJsNo) {
+            throw new Error("Falso positivo: Se emitió IND_STRUCT_003 a pesar de que pdfinfo indicó 'JavaScript: no'.");
+        }
+
+        // Caso B: pdfinfo reporta JavaScript: yes => SÍ debe emitir IND_STRUCT_003 con la evidencia correcta
+        const reportYes = await engine.analyzePdf(fp, {
+            strict_forensic_mode: true,
+            simulateOutputStrings: {
+                pdfinfo: 'Pages: 12\nJavaScript:      yes\nPage size: 595 x 842 pts'
+            }
+        });
+        const jsFinding = reportYes.issues.find(i => i.code === FindingCodes.STRUCT_JAVASCRIPT_DETECTED);
+        if (!jsFinding) {
+            throw new Error("Falso negativo: No se emitió IND_STRUCT_003 cuando pdfinfo indicó 'JavaScript: yes'.");
+        }
+        if (!jsFinding.evidence || !jsFinding.evidence.raw.includes('yes')) {
+            throw new Error(`La evidencia no refleja la señal positiva detectada: ${JSON.stringify(jsFinding.evidence)}`);
         }
     });
 

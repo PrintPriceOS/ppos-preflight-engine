@@ -149,8 +149,38 @@ class PdfIntegrityAnalyzer {
         }
 
         // JavaScript
-        if (strContext.includes('javascript') || strContext.includes('/js ') || strContext.includes('/javascript')) {
-            const ev = findEvidence(['javascript', '/js ', '/javascript']);
+        let hasJs = false;
+        let jsEvidenceTool = 'composite_probe';
+        let jsEvidenceRaw = null;
+
+        if (toolOutputs.pdfinfo) {
+            if (/JavaScript:\s+yes/i.test(toolOutputs.pdfinfo)) {
+                hasJs = true;
+                jsEvidenceTool = 'pdfinfo';
+                const lines = toolOutputs.pdfinfo.split('\n');
+                jsEvidenceRaw = lines.find(l => /JavaScript:\s+yes/i.test(l))?.trim() || 'JavaScript: yes';
+            }
+        }
+
+        if (!hasJs) {
+            for (const [tool, output] of Object.entries(toolOutputs)) {
+                if (!output || tool === 'pdfinfo') continue;
+                
+                const lines = output.split('\n');
+                for (const line of lines) {
+                    const low = line.toLowerCase();
+                    if (low.includes('/javascript') || low.includes('/openaction') || /\/js(\s|\/|>|\[|\(|$)/i.test(line) || /\/aa(\s|\/|>|\[|\(|$)/i.test(line)) {
+                        hasJs = true;
+                        jsEvidenceTool = tool;
+                        jsEvidenceRaw = line.trim();
+                        break;
+                    }
+                }
+                if (hasJs) break;
+            }
+        }
+
+        if (hasJs) {
             findings.push({
                 page: 1,
                 code: CODES.STRUCT_JAVASCRIPT_DETECTED,
@@ -162,11 +192,11 @@ class PdfIntegrityAnalyzer {
                 recommended_fix: "STRIP_JAVASCRIPT",
                 message: "Embedded JavaScript detected.",
                 evidence: {
-                    tool: ev.tool,
-                    source: ev.source,
+                    tool: jsEvidenceTool,
+                    source: 'CLI_PROBE',
                     page: 1,
                     confidence: 0.98,
-                    raw: ev.raw
+                    raw: jsEvidenceRaw
                 }
             });
         }
