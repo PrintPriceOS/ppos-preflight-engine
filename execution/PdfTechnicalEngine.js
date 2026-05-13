@@ -143,15 +143,25 @@ class PdfTechnicalEngine {
                 extractionErrors.push(...opts.simulateMissingTools.map(t => ({ parser: t, message: `Simulated absence of tool ${t}` })));
             }
 
+            let pdfVersion = 'unknown';
+            if (toolOutputs.pdfinfo) {
+                const match = toolOutputs.pdfinfo.match(/PDF version:\s*([0-9.]+)/i);
+                if (match && match[1]) {
+                    pdfVersion = match[1].trim();
+                }
+            }
+
+            const hasMissing = missingTools.length > 0;
             return {
-                ok: true,
-                status: 'SUCCESS',
+                ok: !hasMissing,
+                status: hasMissing ? 'DEGRADED' : 'SUCCESS',
                 source: 'PDF_LIB',
                 toolOutputs,
+                pdfVersion,
                 analysisIntegrity: {
-                    realExtraction: true,
-                    fallbackUsed: false,
-                    degradedMode: false,
+                    realExtraction: !hasMissing,
+                    fallbackUsed: hasMissing,
+                    degradedMode: hasMissing,
                     extractionErrors,
                     missingTools
                 },
@@ -181,6 +191,7 @@ class PdfTechnicalEngine {
                 partial: true,
                 warning: 'PDF_EXTRACTION_DEGRADED',
                 forensic_event: 'FORENSIC_DEGRADED_ANALYSIS',
+                pdfVersion: 'unknown',
                 analysisIntegrity: {
                     realExtraction: false,
                     fallbackUsed: true,

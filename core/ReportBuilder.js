@@ -8,7 +8,9 @@ class ReportBuilder {
         let analysis_type = 'REAL_INDUSTRIAL';
         const hasExtractionErrors = metadata.analysisIntegrity?.extractionErrors?.length > 0;
         const isDegraded = partial || hasExtractionErrors || warnings.some(w => w.error?.includes('DEGRADED') || w.error?.includes('FAILED'));
-        if (metadata.source === 'FALLBACK_MOCK' || isDegraded) {
+        if (metadata.environmentFailure) {
+            analysis_type = 'ENGINE_ENVIRONMENT_FAILURE';
+        } else if (metadata.source === 'FALLBACK_MOCK' || isDegraded) {
             analysis_type = (metadata.pages === 0 && !metadata.geometry?.pages?.length) ? 'FAILED' : 'DEGRADED';
         } else if (partial) {
             analysis_type = 'PARTIAL';
@@ -41,35 +43,28 @@ class ReportBuilder {
             fix_method: allowAutofix ? (i.fix_method || null) : null,
             repairStrategy: allowAutofix ? (i.repairStrategy || i.fix_method || null) : null,
             category: i.category || null,
-            confidence: fallbackUsed ? 0 : (i.confidence !== undefined ? i.confidence : 0.98),
+            confidence: i.confidence !== undefined ? i.confidence : (i.evidence?.confidence !== undefined ? i.evidence.confidence : 0.98),
             fixRequired: i.fixRequired || false,
             safeToAutofix: allowAutofix ? (i.safeToAutofix || false) : false,
             destructiveFixRisk: i.destructiveFixRisk || "LOW",
             evidence: i.evidence || { source: "PDF Kernel Extraction", descriptor: "Dictionary metrics and structural verification pass" }
         }));
 
-        const mappedFindings = issues.map(i => ({
-            page: i.page || null,
-            code: i.code || i.id,
-            id: i.id,
-            severity: i.severity,
-            analyzer: i.analyzer || 'PreflightEngine',
-            confidence: fallbackUsed ? 0 : (i.confidence !== undefined ? i.confidence : 0.98),
-            message: i.message,
-            evidence: i.evidence || { source: "PDF Kernel Extraction", descriptor: "Dictionary metrics and structural verification pass" }
-        }));
-
-        const analysisIntegrity = metadata.analysisIntegrity || {
-            realExtraction: !fallbackUsed,
-            fallbackUsed,
-            degradedMode: analysis_type === 'DEGRADED' || analysis_type === 'FAILED',
-            extractionErrors: [],
-            extractionPipeline: [],
-            parserVersions: {}
+        const baseIntegrity = metadata.analysisIntegrity || {};
+        const analysisIntegrity = {
+            ...baseIntegrity,
+            realExtraction: !fallbackUsed && (baseIntegrity.realExtraction !== false),
+            fallbackUsed: fallbackUsed || !!baseIntegrity.fallbackUsed,
+            degradedMode: analysis_type === 'DEGRADED' || analysis_type === 'FAILED' || analysis_type === 'ENGINE_ENVIRONMENT_FAILURE' || !!baseIntegrity.degradedMode,
+            extractionErrors: baseIntegrity.extractionErrors || [],
+            missingTools: baseIntegrity.missingTools || [],
+            extractionPipeline: baseIntegrity.extractionPipeline || [],
+            parserVersions: baseIntegrity.parserVersions || {}
         };
 
         let analysis_status = 'COMPLETE';
-        if (analysis_type === 'FAILED') analysis_status = 'FAILED';
+        if (analysis_type === 'ENGINE_ENVIRONMENT_FAILURE') analysis_status = 'ENGINE_ENVIRONMENT_FAILURE';
+        else if (analysis_type === 'FAILED') analysis_status = 'FAILED';
         else if (analysis_type === 'DEGRADED') analysis_status = 'DEGRADED';
         else if (analysis_type === 'PARTIAL') analysis_status = 'PARTIAL';
 
@@ -97,6 +92,7 @@ class ReportBuilder {
             ok: isOk,
             analysis_type,
             analysis_status,
+            analysis_scope: metadata.environmentFailure ? 'PARTIAL_ANALYSIS' : 'FULL_ANALYSIS',
             certifiable: isCertifiable,
             timestamp: new Date().toISOString(),
             partial: finalPartial,
@@ -107,6 +103,7 @@ class ReportBuilder {
             summary: {
                 risk_level: riskSummary.level,
                 risk_score: riskSummary.score,
+                scoreBasis: riskSummary.scoreBasis || 'DOCUMENT_FINDINGS',
                 issue_count: issues.length,
                 critical_count: riskSummary.criticals,
                 analysis_warnings: warnings.length
@@ -118,7 +115,7 @@ class ReportBuilder {
                 pdf_version: metadata.pdfVersion || 'unknown'
             },
             issues: mappedIssues,
-            findings: mappedFindings,
+            findings: mappedIssues,
             analysis_warnings: warnings,
             engines: {
                 preflight_engine: 'v1.9.0-deterministic',
@@ -127,7 +124,7 @@ class ReportBuilder {
             },
             // Legacy/Upstream Compatibility Aliases
             analysis: { issues: mappedIssues },
-            forensics: { findings: mappedFindings, events: forensic_events }
+            forensics: { findings: mappedIssues, events: forensic_events }
         };
     }
 }

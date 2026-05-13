@@ -9,6 +9,16 @@ class RiskAnalyzer {
      * Calculates an industrial risk score and level.
      */
     score(issues, metadata) {
+        if (metadata.environmentFailure) {
+            return {
+                score: null,
+                level: 'UNKNOWN',
+                scoreBasis: 'ENVIRONMENT_FAILURE',
+                warnings: 0,
+                criticals: 0
+            };
+        }
+
         let score = 0;
         
         issues.forEach(issue => {
@@ -27,6 +37,7 @@ class RiskAnalyzer {
         return {
             score: normalizedScore,
             level: this.determineLevel(normalizedScore),
+            scoreBasis: 'DOCUMENT_FINDINGS',
             warnings: issues.length,
             criticals: issues.filter(i => i.severity === 'critical' || i.severity === 'error').length
         };

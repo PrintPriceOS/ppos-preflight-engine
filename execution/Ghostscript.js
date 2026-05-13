@@ -15,7 +15,7 @@ class Ghostscript {
     async runGs(args, opts = {}) {
         const cmd = this.resolveGsCmd();
         const commandLine = `${cmd} ${args.map(a => a.includes(' ') ? `"${a}"` : a).join(' ')}`;
-        
+
         // Timeout logic: ENV > opts.timeout > Default (120s)
         const defaultTimeout = parseInt(process.env.GS_TIMEOUT_MS || process.env.PPOS_GS_TIMEOUT_MS || '120000');
         const timeout = opts.timeout || defaultTimeout;
@@ -30,20 +30,20 @@ class Ghostscript {
             const duration = Date.now() - start;
 
             console.log(`[ENGINE][GS][OK][${reqId}] Duration: ${duration}ms`);
-            
+
             // v2.4.121: Tolerate repair warnings if exit code is 0
             const hasFatalError = stderr && (
-                /Unrecoverable error/i.test(stderr) || 
+                /Unrecoverable error/i.test(stderr) ||
                 /Error: \//i.test(stderr) ||
                 (stderr.includes('Error') && !/repaired|ignored|warnings encountered|notify the author/i.test(stderr))
             );
 
             if (hasFatalError) {
                 console.error(`[ENGINE][GS][ERROR-CONTENT][${reqId}] Stderr: ${stderr}`);
-                throw { 
-                    name: 'GS_ERROR', 
-                    message: `Ghostscript reported internal error: ${stderr.substring(0, 500)}`, 
-                    code: 'GS_STDERR_ERROR', 
+                throw {
+                    name: 'GS_ERROR',
+                    message: `Ghostscript reported internal error: ${stderr.substring(0, 500)}`,
+                    code: 'GS_STDERR_ERROR',
                     stderr,
                     stdout,
                     duration
@@ -58,7 +58,7 @@ class Ghostscript {
         } catch (err) {
             const duration = Date.now() - start;
             const isTimeout = err.signal === 'SIGTERM' || err.code === 'ETIMEDOUT';
-            
+
             console.error(`[ENGINE][GS][FAIL][${reqId}] Duration: ${duration}ms`);
             console.error(`[ENGINE][GS][FAIL][${reqId}] Code: ${err.code}, Signal: ${err.signal}`);
             if (err.stderr) console.error(`[ENGINE][GS][FAIL][${reqId}] Stderr: ${err.stderr}`);

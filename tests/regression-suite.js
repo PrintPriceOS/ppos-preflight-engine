@@ -76,9 +76,9 @@ async function runRegressionSuite() {
         const report = await engine.analyzePdf(fp);
         
         validateEvidenceDiscipline(report);
-        const validStatuses = ['COMPLETE', 'DEGRADED', 'PARTIAL'];
+        const validStatuses = ['COMPLETE', 'DEGRADED', 'PARTIAL', 'ENGINE_ENVIRONMENT_FAILURE'];
         if (!validStatuses.includes(report.analysis_status)) {
-            throw new Error(`Expected analysis_status COMPLETE/DEGRADED, got ${report.analysis_status}`);
+            throw new Error(`Expected analysis_status COMPLETE/DEGRADED/ENGINE_ENVIRONMENT_FAILURE, got ${report.analysis_status}`);
         }
     });
 
@@ -225,7 +225,7 @@ async function runRegressionSuite() {
         if (report.analysis_status === 'COMPLETE') {
             throw new Error('Un diagnóstico con fallos de extracción/herramientas ausentes nunca debe marcarse COMPLETE');
         }
-        if (!['DEGRADED', 'PARTIAL', 'FAILED'].includes(report.analysis_status)) {
+        if (!['DEGRADED', 'PARTIAL', 'FAILED', 'ENGINE_ENVIRONMENT_FAILURE'].includes(report.analysis_status)) {
             throw new Error(`analysis_status no reconocido: ${report.analysis_status}`);
         }
         if (!report.degraded_reasons || report.degraded_reasons.length === 0) {
@@ -251,6 +251,29 @@ async function runRegressionSuite() {
                 throw new Error(`Violación de contrato: El issue ${item.code} contiene un objeto evidence vacío.`);
             }
         });
+    });
+
+    // ---------------------------------------------------------
+    // TEST 11: PATH environment absence / Hard environment gate
+    // ---------------------------------------------------------
+    await test('11. Hard environment gate: Ausencia total de herramientas en PATH dispara ENGINE_ENVIRONMENT_FAILURE y risk_score nulo', async () => {
+        const fp = await createPdfFixture('sano.pdf');
+        const engine = createStandardEngine();
+        // Simular ausencia de todas las herramientas críticas
+        const report = await engine.analyzePdf(fp, { simulateMissingTools: ['pdfinfo', 'pdfimages', 'mutool', 'gs'] });
+        
+        if (report.analysis_status !== 'ENGINE_ENVIRONMENT_FAILURE') {
+            throw new Error(`Se esperaba analysis_status ENGINE_ENVIRONMENT_FAILURE, se obtuvo: ${report.analysis_status}`);
+        }
+        if (report.summary?.risk_score !== null) {
+            throw new Error(`El risk_score debe ser null ante fallo de entorno, se obtuvo: ${report.summary?.risk_score}`);
+        }
+        if (report.summary?.scoreBasis !== 'ENVIRONMENT_FAILURE') {
+            throw new Error(`scoreBasis debe ser ENVIRONMENT_FAILURE, se obtuvo: ${report.summary?.scoreBasis}`);
+        }
+        if (report.analysis_scope !== 'PARTIAL_ANALYSIS') {
+            throw new Error(`analysis_scope debe ser PARTIAL_ANALYSIS, se obtuvo: ${report.analysis_scope}`);
+        }
     });
 
     console.log('---------------------------------------------------');

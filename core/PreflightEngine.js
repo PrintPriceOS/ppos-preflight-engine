@@ -30,14 +30,25 @@ class PreflightEngine {
 
         try {
             const techResult = await this.technicalEngine.analyze(filePath, options);
+            
+            const missingTools = techResult.analysisIntegrity?.missingTools || [];
+            const criticalTools = ['pdfinfo', 'pdfimages', 'mutool', 'gs', 'Ghostscript'];
+            const isEnvironmentFailure = missingTools.some(t => criticalTools.includes(t)) || techResult.source === 'FALLBACK_MOCK';
+
             metadata = {
                 geometry: techResult.geometry,
                 pages: techResult.info?.pages || 0,
                 size: techResult.info?.size || 0,
                 source: techResult.source,
                 analysisIntegrity: techResult.analysisIntegrity,
-                toolOutputs: techResult.toolOutputs || {}
+                toolOutputs: techResult.toolOutputs || {},
+                pdfVersion: techResult.pdfVersion || 'unknown',
+                environmentFailure: isEnvironmentFailure
             };
+
+            if (isEnvironmentFailure) {
+                console.warn(`[ENGINE] Hard environment gate triggered: missing critical industrial probes: ${missingTools.join(', ')}`);
+            }
 
             if (techResult.ok) {
                 console.log(`[ENGINE] PDF metadata extracted (source=${techResult.source}): pages=${metadata.pages}, ${metadata.geometry?.widthMm}x${metadata.geometry?.heightMm}mm`);
@@ -62,8 +73,13 @@ class PreflightEngine {
 
         // 2. Run all registered analyzers with real metadata
         for (const analyzer of this.analyzers) {
+            const analyzerName = analyzer.constructor.name;
+            if (metadata.environmentFailure && analyzerName !== 'GeometryAnalyzer') {
+                console.log(`[ENGINE] Skipping ${analyzerName} due to hard environment gate (missing critical industrial probes).`);
+                continue;
+            }
+
             try {
-                const analyzerName = analyzer.constructor.name;
                 console.log(`[ENGINE][${analyzerName}] Running analysis stage...`);
                 const start = Date.now();
                 const result = await analyzer.analyze(filePath, { ...options, metadata });
