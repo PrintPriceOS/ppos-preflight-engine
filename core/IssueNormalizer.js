@@ -81,6 +81,8 @@ class IssueNormalizer {
             if (rawCode?.startsWith('IND_TRANS')) normalized.category = 'TRANSPARENCY';
             if (rawCode?.startsWith('IND_OVERPRINT')) normalized.category = 'OVERPRINT';
             if (rawCode?.startsWith('IND_MARK')) normalized.category = 'MARK';
+            if (rawCode?.startsWith('IND_COMPLIANCE')) normalized.category = 'COMPLIANCE';
+            if (rawCode?.startsWith('IND_STRUCT')) normalized.category = 'STRUCTURAL';
             if (rawCode?.includes('INTEGRITY')) normalized.category = 'INTEGRITY';
 
             return normalized;
@@ -109,6 +111,10 @@ class IssueNormalizer {
             'IND_COLOR_003': 'Mixed Color Spaces Detected',
             'IND_COLOR_004': 'Spot Color Detected',
             'IND_COLOR_005': 'Total Ink Coverage (TAC) Exceeded',
+            'IND_COLOR_006': 'OutputIntent Missing',
+            'IND_COLOR_007': 'ICC Profile Mismatch',
+            'IND_COLOR_008': 'Rich Black Text Detected',
+            'IND_COLOR_009': 'Registration Color Abuse',
             'IND_FONT_001': 'Font Not Embedded',
             'IND_FONT_002': 'Font Subset Detected',
             'IND_FONT_003': 'Type3 Font Detected',
@@ -116,8 +122,10 @@ class IssueNormalizer {
             'IND_IMG_001': 'Image Low Resolution',
             'IND_IMG_002': 'Image Excessive Resolution',
             'IND_IMG_003': 'JPEG Artifacts Detected',
+            'IND_IMG_004': 'RGB Image Detected',
             'IND_TRANS_001': 'Live Transparency Detected',
             'IND_TRANS_002': 'Blend Mode Detected',
+            'IND_TRANS_003': 'Soft Mask Detected',
             'IND_OVERPRINT_001': 'Overprint Detected',
             'IND_OVERPRINT_002': 'Knockout Conflict',
             'IND_MARK_001': 'Crop Marks Missing',
@@ -125,6 +133,14 @@ class IssueNormalizer {
             'IND_MARK_003': 'Color Bar Detected',
             'IND_GEOM_010': 'Page Rotation Detected',
             'IND_GEOM_011': 'Mixed Page Orientation',
+            'IND_GEOM_012': 'Hairline / Thin Stroke Detected',
+            'IND_COMPLIANCE_001': 'PDF/X Compliance Missing',
+            'IND_COMPLIANCE_002': 'PDF/X OutputCondition Mismatch / Invalid',
+            'IND_STRUCT_001': 'Annotations Present',
+            'IND_STRUCT_002': 'Interactive Form / AcroForm Detected',
+            'IND_STRUCT_003': 'JavaScript Embedded Action Detected',
+            'IND_STRUCT_004': 'Broken XREF / Incremental Save Anomaly',
+            'IND_STRUCT_005': 'Object Stream / Cross-Reference Issue',
             'IND_INTEGRITY_DEGRADED': 'Forensic Extraction Degraded',
             'IND_INTEGRITY_EXTRACTION_ERROR': 'Extraction Probe Failure',
             'IND_INTEGRITY_MISSING_TOOL': 'Required Industrial Tool Missing'

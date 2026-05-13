@@ -77,6 +77,45 @@ class GeometryAnalyzer {
             };
         });
 
+        const toolOutputs = metadata.toolOutputs || {};
+        const strContext = `${toolOutputs.pdfinfo || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''}`.toLowerCase();
+
+        if (strContext.includes('hairline') || strContext.includes('stroke width <') || strContext.includes('line width <')) {
+            const findEvidence = (keywords) => {
+                for (const [tool, output] of Object.entries(toolOutputs)) {
+                    if (!output) continue;
+                    const lower = output.toLowerCase();
+                    for (const kw of keywords) {
+                        if (lower.includes(kw)) {
+                            const lines = output.split('\n');
+                            const matchingLine = lines.find(l => l.toLowerCase().includes(kw)) || kw;
+                            return { tool, source: 'CLI_PROBE', raw: matchingLine.trim() };
+                        }
+                    }
+                }
+                return { tool: 'composite_probe', source: metadata.source || 'CLI_PROBE', raw: keywords[0] };
+            };
+            const ev = findEvidence(['hairline', 'stroke width <', 'line width <']);
+            mappedFindings.push({
+                page: 1,
+                code: CODES.GEOM_HAIRLINE_DETECTED,
+                severity: "warning",
+                category: "GEOMETRY",
+                analyzer: "GeometryAnalyzer",
+                confidence: 0.98,
+                fixable: true,
+                recommended_fix: "THICKEN_STROKES",
+                message: "Hairlines or exceptionally thin vector strokes detected.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
         return {
             findings: mappedFindings,
             metadata: rawResult.metadata,

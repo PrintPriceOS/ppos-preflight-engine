@@ -72,10 +72,23 @@ class PreflightEngine {
         }
 
         // 2. Run all registered analyzers with real metadata
+        const strictMode = process.env.PREFLIGHT_STRICT_FORENSIC_MODE === 'true' || 
+                           process.env.STRICT_FORENSIC_MODE === 'true' || 
+                           options.strict_forensic_mode === true || 
+                           options.strictForensicMode === true;
+
+        const analyzerCoverage = {
+            registered: this.analyzers.map(a => a.constructor.name),
+            executed: [],
+            skipped: [],
+            failed: []
+        };
+
         for (const analyzer of this.analyzers) {
             const analyzerName = analyzer.constructor.name;
-            if (metadata.environmentFailure && analyzerName !== 'GeometryAnalyzer') {
+            if (!strictMode && metadata.environmentFailure && analyzerName !== 'GeometryAnalyzer') {
                 console.log(`[ENGINE] Skipping ${analyzerName} due to hard environment gate (missing critical industrial probes).`);
+                analyzerCoverage.skipped.push({ analyzer: analyzerName, reason: 'hard environment gate (missing critical industrial probes)' });
                 continue;
             }
 
@@ -86,13 +99,24 @@ class PreflightEngine {
                 const elapsed = Date.now() - start;
                 console.log(`[ENGINE][${analyzerName}] Stage completed in ${elapsed}ms`);
 
+                analyzerCoverage.executed.push(analyzerName);
+
                 if (result.findings) rawFindings.push(...result.findings);
                 if (result.metadata) metadata = { ...metadata, ...result.metadata };
+
+                if (strictMode && result.status === 'PARTIAL') {
+                    warnings.push({
+                        analyzer: analyzerName,
+                        error: 'COVERAGE_WARNING',
+                        message: `Analyzer ${analyzerName} executed with partial extraction depth.`
+                    });
+                }
             } catch (err) {
                 console.error(`[ENGINE] Analyzer ${analyzer.constructor.name} failed:`, err.message);
                 partial = true;
+                analyzerCoverage.failed.push({ analyzer: analyzerName, error: err.message });
                 warnings.push({
-                    analyzer: analyzer.constructor.name,
+                    analyzer: analyzerName,
                     error: err.name || 'ANALYZER_ERROR',
                     message: err.message
                 });
@@ -102,8 +126,29 @@ class PreflightEngine {
         // 3. Normalize issues
         const normalizedIssues = IssueNormalizer.normalize(rawFindings);
 
+        // Enforce Policy constraints on severities before scoring
+        const isOffsetPolicy = options.policy === 'OFFSET_MODERN_COATED_F51' || 
+                               options.profile === 'OFFSET_MODERN_COATED_F51' ||
+                               options.policy?.includes('OFFSET') ||
+                               options.profile?.includes('OFFSET');
+
+        if (isOffsetPolicy) {
+            const { CODES: FindingCodes } = require('../interpretation/IndustrialFindingCodes');
+            normalizedIssues.forEach(issue => {
+                if (issue.code === FindingCodes.COLOR_RGB_OBJECTS_DETECTED || issue.code === 'IND_COLOR_001') {
+                    issue.severity = 'error';
+                }
+                if (issue.code === FindingCodes.COLOR_ICC_PROFILE_MISSING || issue.code === FindingCodes.COLOR_OUTPUT_INTENT_MISSING) {
+                    issue.severity = 'error';
+                }
+                if (issue.code === FindingCodes.GEOM_BLEEDBOX_MISSING || issue.code === FindingCodes.GEOM_TRIMBOX_MISSING) {
+                    issue.severity = 'error';
+                }
+            });
+        }
+
         // 4. Score Risk
-        const riskSummary = this.riskAnalyzer.score(normalizedIssues, metadata);
+        const riskSummary = this.riskAnalyzer.score(normalizedIssues, metadata, options);
 
         // 5. Build Final Report
         return this.reportBuilder.build({
@@ -112,7 +157,9 @@ class PreflightEngine {
             metadata,
             filePath,
             partial,
-            warnings
+            warnings,
+            analyzerCoverage,
+            options
         });
     }
 

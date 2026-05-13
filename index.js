@@ -14,6 +14,9 @@ const OverprintAnalyzer = require('./analyzers/OverprintAnalyzer');
 const MarkAnalyzer = require('./analyzers/MarkAnalyzer');
 const PdfIntegrityAnalyzer = require('./analyzers/PdfIntegrityAnalyzer');
 const HeuristicAnalyzer = require('./analyzers/HeuristicAnalyzer');
+const OutputIntentAnalyzer = require('./analyzers/OutputIntentAnalyzer');
+const PdfXAnalyzer = require('./analyzers/PdfXAnalyzer');
+const InkAnalyzer = require('./analyzers/InkAnalyzer');
 const TechnicalEngine = require('./execution/PdfTechnicalEngine');
 const AutofixExecutionEngine = require('./execution/AutofixExecutionEngine');
 const MagicFixEngine = require('./engine/MagicFixEngine');
@@ -26,6 +29,9 @@ const createStandardEngine = () => {
     return new PreflightEngine([
         new GeometryAnalyzer(),
         new ColorAnalyzer(),
+        new OutputIntentAnalyzer(),
+        new PdfXAnalyzer(),
+        new InkAnalyzer(),
         new FontAnalyzer(),
         new ImageAnalyzer(),
         new TransparencyAnalyzer(),
@@ -43,6 +49,9 @@ module.exports = {
     GeometryAuditEngine,
     GeometryAnalyzer,
     ColorAnalyzer,
+    OutputIntentAnalyzer,
+    PdfXAnalyzer,
+    InkAnalyzer,
     FontAnalyzer,
     ImageAnalyzer,
     TransparencyAnalyzer,
@@ -58,6 +67,9 @@ module.exports = {
     analyzers: {
         Geometry: GeometryAnalyzer,
         Color: ColorAnalyzer,
+        OutputIntent: OutputIntentAnalyzer,
+        PdfX: PdfXAnalyzer,
+        Ink: InkAnalyzer,
         Font: FontAnalyzer,
         Image: ImageAnalyzer,
         Transparency: TransparencyAnalyzer,

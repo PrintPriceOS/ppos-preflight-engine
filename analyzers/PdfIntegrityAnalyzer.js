@@ -84,6 +84,139 @@ class PdfIntegrityAnalyzer {
 
         const isPartial = metadata.source === 'FALLBACK_MOCK' || integrity.realExtraction === false;
 
+        const toolOutputs = metadata.toolOutputs || {};
+        const strContext = `${toolOutputs.pdfinfo || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''}`.toLowerCase();
+
+        const findEvidence = (keywords) => {
+            for (const [tool, output] of Object.entries(toolOutputs)) {
+                if (!output) continue;
+                const lower = output.toLowerCase();
+                for (const kw of keywords) {
+                    if (lower.includes(kw)) {
+                        const lines = output.split('\n');
+                        const matchingLine = lines.find(l => l.toLowerCase().includes(kw)) || kw;
+                        return { tool, source: 'CLI_PROBE', raw: matchingLine.trim() };
+                    }
+                }
+            }
+            return { tool: 'composite_probe', source: metadata.source || 'CLI_PROBE', raw: keywords[0] };
+        };
+
+        // Annotations
+        if (strContext.includes('annotation') || strContext.includes('/annot')) {
+            const ev = findEvidence(['annotation', '/annot']);
+            findings.push({
+                page: 1,
+                code: CODES.STRUCT_ANNOTATIONS_DETECTED,
+                severity: "warning",
+                category: "STRUCTURAL",
+                analyzer: "PdfIntegrityAnalyzer",
+                confidence: 0.98,
+                fixable: true,
+                recommended_fix: "FLATTEN_ANNOTATIONS",
+                message: "PDF annotations detected.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
+        // AcroForm
+        if (strContext.includes('acroform') || strContext.includes('interactive form')) {
+            const ev = findEvidence(['acroform', 'interactive form']);
+            findings.push({
+                page: 1,
+                code: CODES.STRUCT_ACROFORM_DETECTED,
+                severity: "warning",
+                category: "STRUCTURAL",
+                analyzer: "PdfIntegrityAnalyzer",
+                confidence: 0.98,
+                fixable: true,
+                recommended_fix: "FLATTEN_FORMS",
+                message: "Interactive form (AcroForm) detected.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
+        // JavaScript
+        if (strContext.includes('javascript') || strContext.includes('/js ') || strContext.includes('/javascript')) {
+            const ev = findEvidence(['javascript', '/js ', '/javascript']);
+            findings.push({
+                page: 1,
+                code: CODES.STRUCT_JAVASCRIPT_DETECTED,
+                severity: "error",
+                category: "STRUCTURAL",
+                analyzer: "PdfIntegrityAnalyzer",
+                confidence: 0.98,
+                fixable: true,
+                recommended_fix: "STRIP_JAVASCRIPT",
+                message: "Embedded JavaScript detected.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
+        // Broken XREF / Incremental Save
+        if (strContext.includes('xref error') || strContext.includes('broken xref') || strContext.includes('incremental save')) {
+            const ev = findEvidence(['xref error', 'broken xref', 'incremental save']);
+            findings.push({
+                page: 1,
+                code: CODES.STRUCT_XREF_BROKEN,
+                severity: "error",
+                category: "STRUCTURAL",
+                analyzer: "PdfIntegrityAnalyzer",
+                confidence: 0.98,
+                fixable: true,
+                recommended_fix: "REBUILD_XREF",
+                message: "Broken cross-reference table or anomalous incremental save.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
+        // Object Stream Anomalies
+        if (strContext.includes('object stream') || strContext.includes('/objstm')) {
+            const ev = findEvidence(['object stream', '/objstm']);
+            findings.push({
+                page: 1,
+                code: CODES.STRUCT_OBJECT_STREAM_ANOMALY,
+                severity: "info",
+                category: "STRUCTURAL",
+                analyzer: "PdfIntegrityAnalyzer",
+                confidence: 0.98,
+                fixable: false,
+                recommended_fix: null,
+                message: "Compressed object streams utilized.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
         return {
             findings,
             partial: isPartial,

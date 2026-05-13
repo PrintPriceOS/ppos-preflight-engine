@@ -4,7 +4,7 @@
  * Standardizes the output structure of the preflight engine.
  */
 class ReportBuilder {
-    build({ issues, riskSummary, metadata, filePath, partial = false, warnings = [] }) {
+    build({ issues, riskSummary, metadata, filePath, partial = false, warnings = [], analyzerCoverage = null, options = {} }) {
         let analysis_type = 'REAL_INDUSTRIAL';
         const hasExtractionErrors = metadata.analysisIntegrity?.extractionErrors?.length > 0;
         const isDegraded = partial || hasExtractionErrors || warnings.some(w => w.error?.includes('DEGRADED') || w.error?.includes('FAILED'));
@@ -16,7 +16,11 @@ class ReportBuilder {
             analysis_type = 'PARTIAL';
         }
 
-        const strictMode = process.env.STRICT_FORENSIC_MODE === 'true';
+        const strictMode = process.env.PREFLIGHT_STRICT_FORENSIC_MODE === 'true' || 
+                           process.env.STRICT_FORENSIC_MODE === 'true' || 
+                           options.strict_forensic_mode === true || 
+                           options.strictForensicMode === true;
+
         const fallbackUsed = analysis_type !== 'REAL_INDUSTRIAL' || metadata.analysisIntegrity?.realExtraction === false;
         const finalPartial = partial || hasExtractionErrors || fallbackUsed;
 
@@ -51,13 +55,14 @@ class ReportBuilder {
         }));
 
         const baseIntegrity = metadata.analysisIntegrity || {};
+        const missingToolsResolved = fallbackUsed ? (baseIntegrity.missingTools || []) : [];
         const analysisIntegrity = {
             ...baseIntegrity,
             realExtraction: !fallbackUsed && (baseIntegrity.realExtraction !== false),
             fallbackUsed: fallbackUsed || !!baseIntegrity.fallbackUsed,
             degradedMode: analysis_type === 'DEGRADED' || analysis_type === 'FAILED' || analysis_type === 'ENGINE_ENVIRONMENT_FAILURE' || !!baseIntegrity.degradedMode,
             extractionErrors: baseIntegrity.extractionErrors || [],
-            missingTools: baseIntegrity.missingTools || [],
+            missingTools: missingToolsResolved,
             extractionPipeline: baseIntegrity.extractionPipeline || [],
             parserVersions: baseIntegrity.parserVersions || {}
         };
@@ -68,7 +73,7 @@ class ReportBuilder {
         else if (analysis_type === 'DEGRADED') analysis_status = 'DEGRADED';
         else if (analysis_type === 'PARTIAL') analysis_status = 'PARTIAL';
 
-        const missing_tools = analysisIntegrity.missingTools || [];
+        const missing_tools = missingToolsResolved;
         const degraded_reasons = [];
         if (metadata.source === 'FALLBACK_MOCK') {
             degraded_reasons.push('FALLBACK_MOCK_USED');
@@ -88,8 +93,35 @@ class ReportBuilder {
         }
         const uniqueDegradedReasons = [...new Set(degraded_reasons)];
 
+        // Enforce strict Status Consensus
+        const isOffsetPolicy = options.policy === 'OFFSET_MODERN_COATED_F51' || 
+                               options.profile === 'OFFSET_MODERN_COATED_F51' ||
+                               options.policy?.includes('OFFSET') ||
+                               options.profile?.includes('OFFSET');
+
+        let status = 'PASS';
+        const hasCriticalOrError = mappedIssues.some(i => i.severity === 'critical' || i.severity === 'error');
+        const hasWarningOrInfo = mappedIssues.some(i => i.severity === 'warning' || i.severity === 'info');
+
+        if (metadata.environmentFailure || missing_tools.length > 0) {
+            status = 'FAILED_RUNTIME_ENVIRONMENT';
+        } else if (hasCriticalOrError) {
+            status = isOffsetPolicy ? 'FAIL_PREPRESS' : 'FAIL';
+        } else if (hasWarningOrInfo) {
+            status = 'PASS_WITH_WARNINGS';
+        }
+
         return {
             ok: isOk,
+            status,
+            risk_score: riskSummary.score,
+            strict_forensic_mode: strictMode,
+            analyzerCoverage: analyzerCoverage || {
+                registered: [],
+                executed: [],
+                skipped: [],
+                failed: []
+            },
             analysis_type,
             analysis_status,
             analysis_scope: metadata.environmentFailure ? 'PARTIAL_ANALYSIS' : 'FULL_ANALYSIS',
@@ -100,6 +132,9 @@ class ReportBuilder {
             forensic_events,
             degraded_reasons: uniqueDegradedReasons,
             missing_tools,
+            missingTools: missing_tools, // direct top-level support
+            pdf_version: metadata.pdfVersion || 'unknown',
+            page_count: metadata.pages || metadata.pageCount || 0,
             summary: {
                 risk_level: riskSummary.level,
                 risk_score: riskSummary.score,

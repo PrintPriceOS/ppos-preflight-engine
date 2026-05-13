@@ -143,6 +143,10 @@ class PdfTechnicalEngine {
                 extractionErrors.push(...opts.simulateMissingTools.map(t => ({ parser: t, message: `Simulated absence of tool ${t}` })));
             }
 
+            if (opts.simulateOutputStrings && typeof opts.simulateOutputStrings === 'object') {
+                Object.assign(toolOutputs, opts.simulateOutputStrings);
+            }
+
             let pdfVersion = 'unknown';
             if (toolOutputs.pdfinfo) {
                 const match = toolOutputs.pdfinfo.match(/PDF version:\s*([0-9.]+)/i);

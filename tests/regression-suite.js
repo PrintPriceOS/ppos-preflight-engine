@@ -276,6 +276,49 @@ async function runRegressionSuite() {
         }
     });
 
+    // ---------------------------------------------------------
+    // TEST 12: Strict Forensic Coverage & Offset Policy Validation
+    // ---------------------------------------------------------
+    await test('12. Strict Forensic Mode & Offset Policy: Integración de coverage manifest y severidad de RGB bajo FOGRA51', async () => {
+        const fp = await createPdfFixture('policy_test.pdf');
+        const engine = createStandardEngine();
+        
+        // Simular modo estricto y política offset sobre un mock que reporta RGB para evaluar actualización de severidad
+        const report = await engine.analyzePdf(fp, {
+            strict_forensic_mode: true,
+            policy: 'OFFSET_MODERN_COATED_F51',
+            simulateOutputStrings: {
+                pdfinfo: 'OutputIntent: None | DeviceRGB detected | /JS /JavaScript embedded action | stroke width < 0.05',
+                mutool: 'GTS_PDFX version missing | Broken xref error | Tac exceeded 340%'
+            }
+        });
+
+        if (!report.strict_forensic_mode) {
+            throw new Error("El reporte no propagó strict_forensic_mode = true.");
+        }
+        if (!report.analyzerCoverage || !Array.isArray(report.analyzerCoverage.registered)) {
+            throw new Error("El manifest de analyzerCoverage está ausente o malformado.");
+        }
+        if (report.analyzerCoverage.registered.length < 12) {
+            throw new Error(`Se esperaban al menos 12 analizadores registrados, se hallaron: ${report.analyzerCoverage.registered.length}`);
+        }
+        
+        // Verificar que los issues de RGB u OutputIntent/ICC faltantes tengan severidad 'error' bajo política Offset
+        const hasOffsetError = report.issues.some(i => 
+            (i.code === FindingCodes.COLOR_RGB_OBJECTS_DETECTED || i.code === FindingCodes.COLOR_OUTPUT_INTENT_MISSING) && 
+            i.severity === 'error'
+        );
+        if (!hasOffsetError) {
+            throw new Error("La política Offset no escaló la severidad de RGB/OutputIntent a 'error'.");
+        }
+
+        // Verificar detección de anomalías estructurales o de compliance
+        const hasJs = report.issues.some(i => i.code === FindingCodes.STRUCT_JAVASCRIPT_DETECTED);
+        if (!hasJs) {
+            throw new Error("No se detectaron secuencias de JavaScript embebido.");
+        }
+    });
+
     console.log('---------------------------------------------------');
     console.log(`Test Summary: ${passCount} Passed | ${failCount} Failed`);
     console.log('---------------------------------------------------');

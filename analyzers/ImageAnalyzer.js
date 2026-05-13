@@ -116,6 +116,30 @@ class ImageAnalyzer {
             });
         }
 
+        // RGB Images
+        const hasRgbImage = strContext.includes('rgb image') || strContext.includes('devicergb image') || strContext.includes('color: rgb');
+        if (hasRgbImage) {
+            const ev = findEvidence(['rgb image', 'devicergb image', 'color: rgb']);
+            findings.push({
+                page: 1,
+                code: CODES.IMG_RGB_IMAGE_DETECTED,
+                severity: "error",
+                category: "IMAGE",
+                analyzer: "ImageAnalyzer",
+                confidence: 0.98,
+                fixable: true,
+                recommended_fix: "CONVERT_TO_CMYK",
+                message: "Raster image uses RGB color space.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
         return { findings, status: "SUCCESS" };
     }
 }

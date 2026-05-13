@@ -92,6 +92,30 @@ class TransparencyAnalyzer {
             });
         }
 
+        // Soft mask detected
+        const hasSoftMask = strContext.includes('soft mask') || strContext.includes('/smask');
+        if (hasSoftMask) {
+            const ev = findEvidence(['soft mask', '/smask']);
+            findings.push({
+                page: 1,
+                code: CODES.TRANS_SOFT_MASK_DETECTED,
+                severity: "warning",
+                category: "TRANSPARENCY",
+                analyzer: "TransparencyAnalyzer",
+                confidence: 0.98,
+                fixable: false,
+                recommended_fix: null,
+                message: "Soft mask transparency detected.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
         return { findings, status: "SUCCESS" };
     }
 }

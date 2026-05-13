@@ -165,6 +165,29 @@ class ColorAnalyzer {
             });
         }
 
+        // Registration color abuse
+        if (strContext.includes('registration color') || strContext.includes('colorant: all') || strContext.includes('/cs /all')) {
+            const ev = findEvidence(['registration color', 'colorant: all', '/cs /all']);
+            findings.push({
+                page: 1,
+                code: CODES.COLOR_REGISTRATION_ABUSE,
+                severity: "warning",
+                category: "COLOR",
+                analyzer: "ColorAnalyzer",
+                confidence: 0.98,
+                fixable: true,
+                recommended_fix: "MAP_TO_BLACK",
+                message: "Registration colorant applied to non-mark layout elements.",
+                evidence: {
+                    tool: ev.tool,
+                    source: ev.source,
+                    page: 1,
+                    confidence: 0.98,
+                    raw: ev.raw
+                }
+            });
+        }
+
         return { findings, status: "SUCCESS" };
     }
 }
