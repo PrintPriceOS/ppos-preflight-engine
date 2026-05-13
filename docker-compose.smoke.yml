@@ -7,6 +7,8 @@ services:
     image: ppos/preflight-engine:smoke
     volumes:
       - ./tests/cli/fixtures:/fixtures
+    environment:
+      - PREFLIGHT_STRICT_FORENSIC_MODE=true
     working_dir: /fixtures
     # Run a full series of smoke tests
     command: >

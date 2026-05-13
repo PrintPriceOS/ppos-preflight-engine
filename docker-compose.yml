@@ -6,5 +6,7 @@ services:
     image: ppos/preflight-engine:latest
     volumes:
       - ./tests/cli/fixtures:/fixtures
+    environment:
+      - PREFLIGHT_STRICT_FORENSIC_MODE=true
     working_dir: /fixtures
     # Example usage: docker-compose run preflight-engine analyze small_valid.pdf --json

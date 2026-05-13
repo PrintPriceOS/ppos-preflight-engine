@@ -354,6 +354,30 @@ async function runRegressionSuite() {
         }
     });
 
+    // ---------------------------------------------------------
+    // TEST 14: Status consensus regression for RGB Objects Detected
+    // ---------------------------------------------------------
+    await test('14. Regresión de consenso: RGB Objects Detected con severidad error impide que el status sea PASS', async () => {
+        const fp = await createPdfFixture('policy_test_rgb.pdf');
+        const engine = createStandardEngine();
+        
+        const report = await engine.analyzePdf(fp, {
+            strict_forensic_mode: true,
+            policy: 'OFFSET_MODERN_COATED_F51',
+            simulateOutputStrings: {
+                pdfinfo: 'OutputIntent: None | DeviceRGB detected'
+            }
+        });
+
+        const rgbError = report.issues.find(i => i.code === FindingCodes.COLOR_RGB_OBJECTS_DETECTED && i.severity === 'error');
+        if (!rgbError) {
+            throw new Error("No se halló el finding de RGB con severidad error para la prueba de regresión.");
+        }
+        if (report.status === 'PASS') {
+            throw new Error("Regresión fallida: El reporte devolvió status PASS a pesar de contener hallazgos con severidad error.");
+        }
+    });
+
     console.log('---------------------------------------------------');
     console.log(`Test Summary: ${passCount} Passed | ${failCount} Failed`);
     console.log('---------------------------------------------------');

@@ -25,10 +25,11 @@ class ReportBuilder {
         const finalPartial = partial || hasExtractionErrors || fallbackUsed;
 
         // Rule #16: Never return ok: true if there was no real extraction or fallback/mock data was used
-        const isOk = fallbackUsed ? false : (riskSummary.level !== 'CRITICAL');
+        const hasCriticalOrError = issues.some(i => i.severity === 'critical' || i.severity === 'error');
+        const isOk = (fallbackUsed || hasCriticalOrError) ? false : (riskSummary.level !== 'CRITICAL');
         
         // In strict forensic mode, any fallback invalidates the entire analysis certification
-        const isCertifiable = strictMode && fallbackUsed ? false : riskSummary.level !== 'CRITICAL';
+        const isCertifiable = ((strictMode && fallbackUsed) || hasCriticalOrError) ? false : (riskSummary.level !== 'CRITICAL');
         const allowAutofix = !(strictMode && fallbackUsed);
 
         const forensic_events = [];
@@ -100,12 +101,12 @@ class ReportBuilder {
                                options.profile?.includes('OFFSET');
 
         let status = 'PASS';
-        const hasCriticalOrError = mappedIssues.some(i => i.severity === 'critical' || i.severity === 'error');
+        const hasCriticalOrErrorMapped = mappedIssues.some(i => i.severity === 'critical' || i.severity === 'error');
         const hasWarningOrInfo = mappedIssues.some(i => i.severity === 'warning' || i.severity === 'info');
 
         if (metadata.environmentFailure || missing_tools.length > 0) {
             status = 'FAILED_RUNTIME_ENVIRONMENT';
-        } else if (hasCriticalOrError) {
+        } else if (hasCriticalOrErrorMapped) {
             status = isOffsetPolicy ? 'FAIL_PREPRESS' : 'FAIL';
         } else if (hasWarningOrInfo) {
             status = 'PASS_WITH_WARNINGS';
