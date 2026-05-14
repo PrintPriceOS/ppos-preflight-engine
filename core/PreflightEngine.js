@@ -193,202 +193,380 @@ class PreflightEngine {
         const outputPath = path.join(outDir, `${basename}_fixed_${Date.now()}${ext}`);
 
         try {
-            // Pre-fix validation for NO-OP detection (specifically for TrimBox)
-            if (fixPlan.strategy === 'REBUILD_TRIMBOX' || fixPlan.repairStrategy === 'REBUILD_TRIMBOX') {
-                const bytes = await fs.readFile(filePath);
-                const pdfDoc = await PDFDocument.load(bytes);
-                const pages = pdfDoc.getPages();
-                let allValid = true;
-
-                for (const page of pages) {
-                    const trimBox = page.node.lookup(PDFName.of('TrimBox'));
-                    const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
-
-                    if (!trimBox || !mediaBox) {
-                        allValid = false;
-                        break;
-                    }
-
-                    const trimArray = trimBox.asArray().map(v => v.asNumber());
-                    const mediaArray = mediaBox.asArray().map(v => v.asNumber());
-
-                    const width = trimArray[2] - trimArray[0];
-                    const height = trimArray[3] - trimArray[1];
-                    const isFinite = trimArray.every(n => Number.isFinite(n));
-
-                    const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
-                        trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
-
-                    if (!isFinite || width <= 0 || height <= 0 || !isInside) {
-                        allValid = false;
-                        break;
-                    }
-                }
-
-                if (allValid) {
-                    console.log(`[ENGINE][AUTOFIX] No-op detected: TrimBox already valid.`);
-                    const fixHint = fixPlan.repairStrategy || fixPlan.strategy || fixPlan.type || 'REBUILD_TRIMBOX';
-                    return {
-                        ok: false, // Mandatory Rule 3: Nunca devolver ok: true si no se ha modificado realmente el PDF
-                        status: 'NO_CHANGE', // Mandatory Rule 5: status:NO_CHANGE
-                        fix_id: options.jobId || `fix_${Date.now()}`,
-                        input_issue_codes: [fixHint],
-                        strategy: fixHint,
-                        applied: false, // Mandatory Rule 5
-                        modified: false, // Mandatory Rule 5
-                        output_path: filePath,
-                        warnings: ['Document copied or preserved without modification.'],
-                        verification_status: 'VERIFIED',
-                        // Legacy keys preserved for backward compatibility:
-                        noopFix: true,
-                        fixApplied: false,
-                        rewritten: false,
-                        certificationMode: "CERTIFIED_WITHOUT_MODIFICATION",
-                        repairs: [],
-                        fixedPath: filePath,
-                        artifacts: {
-                            certified_pdf: {
-                                source_preserved: true,
-                                rewrite: false,
-                                path: filePath,
-                                filename: path.basename(filePath)
-                            }
-                        },
-                        message: "No structural changes were required. Document already complied with geometry requirements."
-                    };
-                }
-            }
-
-            let result;
-            let destructiveFixRisk = "LOW";
             const requestedStrategy = fixPlan.repairStrategy || fixPlan.strategy || fixPlan.type;
+            const requestedFixesRaw = fixPlan.fixes || fixPlan.requested_fixes || options.fixes || options.requested_fixes || [];
+            const requestedFixesArr = Array.isArray(requestedFixesRaw) ? [...requestedFixesRaw] : [requestedFixesRaw].filter(Boolean);
 
-            if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') {
-                result = await fixEngine.applyCmyk(filePath, outputPath, null, options);
-                destructiveFixRisk = "HIGH";
-            } else if (fixPlan.type === 'bleed' || fixPlan.forceBleed || fixPlan.repairStrategy === 'APPLY_BLEED' || fixPlan.fix_method === 'APPLY_BLEED') {
-                const bleedMm = fixPlan.bleedMm || 3;
-                result = await fixEngine.applyBleed(filePath, outputPath, bleedMm, options);
-                // Chain CMYK conversion after bleed fix when both are needed
-                if (result.success && fixPlan.target === 'cmyk') {
-                    const cmykOutputPath = outputPath.replace(/\.pdf$/i, '_cmyk.pdf');
-                    const profile = fixPlan.profile || 'iso_coated_v3';
-                    const cmykResult = await fixEngine.applyCmyk(outputPath, cmykOutputPath, resolveIccPath(profile), options);
-                    if (cmykResult.success) {
-                        await fs.move(cmykOutputPath, outputPath, { overwrite: true });
-                        result.repairs = [...(result.repairs || []), { code: 'CONVERT_CMYK', status: 'APPLIED', description: 'Colorspace converted to CMYK after bleed fix.' }];
-                        destructiveFixRisk = "HIGH";
-                    }
-                }
-            } else if (fixPlan.type === 'geometry' || fixPlan.strategy === 'REBUILD_TRIMBOX' || fixPlan.repairStrategy === 'REBUILD_TRIMBOX') {
-                result = await fixEngine.rebuildTrimBox(filePath, outputPath, options);
-                // Chain CMYK conversion after geometry fix when both are needed
-                if (result.success && fixPlan.target === 'cmyk') {
-                    const cmykOutputPath = outputPath.replace(/\.pdf$/i, '_cmyk.pdf');
-                    const profile = fixPlan.profile || 'iso_coated_v3';
-                    const cmykResult = await fixEngine.applyCmyk(outputPath, cmykOutputPath, resolveIccPath(profile), options);
-                    if (cmykResult.success) {
-                        await fs.move(cmykOutputPath, outputPath, { overwrite: true });
-                        result.repairs = [...(result.repairs || []), { code: 'CONVERT_CMYK', status: 'APPLIED', description: 'Colorspace converted to CMYK after TrimBox rebuild.' }];
-                        destructiveFixRisk = "HIGH";
-                    }
-                }
-            } else if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') {
-                const profile = fixPlan.profile || 'iso_coated_v3';
-                result = await fixEngine.applyCmyk(filePath, outputPath, resolveIccPath(profile), options);
-                destructiveFixRisk = "HIGH";
-            } else {
-                // Fallback copying or unsupported fix
-                const isExplicitNoAction = requestedStrategy === 'NO_ACTION' || !requestedStrategy;
-                if (!isExplicitNoAction) {
-                    console.log(`[ENGINE][AUTOFIX] Unrecognized fix strategy '${requestedStrategy}', returning FIX_UNSUPPORTED.`);
-                    return {
-                        ok: false,
-                        status: 'FIX_UNSUPPORTED',
-                        error: 'NO_SAFE_FIX_AVAILABLE',
-                        fix_id: options.jobId || `fix_${Date.now()}`,
-                        input_issue_codes: [requestedStrategy || 'UNKNOWN'],
-                        strategy: requestedStrategy || 'UNKNOWN',
-                        applied: false,
-                        modified: false,
-                        output_path: null,
-                        warnings: ['Requested fix strategy is not recognized or supported.'],
-                        verification_status: 'FAILED',
-                        // Legacy compatibility fields:
-                        noopFix: false,
-                        fixApplied: false,
-                        rewritten: false,
-                        fixedPath: null,
-                        repairs: [],
-                        artifacts: {},
-                        wrapper_metadata: { timestamp: new Date().toISOString() }
-                    };
-                }
+            if (fixPlan.repairStrategy) requestedFixesArr.push(fixPlan.repairStrategy);
+            if (fixPlan.strategy) requestedFixesArr.push(fixPlan.strategy);
+            if (fixPlan.fix_method) requestedFixesArr.push(fixPlan.fix_method);
+            if (fixPlan.type === 'bleed') requestedFixesArr.push('APPLY_BLEED');
+            if (fixPlan.type === 'geometry') requestedFixesArr.push('REBUILD_TRIMBOX');
+            if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') requestedFixesArr.push('CONVERT_CMYK');
+            if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') requestedFixesArr.push('CONVERT_CMYK');
+            if (fixPlan.forceBleed) requestedFixesArr.push('APPLY_BLEED');
+            if (fixPlan.forceCmyk) requestedFixesArr.push('CONVERT_CMYK');
 
-                await fs.copy(filePath, outputPath);
-                result = { success: true, note: 'Copied' };
+            const findings = fixPlan.findings || fixPlan.issues || options.findings || options.issues || [];
+            findings.forEach(f => {
+                if (f.repairStrategy) requestedFixesArr.push(f.repairStrategy);
+                if (f.fix_method) requestedFixesArr.push(f.fix_method);
+                if (f.recommended_fix) requestedFixesArr.push(f.recommended_fix);
+            });
+
+            const uniqueFixes = [...new Set(requestedFixesArr)];
+            if (uniqueFixes.length === 0 && requestedStrategy) {
+                uniqueFixes.push(requestedStrategy);
             }
 
-            if (result.success) {
-                console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${outputPath}`);
+            console.log(`[ENGINE][AUTOFIX][PLAN] PlannedFixes: ${JSON.stringify(uniqueFixes)}`);
 
-                // If copied without changes as a fallback, report honest no-change contract
-                if (result.note === 'Copied') {
-                    return {
-                        ok: false, // Mandatory Rule 3
-                        status: 'NO_CHANGE', // Mandatory Rule 5
-                        fix_id: options.jobId || `fix_${Date.now()}`,
-                        input_issue_codes: [requestedStrategy || 'NO_ACTION'],
-                        strategy: requestedStrategy || 'NO_ACTION',
-                        applied: false, // Mandatory Rule 5
-                        modified: false, // Mandatory Rule 5
-                        output_path: outputPath,
-                        warnings: ['Document copied without modification.'],
-                        verification_status: 'VERIFIED',
-                        // Legacy keys:
-                        noopFix: true,
-                        fixApplied: false,
-                        rewritten: false,
-                        fixedPath: outputPath,
-                        artifacts: {
-                            fixed_pdf: {
-                                path: outputPath,
-                                filename: path.basename(outputPath)
-                            }
-                        },
-                        repairs: [],
-                        note: result.note,
-                        wrapper_metadata: { timestamp: new Date().toISOString() }
-                    };
+            // Enforce structural integrity through mandatory repair ordering
+            const priorityOrder = ['REBUILD_TRIMBOX', 'APPLY_BLEED', 'CONVERT_CMYK', 'INJECT_OUTPUT_INTENT'];
+            uniqueFixes.sort((a, b) => {
+                const idxA = priorityOrder.indexOf(a);
+                const idxB = priorityOrder.indexOf(b);
+                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                if (idxA !== -1) return -1;
+                if (idxB !== -1) return 1;
+                return a.localeCompare(b);
+            });
+
+            let currentInputPath = filePath;
+            let anyModified = false;
+            let cumulativeRepairs = [];
+            let highestRisk = "LOW";
+            let requiresHumanReview = false;
+            let rootError = null;
+            let rootStatus = null;
+            let anyApplied = false;
+            let usedStrategy = null;
+            let usedQuality = 'STANDARD';
+            let usedBleedMode = null;
+            const cumulativeWarnings = [];
+
+            let stepIdx = 0;
+            for (const fixCode of uniqueFixes) {
+                stepIdx++;
+                const finding = findings.find(f => f.fix_method === fixCode || f.repairStrategy === fixCode || f.recommended_fix === fixCode || f.id?.includes(fixCode.split('_')[1] || 'NONE'));
+
+                if (fixCode === 'REBUILD_TRIMBOX') {
+                    if (finding && finding.safeToAutofix === false) {
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'SKIPPED',
+                            reason: 'safeToAutofix=false or policy restricts automatic geometry reconstruction.',
+                            destructiveFixRisk: finding.destructiveFixRisk || 'LOW',
+                            requires_human_review: true
+                        });
+                        console.log(`[ENGINE][AUTOFIX][SKIP] Code: ${fixCode} | Reason: safeToAutofix=false`);
+                        continue;
+                    }
+
+                    let isTrimBoxValid = false;
+                    try {
+                        const bytes = await fs.readFile(filePath);
+                        const pdfDoc = await PDFDocument.load(bytes);
+                        const pages = pdfDoc.getPages();
+                        let allValid = true;
+                        for (const page of pages) {
+                            const trimBox = page.node.lookup(PDFName.of('TrimBox'));
+                            const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
+                            if (!trimBox || !mediaBox) { allValid = false; break; }
+                            const trimArray = trimBox.asArray().map(v => v.asNumber());
+                            const mediaArray = mediaBox.asArray().map(v => v.asNumber());
+                            const width = trimArray[2] - trimArray[0];
+                            const height = trimArray[3] - trimArray[1];
+                            const isFinite = trimArray.every(n => Number.isFinite(n));
+                            const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
+                                trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
+                            if (!isFinite || width <= 0 || height <= 0 || !isInside) { allValid = false; break; }
+                        }
+                        isTrimBoxValid = allValid;
+                    } catch (err) {
+                        console.warn(`[ENGINE][AUTOFIX] Failed to evaluate TrimBox validation: ${err.message}`);
+                    }
+
+                    if (isTrimBoxValid) {
+                        console.log(`[ENGINE][AUTOFIX] No-op detected: TrimBox already valid.`);
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'SKIPPED',
+                            strategy: 'TRIMBOX_REBUILD_FROM_MEDIABOX',
+                            description: 'No structural changes were required. Document already complied with geometry requirements.',
+                            reason: 'TrimBox already valid.',
+                            destructiveFixRisk: 'LOW',
+                            requires_human_review: false
+                        });
+                        if (uniqueFixes.length === 1) {
+                            const fixHint = fixPlan.repairStrategy || fixPlan.strategy || fixPlan.type || 'REBUILD_TRIMBOX';
+                            return {
+                                ok: false,
+                                status: 'NO_CHANGE',
+                                fix_id: options.jobId || `fix_${Date.now()}`,
+                                input_issue_codes: [fixHint],
+                                strategy: fixHint,
+                                applied: false,
+                                modified: false,
+                                output_path: filePath,
+                                warnings: ['Document copied or preserved without modification.'],
+                                verification_status: 'VERIFIED',
+                                noopFix: true,
+                                fixApplied: false,
+                                rewritten: false,
+                                certificationMode: "CERTIFIED_WITHOUT_MODIFICATION",
+                                repairs: cumulativeRepairs,
+                                fixedPath: filePath,
+                                artifacts: {
+                                    certified_pdf: {
+                                        source_preserved: true,
+                                        rewrite: false,
+                                        path: filePath,
+                                        filename: path.basename(filePath)
+                                    }
+                                },
+                                message: "No structural changes were required. Document already complied with geometry requirements."
+                            };
+                        }
+                        continue;
+                    }
+
+                    console.log(`[ENGINE][AUTOFIX][APPLY] Executing REBUILD_TRIMBOX on ${currentInputPath}`);
+                    const stepOutPath = path.join(outDir, `${basename}_step_${stepIdx}_${Date.now()}${ext}`);
+                    const res = await fixEngine.rebuildTrimBox(currentInputPath, stepOutPath, options);
+                    if (res.success) {
+                        anyModified = true;
+                        anyApplied = true;
+                        currentInputPath = stepOutPath;
+                        usedStrategy = 'TRIMBOX_REBUILD_FROM_MEDIABOX';
+                        if (res.repairs && res.repairs.length > 0) {
+                            cumulativeRepairs.push(...res.repairs);
+                        } else {
+                            cumulativeRepairs.push({
+                                code: 'REBUILD_TRIMBOX',
+                                status: 'APPLIED',
+                                strategy: 'TRIMBOX_REBUILD_FROM_MEDIABOX',
+                                description: 'TrimBox rebuilt from MediaBox or inferred production geometry.',
+                                destructiveFixRisk: 'LOW',
+                                requires_human_review: false
+                            });
+                        }
+                    } else {
+                        rootError = res.error;
+                        cumulativeRepairs.push({
+                            code: 'REBUILD_TRIMBOX',
+                            status: 'FAILED',
+                            reason: res.error,
+                            destructiveFixRisk: 'LOW',
+                            requires_human_review: true
+                        });
+                    }
+                } else if (fixCode === 'APPLY_BLEED') {
+                    if (finding && finding.safeToAutofix === false) {
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'SKIPPED',
+                            reason: 'safeToAutofix=false or policy restricts automatic bleed generation.',
+                            destructiveFixRisk: finding.destructiveFixRisk || 'MEDIUM',
+                            requires_human_review: true
+                        });
+                        console.log(`[ENGINE][AUTOFIX][SKIP] Code: ${fixCode} | Reason: safeToAutofix=false`);
+                        continue;
+                    }
+
+                    console.log(`[ENGINE][AUTOFIX][APPLY] Executing APPLY_BLEED on ${currentInputPath}`);
+                    const bleedMm = fixPlan.bleedMm || 3;
+                    const stepOutPath = path.join(outDir, `${basename}_step_${stepIdx}_${Date.now()}${ext}`);
+                    const res = await fixEngine.applyBleed(currentInputPath, stepOutPath, bleedMm, { ...options, ...fixPlan });
+                    if (res.success) {
+                        anyModified = true;
+                        anyApplied = true;
+                        currentInputPath = stepOutPath;
+                        usedStrategy = res.strategy || 'BOX_EXPANSION_ONLY';
+                        if (res.industrial_quality === 'LIMITED') usedQuality = 'LIMITED';
+                        if (res.requires_human_review) requiresHumanReview = true;
+                        if (res.bleed_fix_mode) usedBleedMode = res.bleed_fix_mode;
+                        if (res.warnings) cumulativeWarnings.push(...res.warnings);
+
+                        if (res.repairs && res.repairs.length > 0) {
+                            cumulativeRepairs.push(...res.repairs);
+                        } else {
+                            cumulativeRepairs.push({
+                                code: 'APPLY_BLEED',
+                                status: 'APPLIED',
+                                strategy: usedStrategy,
+                                description: `BleedBox expanded ${bleedMm}mm on all sides via page box adjustment.`,
+                                destructiveFixRisk: 'LOW',
+                                requires_human_review: true
+                            });
+                        }
+                    } else {
+                        rootError = res.error;
+                        if (res.status === 'UNSAFE_BLEED_FIX_NOT_APPLIED') rootStatus = res.status;
+                        if (res.warnings) cumulativeWarnings.push(...res.warnings);
+                        cumulativeRepairs.push({
+                            code: 'APPLY_BLEED',
+                            status: 'FAILED',
+                            reason: res.error,
+                            destructiveFixRisk: 'MEDIUM',
+                            requires_human_review: true
+                        });
+                    }
+                } else if (fixCode === 'CONVERT_CMYK') {
+                    const isForce = fixPlan.forceCmyk || fixPlan.target === 'cmyk' || fixPlan.type === 'color' || fixPlan.type === 'grayscale';
+                    if (finding && finding.safeToAutofix === false && !isForce) {
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'SKIPPED',
+                            reason: 'safeToAutofix=false or policy requires explicit destructive color conversion authorization.',
+                            destructiveFixRisk: finding.destructiveFixRisk || 'LOW',
+                            requires_human_review: true
+                        });
+                        console.log(`[ENGINE][AUTOFIX][SKIP] Code: ${fixCode} | Reason: safeToAutofix=false`);
+                        continue;
+                    }
+
+                    console.log(`[ENGINE][AUTOFIX][APPLY] Executing CONVERT_CMYK on ${currentInputPath}`);
+                    const profile = fixPlan.profile || 'iso_coated_v3';
+                    const stepOutPath = path.join(outDir, `${basename}_step_${stepIdx}_${Date.now()}${ext}`);
+                    const res = await fixEngine.applyCmyk(currentInputPath, stepOutPath, resolveIccPath(profile), options);
+                    if (res.success) {
+                        anyModified = true;
+                        anyApplied = true;
+                        currentInputPath = stepOutPath;
+                        highestRisk = "HIGH";
+                        requiresHumanReview = true;
+                        usedStrategy = 'CONVERT_CMYK';
+                        if (res.repairs && res.repairs.length > 0) {
+                            cumulativeRepairs.push(...res.repairs);
+                        } else {
+                            cumulativeRepairs.push({
+                                code: 'CONVERT_CMYK',
+                                status: 'APPLIED',
+                                strategy: 'CONVERT_CMYK',
+                                description: 'Colorspace converted to CMYK via Ghostscript color strategy.',
+                                destructiveFixRisk: 'HIGH',
+                                requires_human_review: true
+                            });
+                        }
+                    } else {
+                        rootError = res.error;
+                        cumulativeRepairs.push({
+                            code: 'CONVERT_CMYK',
+                            status: 'FAILED',
+                            reason: res.error,
+                            destructiveFixRisk: 'HIGH',
+                            requires_human_review: true
+                        });
+                    }
+                } else if (fixCode === 'INJECT_OUTPUT_INTENT') {
+                    cumulativeRepairs.push({
+                        code: fixCode,
+                        status: 'SKIPPED',
+                        reason: 'OutputIntent injection requires configured ICC profile or policy approval.',
+                        destructiveFixRisk: 'LOW',
+                        requires_human_review: true
+                    });
+                    console.log(`[ENGINE][AUTOFIX][SKIP] Code: ${fixCode} | Reason: OutputIntent injection requires configured ICC profile or policy approval.`);
+                } else if (fixCode === 'NO_ACTION') {
+                    cumulativeRepairs.push({
+                        code: fixCode,
+                        status: 'SKIPPED',
+                        reason: 'Explicit NO_ACTION requested.',
+                        destructiveFixRisk: 'LOW',
+                        requires_human_review: false
+                    });
+                } else {
+                    const isExplicitNoAction = fixCode === 'NO_ACTION';
+                    if (!isExplicitNoAction) {
+                        console.log(`[ENGINE][AUTOFIX] Unrecognized fix strategy '${fixCode}', returning FIX_UNSUPPORTED.`);
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'UNSUPPORTED',
+                            reason: 'Requested fix strategy is not recognized or supported by the execution layer.',
+                            destructiveFixRisk: 'LOW',
+                            requires_human_review: true
+                        });
+                        if (uniqueFixes.length === 1 || fixCode === requestedStrategy) {
+                            rootStatus = 'FIX_UNSUPPORTED';
+                            rootError = 'NO_SAFE_FIX_AVAILABLE';
+                        }
+                    }
                 }
+            }
 
-                const repairs = (result.repairs || []).map(r => ({
-                    ...r,
-                    destructiveFixRisk: r.destructiveFixRisk || destructiveFixRisk,
-                    rewritten: true
-                }));
+            if (anyModified && currentInputPath !== outputPath) {
+                await fs.move(currentInputPath, outputPath, { overwrite: true });
+                currentInputPath = outputPath;
+            }
 
-                const stratUsed = result.strategy || requestedStrategy || 'UNKNOWN';
-                const isBleedLimited = result.industrial_quality === 'LIMITED';
+            console.log(`[ENGINE][AUTOFIX][RESULT] JobId: ${options.jobId || 'N/A'} | Applied: ${anyApplied} | Modified: ${anyModified} | Status: ${rootStatus || (anyApplied ? 'SUCCESS' : 'NO_CHANGE')}`);
 
+            if (rootStatus === 'FIX_UNSUPPORTED') {
                 return {
-                    ok: true,
-                    status: result.status || 'SUCCESS',
+                    ok: false,
+                    status: 'FIX_UNSUPPORTED',
+                    error: rootError || 'NO_SAFE_FIX_AVAILABLE',
                     fix_id: options.jobId || `fix_${Date.now()}`,
-                    input_issue_codes: [requestedStrategy || stratUsed],
-                    strategy: stratUsed,
-                    industrial_quality: result.industrial_quality || 'STANDARD',
-                    requires_human_review: result.requires_human_review || false,
-                    bleed_fix_mode: result.bleed_fix_mode || null,
-                    applied: true,
-                    modified: true,
-                    output_path: outputPath,
-                    warnings: result.warnings || [],
-                    verification_status: result.requires_human_review ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED',
-                    // Legacy keys:
+                    input_issue_codes: uniqueFixes.length > 0 ? uniqueFixes : [requestedStrategy || 'UNKNOWN'],
+                    requested_fixes: uniqueFixes,
+                    strategy: requestedStrategy || 'UNKNOWN',
+                    applied: false,
+                    modified: false,
+                    output_path: null,
+                    warnings: ['Requested fix strategy is not recognized or supported.'],
+                    verification_status: 'FAILED',
                     noopFix: false,
-                    fixApplied: true,
-                    rewritten: true,
+                    fixApplied: false,
+                    rewritten: false,
+                    fixedPath: null,
+                    repairs: cumulativeRepairs,
+                    artifacts: {},
+                    wrapper_metadata: { timestamp: new Date().toISOString() }
+                };
+            }
+
+            if (rootStatus === 'UNSAFE_BLEED_FIX_NOT_APPLIED') {
+                return {
+                    ok: false,
+                    status: 'UNSAFE_BLEED_FIX_NOT_APPLIED',
+                    error: rootError,
+                    fix_id: options.jobId || `fix_${Date.now()}`,
+                    input_issue_codes: uniqueFixes,
+                    requested_fixes: uniqueFixes,
+                    strategy: 'UNSAFE_BLEED_FIX_NOT_APPLIED',
+                    applied: false,
+                    modified: false,
+                    output_path: null,
+                    warnings: cumulativeWarnings,
+                    verification_status: 'FAILED',
+                    noopFix: false,
+                    fixApplied: false,
+                    rewritten: false,
+                    fixedPath: null,
+                    repairs: cumulativeRepairs,
+                    artifacts: {},
+                    wrapper_metadata: { timestamp: new Date().toISOString() }
+                };
+            }
+
+            if (!anyModified) {
+                await fs.copy(filePath, outputPath);
+                return {
+                    ok: false,
+                    status: 'NO_CHANGE',
+                    fix_id: options.jobId || `fix_${Date.now()}`,
+                    input_issue_codes: uniqueFixes.length > 0 ? uniqueFixes : [requestedStrategy || 'NO_ACTION'],
+                    requested_fixes: uniqueFixes,
+                    strategy: requestedStrategy || 'NO_ACTION',
+                    applied: false,
+                    modified: false,
+                    output_path: outputPath,
+                    warnings: ['Document copied without modification.'],
+                    verification_status: 'VERIFIED',
+                    noopFix: true,
+                    fixApplied: false,
+                    rewritten: false,
                     fixedPath: outputPath,
                     artifacts: {
                         fixed_pdf: {
@@ -396,23 +574,47 @@ class PreflightEngine {
                             filename: path.basename(outputPath)
                         }
                     },
-                    repairs,
-                    note: result.note,
-                    wrapper_metadata: {
-                        timestamp: new Date().toISOString()
-                    }
-                };
-            } else {
-                console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix stage failed: ${result.error}`);
-                return {
-                    ok: false,
-                    status: 'FAILURE',
-                    error: result.error,
-                    wrapper_metadata: {
-                        timestamp: new Date().toISOString()
-                    }
+                    repairs: cumulativeRepairs,
+                    note: 'Copied',
+                    wrapper_metadata: { timestamp: new Date().toISOString() }
                 };
             }
+
+            const finalRepairs = cumulativeRepairs.map(r => ({
+                ...r,
+                destructiveFixRisk: r.destructiveFixRisk || highestRisk,
+                rewritten: true
+            }));
+
+            const stratUsed = usedStrategy || requestedStrategy || 'UNKNOWN';
+            return {
+                ok: true,
+                status: 'SUCCESS',
+                fix_id: options.jobId || `fix_${Date.now()}`,
+                input_issue_codes: uniqueFixes.length > 0 ? uniqueFixes : [stratUsed],
+                requested_fixes: uniqueFixes,
+                strategy: stratUsed,
+                industrial_quality: usedQuality,
+                requires_human_review: requiresHumanReview,
+                bleed_fix_mode: usedBleedMode,
+                applied: true,
+                modified: true,
+                output_path: outputPath,
+                warnings: cumulativeWarnings,
+                verification_status: requiresHumanReview ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED',
+                noopFix: false,
+                fixApplied: true,
+                rewritten: true,
+                fixedPath: outputPath,
+                artifacts: {
+                    fixed_pdf: {
+                        path: outputPath,
+                        filename: path.basename(outputPath)
+                    }
+                },
+                repairs: finalRepairs,
+                wrapper_metadata: { timestamp: new Date().toISOString() }
+            };
 
         } catch (err) {
             console.error('[ENGINE][AUTOFIX-FAILED][NO-OUTPUT]', err);

@@ -65,7 +65,14 @@ class AutofixExecutionEngine {
                 rewritten: false,
                 fixedPath: null,
                 findings: [],
-                artifacts: {}
+                artifacts: {},
+                repairs: [{
+                    code: fix_hint || 'UNKNOWN',
+                    status: 'UNSUPPORTED',
+                    reason: 'Requested fix strategy is not recognized or supported.',
+                    destructiveFixRisk: 'LOW',
+                    requires_human_review: true
+                }]
             };
         }
         
@@ -137,7 +144,14 @@ class AutofixExecutionEngine {
                                 is_certified_original: true
                             }
                         },
-                        findings: []
+                        findings: [],
+                        repairs: [{
+                            code: fix_hint || 'UNKNOWN',
+                            status: 'SKIPPED',
+                            reason: 'Document copied without modification.',
+                            destructiveFixRisk: 'LOW',
+                            requires_human_review: false
+                        }]
                     };
                 }
             } catch (err) {
@@ -193,7 +207,15 @@ class AutofixExecutionEngine {
                     path: output_path,
                     filename: path.basename(output_path)
                 }
-            } : {}
+            } : {},
+            repairs: result.repairs || [{
+                code: fix_hint || 'UNKNOWN',
+                status: result.success ? 'APPLIED' : 'FAILED',
+                strategy: result.strategy || fix_hint,
+                reason: result.error,
+                destructiveFixRisk: result.destructiveFixRisk || 'LOW',
+                requires_human_review: result.requires_human_review || false
+            }]
         };
     }
 

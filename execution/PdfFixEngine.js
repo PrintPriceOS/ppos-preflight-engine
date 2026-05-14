@@ -36,7 +36,23 @@ class PdfFixEngine {
                 return { success: false, error: 'Ghostscript finished but output file is empty (0 bytes)' };
             }
 
-            return { success: result.ok, output };
+            return {
+                success: result.ok,
+                output,
+                strategy: 'CONVERT_CMYK',
+                destructiveFixRisk: 'HIGH',
+                requires_human_review: true,
+                repairs: result.ok ? [
+                    {
+                        code: 'CONVERT_CMYK',
+                        status: 'APPLIED',
+                        strategy: 'CONVERT_CMYK',
+                        description: 'Colorspace converted to CMYK via Ghostscript color strategy.',
+                        destructiveFixRisk: 'HIGH',
+                        requires_human_review: true
+                    }
+                ] : []
+            };
         } catch (e) {
             return { success: false, error: e.message };
         }
@@ -111,6 +127,7 @@ class PdfFixEngine {
                     strategy: strategyVal,
                     industrial_quality: qualityVal,
                     requires_human_review: humanReview,
+                    destructiveFixRisk: 'LOW',
                     description: `BleedBox expanded ${bleedMm}mm on all sides via page box adjustment.`
                 }]
             };
@@ -154,11 +171,17 @@ class PdfFixEngine {
             return {
                 success: true,
                 output: outputPath,
+                strategy: 'TRIMBOX_REBUILD_FROM_MEDIABOX',
+                destructiveFixRisk: 'LOW',
+                requires_human_review: false,
                 repairs: [
                     {
                         code: 'REBUILD_TRIMBOX',
                         status: 'APPLIED',
-                        description: 'TrimBox rebuilt from MediaBox without scaling content.'
+                        strategy: 'TRIMBOX_REBUILD_FROM_MEDIABOX',
+                        description: 'TrimBox rebuilt from MediaBox or inferred production geometry.',
+                        destructiveFixRisk: 'LOW',
+                        requires_human_review: false
                     }
                 ]
             };
