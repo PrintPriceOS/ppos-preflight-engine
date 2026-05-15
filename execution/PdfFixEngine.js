@@ -137,6 +137,74 @@ class PdfFixEngine {
     }
 
     /**
+     * Injects an OutputIntent with an ICC profile into the PDF catalog.
+     */
+    async injectOutputIntent(input, output, iccPath, opts = {}) {
+        const { PDFDocument, PDFName, PDFString } = require('pdf-lib');
+        if (!iccPath) {
+            return {
+                success: false,
+                status: 'SKIPPED',
+                error: 'No ICC profile path provided for OutputIntent injection.',
+                repairs: [{
+                    code: 'INJECT_OUTPUT_INTENT',
+                    status: 'SKIPPED',
+                    reason: 'No ICC profile configured.',
+                    destructiveFixRisk: 'LOW',
+                    requires_human_review: true
+                }]
+            };
+        }
+
+        try {
+            if (!(await fs.pathExists(iccPath))) {
+                return { success: false, error: `ICC profile not found: ${iccPath}` };
+            }
+
+            const bytes = await fs.readFile(input);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+
+            const iccBytes = await fs.readFile(iccPath);
+            const iccStream = pdfDoc.context.stream(iccBytes, { N: 4, Length: iccBytes.length });
+            const iccStreamRef = pdfDoc.context.register(iccStream);
+
+            const outputIntentDict = pdfDoc.context.obj({
+                Type: PDFName.of('OutputIntent'),
+                S: PDFName.of('GTS_PDFA1'),
+                OutputConditionIdentifier: PDFString.of('PSO Coated v3'),
+                DestOutputProfile: iccStreamRef
+            });
+            const outputIntentRef = pdfDoc.context.register(outputIntentDict);
+            pdfDoc.catalog.set(PDFName.of('OutputIntents'), pdfDoc.context.obj([outputIntentRef]));
+
+            const modified = await pdfDoc.save();
+            await fs.writeFile(output, modified);
+
+            if (!(await fs.pathExists(output))) return { success: false, error: 'Output file missing' };
+            const stats = await fs.stat(output);
+            if (stats.size === 0) return { success: false, error: 'Output file is empty' };
+
+            return {
+                success: true,
+                output,
+                strategy: 'INJECT_OUTPUT_INTENT',
+                destructiveFixRisk: 'LOW',
+                requires_human_review: false,
+                repairs: [{
+                    code: 'INJECT_OUTPUT_INTENT',
+                    status: 'APPLIED',
+                    strategy: 'INJECT_OUTPUT_INTENT',
+                    description: 'OutputIntent with ICC profile injected into PDF catalog.',
+                    destructiveFixRisk: 'LOW',
+                    requires_human_review: false
+                }]
+            };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    }
+
+    /**
      * Rebuilds TrimBox from MediaBox without scaling or rasterizing.
      */
     async rebuildTrimBox(inputPath, outputPath, options = {}) {

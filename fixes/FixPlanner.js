@@ -19,7 +19,7 @@ class FixPlanner {
             'TRIM_BOX_ANOMALY': 'REBUILD_TRIMBOX',
             'BLEEDBOX_MISSING': 'APPLY_BLEED',
             'IND_COLOR_001': 'CONVERT_CMYK',
-            'IND_COLOR_002': 'CONVERT_CMYK',
+            'IND_COLOR_002': 'INJECT_OUTPUT_INTENT',
             'IND_COLOR_006': 'INJECT_OUTPUT_INTENT',
             [FindingCodes.GEOM_BLEED_MISSING]: 'APPLY_BLEED',
             [FindingCodes.GEOM_BLEED_INSUFFICIENT]: 'APPLY_BLEED',
@@ -28,7 +28,7 @@ class FixPlanner {
             [FindingCodes.GEOM_TRIMBOX_INVALID]: 'REBUILD_TRIMBOX',
             [FindingCodes.GEOM_TRIMBOX_OUTSIDE_MEDIABOX]: 'REBUILD_TRIMBOX',
             [FindingCodes.COLOR_RGB_OBJECTS_DETECTED]: 'CONVERT_CMYK',
-            [FindingCodes.COLOR_ICC_PROFILE_MISSING]: 'CONVERT_CMYK',
+            [FindingCodes.COLOR_ICC_PROFILE_MISSING]: 'INJECT_OUTPUT_INTENT',
             [FindingCodes.COLOR_MIXED_COLOR_SPACES]: 'CONVERT_CMYK',
             [FindingCodes.COLOR_OUTPUT_INTENT_MISSING]: 'INJECT_OUTPUT_INTENT',
             [FindingCodes.TRANS_TRANSPARENCY_DETECTED]: 'FLATTEN_PDF'

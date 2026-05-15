@@ -114,7 +114,17 @@ class PdfTechnicalEngine {
 
             const firstPageData = pages[0] || {};
 
+            // Detect OutputIntent via pdf-lib catalog (CLI tools don't report this in text output)
+            const pdfLibStructure = [];
+            if (pdfDoc.catalog.has(PDFName.of('OutputIntents'))) {
+                pdfLibStructure.push('outputintent: detected');
+                pdfLibStructure.push('destoutputprofile: present');
+            }
+
             const toolOutputs = {};
+            if (pdfLibStructure.length > 0) {
+                toolOutputs.pdflib = pdfLibStructure.join('\n');
+            }
             const extractionErrors = [];
             const missingTools = [];
 

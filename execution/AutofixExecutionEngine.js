@@ -9,6 +9,18 @@ const { CODES: FindingCodes } = require('../interpretation/IndustrialFindingCode
  * Portable execution logic for PDF fixes.
  * Classification: INDUSTRIAL_RUNTIME (Technical Orchestration)
  */
+const ICC_DIR = process.env.ICC_PROFILES_DIR || path.resolve(__dirname, '../../icc-profiles');
+const ICC_PROFILE_MAP = {
+    'iso_coated_v3': 'PSO_Coated_v3.icc',
+    'iso_uncoated_v3': 'PSOuncoated_v3_FOGRA52.icc',
+    'iso_coated_v2_to_v3': 'ISOcoated_v2_to_PSOcoated_v3_DeviceLink.icc',
+};
+
+function resolveIccPath(name) {
+    const filename = ICC_PROFILE_MAP[name || 'iso_coated_v3'];
+    return filename ? path.join(ICC_DIR, filename) : null;
+}
+
 class AutofixExecutionEngine {
     constructor(config = {}) {
         this.config = config;
@@ -28,6 +40,7 @@ class AutofixExecutionEngine {
             'REBUILD_TRIMBOX': 'rebuildTrimBox',
             'CONVERT_CMYK': 'applyCmyk',
             'CONVERT_TO_CMYK': 'applyCmyk',
+            'INJECT_OUTPUT_INTENT': 'injectOutputIntent',
             'FLATTEN_PDF': 'flattenPdf',
             'NO_ACTION': 'noop'
         };
@@ -169,6 +182,9 @@ class AutofixExecutionEngine {
             result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3, this.config);
         } else if (method === 'applyCmyk') {
             result = await this.pdfFixEngine.applyCmyk(input_path, output_path, this.config.iccPath);
+        } else if (method === 'injectOutputIntent') {
+            const iccPath = this.config.iccPath || resolveIccPath(this.config.iccProfile || 'iso_coated_v3');
+            result = await this.pdfFixEngine.injectOutputIntent(input_path, output_path, iccPath);
         } else {
             result = { success: false, error: `Strategy method ${method} not implemented` };
         }
@@ -242,6 +258,7 @@ class AutofixExecutionEngine {
     _extractParams(method, options) {
         if (method === 'applyBleed') return [options.bleedMm || 3];
         if (method === 'applyCmyk') return [options.iccPath];
+        if (method === 'injectOutputIntent') return [options.iccPath];
         return [];
     }
 

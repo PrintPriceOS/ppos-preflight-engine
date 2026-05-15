@@ -27,7 +27,7 @@ class OutputIntentAnalyzer {
             };
         }
 
-        const strContext = `${toolOutputs.pdfinfo || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''}`.toLowerCase();
+        const strContext = `${toolOutputs.pdfinfo || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''} ${toolOutputs.pdflib || ''}`.toLowerCase();
 
         const findEvidence = (keywords) => {
             for (const [tool, output] of Object.entries(toolOutputs)) {

@@ -28,7 +28,7 @@ class ColorAnalyzer {
             };
         }
 
-        const strContext = `${toolOutputs.pdfimages || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''} ${toolOutputs.pdfinfo || ''}`.toLowerCase();
+        const strContext = `${toolOutputs.pdfimages || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''} ${toolOutputs.pdfinfo || ''} ${toolOutputs.pdflib || ''}`.toLowerCase();
         
         const findEvidence = (keywords) => {
             for (const [tool, output] of Object.entries(toolOutputs)) {

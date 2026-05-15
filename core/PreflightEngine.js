@@ -460,14 +460,48 @@ class PreflightEngine {
                         });
                     }
                 } else if (fixCode === 'INJECT_OUTPUT_INTENT') {
-                    cumulativeRepairs.push({
-                        code: fixCode,
-                        status: 'SKIPPED',
-                        reason: 'OutputIntent injection requires configured ICC profile or policy approval.',
-                        destructiveFixRisk: 'LOW',
-                        requires_human_review: true
-                    });
-                    console.log(`[ENGINE][AUTOFIX][SKIP] Code: ${fixCode} | Reason: OutputIntent injection requires configured ICC profile or policy approval.`);
+                    const profile = fixPlan.profile || 'iso_coated_v3';
+                    const resolvedIcc = resolveIccPath(profile);
+                    if (!resolvedIcc) {
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'SKIPPED',
+                            reason: 'No ICC profile configured for OutputIntent injection.',
+                            destructiveFixRisk: 'LOW',
+                            requires_human_review: true
+                        });
+                        console.log(`[ENGINE][AUTOFIX][SKIP] Code: ${fixCode} | Reason: No ICC profile configured.`);
+                        continue;
+                    }
+                    console.log(`[ENGINE][AUTOFIX][APPLY] Executing INJECT_OUTPUT_INTENT on ${currentInputPath}`);
+                    const stepOutPath = path.join(outDir, `${basename}_step_${stepIdx}_${Date.now()}${ext}`);
+                    const res = await fixEngine.injectOutputIntent(currentInputPath, stepOutPath, resolvedIcc, options);
+                    if (res.success) {
+                        anyModified = true;
+                        anyApplied = true;
+                        currentInputPath = stepOutPath;
+                        if (res.repairs && res.repairs.length > 0) {
+                            cumulativeRepairs.push(...res.repairs);
+                        } else {
+                            cumulativeRepairs.push({
+                                code: 'INJECT_OUTPUT_INTENT',
+                                status: 'APPLIED',
+                                strategy: 'INJECT_OUTPUT_INTENT',
+                                description: 'OutputIntent with ICC profile injected into PDF catalog.',
+                                destructiveFixRisk: 'LOW',
+                                requires_human_review: false
+                            });
+                        }
+                    } else {
+                        rootError = res.error;
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'FAILED',
+                            reason: res.error,
+                            destructiveFixRisk: 'LOW',
+                            requires_human_review: true
+                        });
+                    }
                 } else if (fixCode === 'NO_ACTION') {
                     cumulativeRepairs.push({
                         code: fixCode,
