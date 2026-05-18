@@ -37,7 +37,10 @@ class PdfIntegrityAnalyzer {
         }
 
         if (hasExtractionErrors) {
-            integrity.extractionErrors.forEach(err => {
+            // Only emit EXTRACTION_ERROR for tools that were found but crashed (FAILED).
+            // Tools that were simply not installed (MISSING) are covered by IND_INTEGRITY_MISSING_TOOL below.
+            const nonMissingErrors = integrity.extractionErrors.filter(e => e.probeStatus !== 'MISSING');
+            nonMissingErrors.forEach(err => {
                 findings.push({
                     page: 1,
                     code: 'IND_INTEGRITY_EXTRACTION_ERROR',

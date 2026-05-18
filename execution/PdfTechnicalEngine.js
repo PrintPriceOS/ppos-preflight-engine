@@ -127,6 +127,7 @@ class PdfTechnicalEngine {
             }
             const extractionErrors = [];
             const missingTools = [];
+            const probeResults = {};
 
             const runProbe = async (bin, args, outputKey, toolAlias) => {
                 const key = outputKey || bin;
@@ -134,28 +135,43 @@ class PdfTechnicalEngine {
                 try {
                     const { stdout } = await execFileAsync(bin, args, { timeout: 3000 });
                     toolOutputs[key] = stdout;
+                    probeResults[alias] = 'SUCCESS';
                 } catch (err) {
-                    extractionErrors.push({ parser: alias, message: err.message });
-                    missingTools.push(alias);
+                    const isNotInstalled = err.code === 'ENOENT' || (err.message && err.message.includes('ENOENT'));
+                    probeResults[alias] = isNotInstalled ? 'MISSING' : 'FAILED';
+                    extractionErrors.push({ parser: alias, message: err.message, probeStatus: probeResults[alias] });
+                    if (isNotInstalled) {
+                        missingTools.push(alias);
+                    }
                 }
             };
 
-            // Rule #6 & #7: Real multi-page extraction via specific CLI parsers including Ghostscript
+            // Real multi-page extraction via specific CLI parsers including Ghostscript
             await Promise.allSettled([
                 runProbe('pdfimages', ['-list', input], 'pdfimages', 'pdfimages'),
-                runProbe('pdfinfo', [input], 'pdfinfo', 'pdfinfo'),
-                runProbe('mutool', ['info', input], 'mutool', 'mutool'),
+                runProbe('pdfinfo',   [input],           'pdfinfo',   'pdfinfo'),
+                runProbe('pdffonts',  [input],           'pdffonts',  'pdffonts'),
+                runProbe('mutool',    ['info', input],   'mutool',    'mutool'),
+                runProbe('qpdf',      ['--check', input],'qpdf',      'qpdf'),
                 runProbe(ghostscript.resolveGsCmd(), ['--version'], 'gs', 'Ghostscript')
             ]);
 
             if (opts.simulateMissingTools && Array.isArray(opts.simulateMissingTools)) {
-                missingTools.push(...opts.simulateMissingTools);
-                extractionErrors.push(...opts.simulateMissingTools.map(t => ({ parser: t, message: `Simulated absence of tool ${t}` })));
+                for (const t of opts.simulateMissingTools) {
+                    probeResults[t] = 'MISSING';
+                    if (!missingTools.includes(t)) missingTools.push(t);
+                    extractionErrors.push({ parser: t, message: `Simulated absence of tool ${t}`, probeStatus: 'MISSING' });
+                    // Remove output so analyzers don't see stale data from a simulated-missing tool
+                    delete toolOutputs[t];
+                }
             }
 
             if (opts.simulateOutputStrings && typeof opts.simulateOutputStrings === 'object') {
                 Object.assign(toolOutputs, opts.simulateOutputStrings);
             }
+
+            // availableTools = keys with non-empty content after all simulation steps
+            const availableTools = Object.keys(toolOutputs).filter(k => !!toolOutputs[k]);
 
             let pdfVersion = 'unknown';
             if (toolOutputs.pdfinfo) {
@@ -172,12 +188,16 @@ class PdfTechnicalEngine {
                 source: 'PDF_LIB',
                 toolOutputs,
                 pdfVersion,
+                probeResults,
+                availableTools,
                 analysisIntegrity: {
-                    realExtraction: !hasMissing,
+                    realExtraction: true,     // pdf-lib geometry succeeded; degradedMode reflects CLI tool gaps
                     fallbackUsed: hasMissing,
                     degradedMode: hasMissing,
                     extractionErrors,
-                    missingTools
+                    missingTools,
+                    probeResults,
+                    availableTools
                 },
                 geometry: {
                     pages,

@@ -64,6 +64,8 @@ class ReportBuilder {
             degradedMode: analysis_type === 'DEGRADED' || analysis_type === 'FAILED' || analysis_type === 'ENGINE_ENVIRONMENT_FAILURE' || !!baseIntegrity.degradedMode,
             extractionErrors: baseIntegrity.extractionErrors || [],
             missingTools: missingToolsResolved,
+            probeResults: baseIntegrity.probeResults || {},
+            availableTools: baseIntegrity.availableTools || [],
             extractionPipeline: baseIntegrity.extractionPipeline || [],
             parserVersions: baseIntegrity.parserVersions || {}
         };
@@ -117,15 +119,21 @@ class ReportBuilder {
             status,
             risk_score: riskSummary.score,
             strict_forensic_mode: strictMode,
-            analyzerCoverage: analyzerCoverage || {
+            analyzerCoverage: analyzerCoverage ? {
+                ...analyzerCoverage,
+                partial: analyzerCoverage.partial || []
+            } : {
                 registered: [],
                 executed: [],
+                partial: [],
                 skipped: [],
                 failed: []
             },
             analysis_type,
             analysis_status,
-            analysis_scope: metadata.environmentFailure ? 'PARTIAL_ANALYSIS' : 'FULL_ANALYSIS',
+            analysis_scope: (metadata.environmentFailure || (analyzerCoverage?.partial?.length > 0))
+                ? 'PARTIAL_ANALYSIS'
+                : 'FULL_ANALYSIS',
             certifiable: isCertifiable,
             timestamp: new Date().toISOString(),
             partial: finalPartial,

@@ -44,9 +44,14 @@ class MarkAnalyzer {
             return { tool: 'composite_probe', source: metadata.source || 'CLI_PROBE', raw: keywords[0] };
         };
 
-        // Crop marks missing (Eliminated filename heuristics)
+        // Crop marks missing — only emit when policy explicitly requires marks.
+        // Default: suppress. Book interiors (≥48 pages) always suppress.
         const hasCropMarks = strContext.includes('crop marks') || strContext.includes('trim marks');
-        if (!hasCropMarks) {
+        const requiresCropMarks = options.requiresCropMarks === true ||
+            options.policy?.requiresCropMarks === true;
+        const isBookInterior = (metadata.pages || 0) >= 48;
+
+        if (!hasCropMarks && requiresCropMarks && !isBookInterior) {
             findings.push({
                 page: 1,
                 code: CODES.MARK_CROP_MARKS_MISSING,

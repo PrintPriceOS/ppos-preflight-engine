@@ -1,3 +1,8 @@
+/**
+ * LEGACY TYPE DEFINITIONS ONLY — contains a mock parsing stub.
+ * NOT used by the runtime. Active orchestrator: core/PreflightEngine.js
+ * Do not add runtime logic here.
+ */
 // ppos-preflight-engine/src/core/PreflightEngine.ts
 import { RiskAnalyzer } from './RiskAnalyzer';
 

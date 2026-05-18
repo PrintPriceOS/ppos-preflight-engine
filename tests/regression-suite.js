@@ -192,9 +192,24 @@ async function runRegressionSuite() {
     // TEST 7: MagicFix sin mejora
     // ---------------------------------------------------------
     await test('7. MagicFix sin mejora: Pipeline industrial reporta fail-loud certificado', async () => {
-        const fp = await createPdfFixture('sano.pdf');
+        // Use a truly compliant fixture (with OutputIntent) so all analyzers find nothing fixable.
+        // Without OutputIntent, OutputIntentAnalyzer now correctly flags a fixable issue.
+        const fp = await createPdfFixture('sano_compliant.pdf', (page, doc) => {
+            const ctx = doc.context;
+            page.node.set(PDFName.of('MediaBox'), ctx.obj([0, 0, 595, 842]));
+            page.node.set(PDFName.of('BleedBox'), ctx.obj([0, 0, 595, 842]));
+            page.node.set(PDFName.of('TrimBox'),  ctx.obj([10, 10, 585, 832]));
+            page.node.set(PDFName.of('CropBox'),  ctx.obj([0, 0, 595, 842]));
+            // Add a minimal OutputIntent so OutputIntentAnalyzer finds nothing missing
+            const outputIntentDict = ctx.obj({
+                Type: 'OutputIntent',
+                S: 'GTS_PDFX',
+                OutputConditionIdentifier: 'ISO Coated v2'
+            });
+            doc.catalog.set(PDFName.of('OutputIntents'), ctx.obj([outputIntentDict]));
+        });
         const out = path.join(fixturesDir, 'magic_no_improv.pdf');
-        
+
         const magicEngine = new MagicFixEngine({ minBleedMm: 3 });
         const result = await magicEngine.run(fp, out, {});
         
@@ -375,6 +390,110 @@ async function runRegressionSuite() {
         }
         if (report.status === 'PASS') {
             throw new Error("Regresión fallida: El reporte devolvió status PASS a pesar de contener hallazgos con severidad error.");
+        }
+    });
+
+    // ---------------------------------------------------------
+    // TEST A: Partial CLI tool absence — DEGRADED, not ENGINE_ENVIRONMENT_FAILURE
+    // ---------------------------------------------------------
+    await test('A. mutool ausente: DEGRADED (no ENGINE_ENVIRONMENT_FAILURE), analizadores no-Geometry ejecutan', async () => {
+        const fp = await createPdfFixture('degraded_mutool.pdf');
+        const engine = createStandardEngine();
+        const report = await engine.analyzePdf(fp, {
+            simulateMissingTools: ['mutool'],
+            simulateOutputStrings: { pdfinfo: 'Pages: 1\nPage size: 595 x 842 pts\n' }
+        });
+
+        validateEvidenceDiscipline(report);
+
+        if (report.analysis_status === 'ENGINE_ENVIRONMENT_FAILURE') {
+            throw new Error('Un solo tool ausente no debe causar ENGINE_ENVIRONMENT_FAILURE');
+        }
+        if (!['DEGRADED', 'PARTIAL', 'COMPLETE'].includes(report.analysis_status)) {
+            throw new Error(`Status inesperado: ${report.analysis_status}`);
+        }
+        const executed = report.analyzerCoverage?.executed || [];
+        const partial  = (report.analyzerCoverage?.partial || []).map(p => p.analyzer);
+        const allRan   = [...executed, ...partial];
+        if (!allRan.includes('GeometryAnalyzer')) {
+            throw new Error('GeometryAnalyzer debe haber ejecutado');
+        }
+        const nonGeom = allRan.filter(a => a !== 'GeometryAnalyzer');
+        if (nonGeom.length === 0) {
+            throw new Error('Ningún analizador no-Geometry ejecutó con mutool ausente');
+        }
+        if (!report.missing_tools?.includes('mutool')) {
+            throw new Error('mutool debe aparecer en missing_tools');
+        }
+    });
+
+    // ---------------------------------------------------------
+    // TEST B: Simulated multi-tool output — multi-category findings
+    // ---------------------------------------------------------
+    await test('B. Simulate outputs multi-categoría: COLOR, FONT, IMAGE, STRUCTURAL en un reporte', async () => {
+        const fp = await createPdfFixture('multicategory.pdf');
+        const engine = createStandardEngine();
+        const report = await engine.analyzePdf(fp, {
+            simulateOutputStrings: {
+                pdfinfo:   'Pages: 1\nDeviceRGB detected\nFont: Arial not embedded\n',
+                pdfimages: 'page   num  type  width height color comp bpc  enc  interp  object ID x-ppi y-ppi\n' +
+                           '   1     0 image   400   300  gray    1   8  jpeg    no       10  0    72    72\n' +
+                           'ppi < 150 (low resolution image detected)',
+                mutool:    'broken xref error in object stream\n'
+            }
+        });
+
+        validateEvidenceDiscipline(report);
+
+        const all = [...(report.issues || []), ...(report.findings || [])];
+        const cats = new Set(all.map(f => f.category));
+
+        if (!cats.has('COLOR'))      throw new Error('Falta categoría COLOR');
+        if (!cats.has('FONT'))       throw new Error('Falta categoría FONT');
+        if (!cats.has('IMAGE'))      throw new Error('Falta categoría IMAGE');
+        if (!cats.has('STRUCTURAL') && !cats.has('INTEGRITY')) {
+            throw new Error('Falta categoría STRUCTURAL/INTEGRITY');
+        }
+    });
+
+    // ---------------------------------------------------------
+    // TEST C: No fake findings without evidence
+    // ---------------------------------------------------------
+    await test('C. Sin pdffonts ni policy: sin HEURISTIC_TEXT_OUTLINED ni MARK_CROP_MARKS_MISSING', async () => {
+        const fp = await createPdfFixture('clean_defaults.pdf');
+        const engine = createStandardEngine();
+        // Explicitly simulate pdffonts unavailable to verify no speculative "outlined text" finding
+        const report = await engine.analyzePdf(fp, {
+            simulateMissingTools: ['pdffonts']
+        });
+
+        validateEvidenceDiscipline(report);
+
+        const all = [...(report.issues || []), ...(report.findings || [])];
+        if (all.some(f => f.code === 'HEURISTIC_TEXT_OUTLINED')) {
+            throw new Error('HEURISTIC_TEXT_OUTLINED no debe emitirse cuando pdffonts no está disponible');
+        }
+        if (all.some(f => f.code === 'IND_MARK_001')) {
+            throw new Error('MARK_CROP_MARKS_MISSING no debe emitirse sin política requiresCropMarks');
+        }
+    });
+
+    // ---------------------------------------------------------
+    // TEST D: Nonexistent PDF — ENGINE_ENVIRONMENT_FAILURE or FAILED
+    // ---------------------------------------------------------
+    await test('D. PDF inexistente: ENGINE_ENVIRONMENT_FAILURE o FAILED, certifiable false', async () => {
+        const engine = createStandardEngine();
+        const report = await engine.analyzePdf('/__nonexistent_ppos_test_xyz__.pdf');
+
+        if (!['ENGINE_ENVIRONMENT_FAILURE', 'FAILED'].includes(report.analysis_status)) {
+            throw new Error(`Se esperaba ENGINE_ENVIRONMENT_FAILURE/FAILED, got: ${report.analysis_status}`);
+        }
+        const riskScore = report.summary?.risk_score;
+        if (riskScore !== null && riskScore !== 0 && riskScore !== undefined) {
+            throw new Error(`risk_score debe ser null/0 ante fallo total, got: ${riskScore}`);
+        }
+        if (report.certifiable !== false) {
+            throw new Error('certifiable debe ser false ante fallo total');
         }
     });
 

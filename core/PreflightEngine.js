@@ -31,9 +31,22 @@ class PreflightEngine {
         try {
             const techResult = await this.technicalEngine.analyze(filePath, options);
             
-            const missingTools = techResult.analysisIntegrity?.missingTools || [];
-            const criticalTools = ['pdfinfo', 'pdfimages', 'mutool', 'gs', 'Ghostscript'];
-            const isEnvironmentFailure = missingTools.some(t => criticalTools.includes(t)) || techResult.source === 'FALLBACK_MOCK';
+            const missingTools  = techResult.analysisIntegrity?.missingTools || [];
+            const probeResults  = techResult.probeResults || {};
+            const availableTools = techResult.availableTools || [];
+
+            // ENGINE_ENVIRONMENT_FAILURE only when:
+            //   (a) pdf-lib could not load the PDF at all (source=FALLBACK_MOCK), OR
+            //   (b) all 4 core CLI probes are absent — preserves existing Test 11 behavior.
+            // 'gs' and 'Ghostscript' are both valid aliases for the Ghostscript probe.
+            const gsAbsent = missingTools.includes('Ghostscript') || missingTools.includes('gs') ||
+                probeResults['Ghostscript'] === 'MISSING' || probeResults['gs'] === 'MISSING';
+            const coreProbesMissing =
+                (missingTools.includes('pdfinfo')   || probeResults['pdfinfo']   === 'MISSING') &&
+                (missingTools.includes('pdfimages') || probeResults['pdfimages'] === 'MISSING') &&
+                (missingTools.includes('mutool')    || probeResults['mutool']    === 'MISSING') &&
+                gsAbsent;
+            const isEnvironmentFailure = techResult.source === 'FALLBACK_MOCK' || coreProbesMissing;
 
             metadata = {
                 geometry: techResult.geometry,
@@ -43,7 +56,9 @@ class PreflightEngine {
                 analysisIntegrity: techResult.analysisIntegrity,
                 toolOutputs: techResult.toolOutputs || {},
                 pdfVersion: techResult.pdfVersion || 'unknown',
-                environmentFailure: isEnvironmentFailure
+                environmentFailure: isEnvironmentFailure,
+                probeResults,
+                availableTools
             };
 
             if (isEnvironmentFailure) {
@@ -80,17 +95,13 @@ class PreflightEngine {
         const analyzerCoverage = {
             registered: this.analyzers.map(a => a.constructor.name),
             executed: [],
+            partial: [],
             skipped: [],
             failed: []
         };
 
         for (const analyzer of this.analyzers) {
             const analyzerName = analyzer.constructor.name;
-            if (!strictMode && metadata.environmentFailure && analyzerName !== 'GeometryAnalyzer') {
-                console.log(`[ENGINE] Skipping ${analyzerName} due to hard environment gate (missing critical industrial probes).`);
-                analyzerCoverage.skipped.push({ analyzer: analyzerName, reason: 'hard environment gate (missing critical industrial probes)' });
-                continue;
-            }
 
             try {
                 console.log(`[ENGINE][${analyzerName}] Running analysis stage...`);
@@ -99,7 +110,17 @@ class PreflightEngine {
                 const elapsed = Date.now() - start;
                 console.log(`[ENGINE][${analyzerName}] Stage completed in ${elapsed}ms`);
 
-                analyzerCoverage.executed.push(analyzerName);
+                if (result.status === 'PARTIAL') {
+                    analyzerCoverage.partial.push({
+                        analyzer: analyzerName,
+                        reason: result.metadata
+                            ? (Object.values(result.metadata)[0]?.reason ?? 'PARTIAL_EVIDENCE')
+                            : 'PARTIAL_EVIDENCE',
+                        missingSources: metadata.analysisIntegrity?.missingTools || []
+                    });
+                } else {
+                    analyzerCoverage.executed.push(analyzerName);
+                }
 
                 if (result.findings) rawFindings.push(...result.findings);
                 if (result.metadata) metadata = { ...metadata, ...result.metadata };
