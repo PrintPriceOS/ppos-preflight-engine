@@ -13,10 +13,80 @@ class PdfFixEngine {
      * Converts a PDF to CMYK using the provided ICC profile.
      */
     async applyCmyk(input, output, iccPath, opts = {}) {
+        const path = require('path');
+        const requestedProfile = opts.requestedProfile || (iccPath ? path.basename(iccPath) : 'PSO_Coated_v3.icc');
+
+        const candidates = [
+            { path: process.env.PPOS_ICC_PROFILE_PATH, source: 'env.PPOS_ICC_PROFILE_PATH' },
+            { path: process.env.PPOS_CMYK_PROFILE_PATH, source: 'env.PPOS_CMYK_PROFILE_PATH' },
+            { path: process.env.ICC_PROFILE_PATH, source: 'env.ICC_PROFILE_PATH' }
+        ];
+
+        if (iccPath && typeof iccPath === 'string' && !iccPath.includes('/opt/printprice-os')) {
+            candidates.push({ path: iccPath, source: 'requested' });
+        }
+
+        const baseName = iccPath ? path.basename(iccPath) : 'PSO_Coated_v3.icc';
+        if (baseName !== 'PSO_Coated_v3.icc') {
+            candidates.push({ path: `/app/icc-profiles/${baseName}`, source: 'app_volume_basename' });
+            candidates.push({ path: `/app/ppos-preflight-worker/icc-profiles/${baseName}`, source: 'app_worker_volume_basename' });
+        }
+
+        candidates.push(
+            { path: '/app/icc-profiles/PSO_Coated_v3.icc', source: 'app_volume' },
+            { path: '/app/ppos-preflight-worker/icc-profiles/PSO_Coated_v3.icc', source: 'app_worker_volume' },
+            { path: '/usr/share/color/icc/ghostscript/default_cmyk.icc', source: 'system_fallback' },
+            { path: '/usr/share/color/icc/ghostscript/ps_cmyk.icc', source: 'system_fallback' }
+        );
+
+        let resolvedProfile = null;
+        let resolvedSource = null;
+
+        for (const candidate of candidates) {
+            if (candidate.path && typeof candidate.path === 'string') {
+                if (fs.existsSync(candidate.path)) {
+                    resolvedProfile = candidate.path;
+                    resolvedSource = candidate.source;
+                    break;
+                }
+            }
+        }
+
+        console.log(`[ENGINE][ICC][RESOLVE] ${JSON.stringify({
+            requestedProfile,
+            resolvedProfile,
+            exists: !!resolvedProfile,
+            source: resolvedSource || 'none'
+        })}`);
+
+        if (resolvedProfile && (resolvedSource.includes('fallback') || (iccPath && resolvedProfile !== iccPath && !resolvedSource.startsWith('env.')))) {
+            console.log(`[ENGINE][ICC][FALLBACK] Using fallback profile: ${resolvedProfile}`);
+        }
+
+        if (!resolvedProfile) {
+            console.log('[ENGINE][ICC][MISSING] No valid ICC profile found among candidates.');
+            return {
+                success: false,
+                error: 'ICC_PROFILE_NOT_FOUND',
+                strategy: 'CONVERT_CMYK',
+                destructiveFixRisk: 'HIGH',
+                requires_human_review: true,
+                repairs: [
+                    {
+                        code: 'CONVERT_CMYK',
+                        status: 'FAILED',
+                        reason: 'ICC_PROFILE_NOT_FOUND',
+                        destructiveFixRisk: 'HIGH',
+                        requires_human_review: true
+                    }
+                ]
+            };
+        }
+
         const args = [
             '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite',
             '-sColorConversionStrategy=CMYK',
-            ...(iccPath ? [`-sDefaultCMYKProfile=${iccPath}`] : []),
+            `-sDefaultCMYKProfile=${resolvedProfile}`,
             '-dProcessColorModel=/DeviceCMYK',
             '-o', output, input
         ];

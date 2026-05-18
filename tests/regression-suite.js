@@ -406,11 +406,20 @@ async function runRegressionSuite() {
 
         validateEvidenceDiscipline(report);
 
-        if (report.analysis_status === 'ENGINE_ENVIRONMENT_FAILURE') {
-            throw new Error('Un solo tool ausente no debe causar ENGINE_ENVIRONMENT_FAILURE');
+        if (report.analysis_status === 'ENGINE_ENVIRONMENT_FAILURE' || report.status === 'FAILED_RUNTIME_ENVIRONMENT') {
+            throw new Error('Un solo tool ausente no debe causar ENGINE_ENVIRONMENT_FAILURE o FAILED_RUNTIME_ENVIRONMENT');
         }
         if (!['DEGRADED', 'PARTIAL', 'COMPLETE'].includes(report.analysis_status)) {
             throw new Error(`Status inesperado: ${report.analysis_status}`);
+        }
+        if (report.analysisIntegrity?.realExtraction !== true) {
+            throw new Error('realExtraction debe ser true cuando pdf-lib extrae bien');
+        }
+        if (report.analysisIntegrity?.fallbackUsed !== false) {
+            throw new Error('fallbackUsed debe ser false cuando pdf-lib extrae bien');
+        }
+        if (report.analysisIntegrity?.degradedMode !== true) {
+            throw new Error('degradedMode debe ser true si faltan herramientas');
         }
         const executed = report.analyzerCoverage?.executed || [];
         const partial  = (report.analyzerCoverage?.partial || []).map(p => p.analyzer);
@@ -485,8 +494,8 @@ async function runRegressionSuite() {
         const engine = createStandardEngine();
         const report = await engine.analyzePdf('/__nonexistent_ppos_test_xyz__.pdf');
 
-        if (!['ENGINE_ENVIRONMENT_FAILURE', 'FAILED'].includes(report.analysis_status)) {
-            throw new Error(`Se esperaba ENGINE_ENVIRONMENT_FAILURE/FAILED, got: ${report.analysis_status}`);
+        if (!['ENGINE_ENVIRONMENT_FAILURE', 'FAILED'].includes(report.analysis_status) && report.status !== 'FAILED_RUNTIME_ENVIRONMENT') {
+            throw new Error(`Se esperaba ENGINE_ENVIRONMENT_FAILURE/FAILED_RUNTIME_ENVIRONMENT, got: ${report.analysis_status} / ${report.status}`);
         }
         const riskScore = report.summary?.risk_score;
         if (riskScore !== null && riskScore !== 0 && riskScore !== undefined) {
@@ -494,6 +503,48 @@ async function runRegressionSuite() {
         }
         if (report.certifiable !== false) {
             throw new Error('certifiable debe ser false ante fallo total');
+        }
+        if (report.analysisIntegrity?.realExtraction !== false) {
+            throw new Error('realExtraction debe ser false ante fallo total');
+        }
+        if (report.analysisIntegrity?.fallbackUsed !== true) {
+            throw new Error('fallbackUsed debe ser true ante fallo total');
+        }
+    });
+
+    // ---------------------------------------------------------
+    // TEST 15: Persistent Docker-safe ICC Profile Access & Resolver Order
+    // ---------------------------------------------------------
+    await test('15. ICC Profile Resolver: Valida orden de resolución, fallback seguro y reporte estructurado ante ausencia total', async () => {
+        const PdfFixEngine = require('../execution/PdfFixEngine');
+        const fixEngine = new PdfFixEngine();
+        const dummyPdf = await createPdfFixture('icc_dummy.pdf');
+        const dummyOut = path.join(fixturesDir, 'icc_out.pdf');
+
+        const origIcc = process.env.PPOS_ICC_PROFILE_PATH;
+        const origCmyk = process.env.PPOS_CMYK_PROFILE_PATH;
+
+        try {
+            delete process.env.PPOS_ICC_PROFILE_PATH;
+            delete process.env.PPOS_CMYK_PROFILE_PATH;
+            
+            // Simular caso de perfiles totalmente ausentes pasando un host path inválido
+            const resMissing = await fixEngine.applyCmyk(dummyPdf, dummyOut, '/opt/printprice-os/nonexistent/PSO_Coated_v3.icc');
+            if (resMissing.success !== false) {
+                throw new Error("Se esperaba éxito false ante perfil ausente.");
+            }
+            if (resMissing.error !== 'ICC_PROFILE_NOT_FOUND') {
+                throw new Error(`Se esperaba error ICC_PROFILE_NOT_FOUND, se obtuvo: ${resMissing.error}`);
+            }
+            if (!resMissing.repairs || resMissing.repairs[0]?.reason !== 'ICC_PROFILE_NOT_FOUND') {
+                throw new Error("El objeto repair estructurado de falla ICC no fue devuelto correctamente.");
+            }
+        } finally {
+            if (origIcc !== undefined) process.env.PPOS_ICC_PROFILE_PATH = origIcc;
+            else delete process.env.PPOS_ICC_PROFILE_PATH;
+
+            if (origCmyk !== undefined) process.env.PPOS_CMYK_PROFILE_PATH = origCmyk;
+            else delete process.env.PPOS_CMYK_PROFILE_PATH;
         }
     });
 

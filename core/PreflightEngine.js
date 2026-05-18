@@ -472,13 +472,17 @@ class PreflightEngine {
                         }
                     } else {
                         rootError = res.error;
-                        cumulativeRepairs.push({
-                            code: 'CONVERT_CMYK',
-                            status: 'FAILED',
-                            reason: res.error,
-                            destructiveFixRisk: 'HIGH',
-                            requires_human_review: true
-                        });
+                        if (res.repairs && res.repairs.length > 0) {
+                            cumulativeRepairs.push(...res.repairs);
+                        } else {
+                            cumulativeRepairs.push({
+                                code: 'CONVERT_CMYK',
+                                status: 'FAILED',
+                                reason: res.error,
+                                destructiveFixRisk: 'HIGH',
+                                requires_human_review: true
+                            });
+                        }
                     }
                 } else if (fixCode === 'INJECT_OUTPUT_INTENT') {
                     const profile = fixPlan.profile || 'iso_coated_v3';

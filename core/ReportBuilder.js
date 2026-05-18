@@ -21,7 +21,10 @@ class ReportBuilder {
                            options.strict_forensic_mode === true || 
                            options.strictForensicMode === true;
 
-        const fallbackUsed = analysis_type !== 'REAL_INDUSTRIAL' || metadata.analysisIntegrity?.realExtraction === false;
+        const fallbackUsed = metadata.source === 'FALLBACK_MOCK' || 
+                             metadata.analysisIntegrity?.realExtraction === false || 
+                             metadata.environmentFailure === true;
+        
         const finalPartial = partial || hasExtractionErrors || fallbackUsed;
 
         // Rule #16: Never return ok: true if there was no real extraction or fallback/mock data was used
@@ -56,11 +59,11 @@ class ReportBuilder {
         }));
 
         const baseIntegrity = metadata.analysisIntegrity || {};
-        const missingToolsResolved = fallbackUsed ? (baseIntegrity.missingTools || []) : [];
+        const missingToolsResolved = baseIntegrity.missingTools || [];
         const analysisIntegrity = {
             ...baseIntegrity,
             realExtraction: !fallbackUsed && (baseIntegrity.realExtraction !== false),
-            fallbackUsed: fallbackUsed || !!baseIntegrity.fallbackUsed,
+            fallbackUsed: fallbackUsed,
             degradedMode: analysis_type === 'DEGRADED' || analysis_type === 'FAILED' || analysis_type === 'ENGINE_ENVIRONMENT_FAILURE' || !!baseIntegrity.degradedMode,
             extractionErrors: baseIntegrity.extractionErrors || [],
             missingTools: missingToolsResolved,
@@ -106,17 +109,35 @@ class ReportBuilder {
         const hasCriticalOrErrorMapped = mappedIssues.some(i => i.severity === 'critical' || i.severity === 'error');
         const hasWarningOrInfo = mappedIssues.some(i => i.severity === 'warning' || i.severity === 'info');
 
-        if (metadata.environmentFailure || missing_tools.length > 0) {
+        if (metadata.environmentFailure === true) {
             status = 'FAILED_RUNTIME_ENVIRONMENT';
         } else if (hasCriticalOrErrorMapped) {
             status = isOffsetPolicy ? 'FAIL_PREPRESS' : 'FAIL';
+        } else if (missing_tools.length > 0) {
+            status = 'DEGRADED';
+        } else if (analyzerCoverage?.partial?.length > 0 || analyzerCoverage?.skipped?.length > 0) {
+            status = 'PARTIAL';
         } else if (hasWarningOrInfo) {
             status = 'PASS_WITH_WARNINGS';
+        }
+
+        let outcome_category = 'SUCCESS';
+        if (metadata.environmentFailure === true) {
+            outcome_category = 'ENVIRONMENT_FAILURE';
+        } else if (hasCriticalOrErrorMapped) {
+            outcome_category = 'PDF_DOCUMENT_FAILURE';
+        } else if (missing_tools.length > 0) {
+            outcome_category = 'DEGRADED_ANALYSIS';
+        } else if (analyzerCoverage?.partial?.length > 0 || analyzerCoverage?.skipped?.length > 0) {
+            outcome_category = 'PARTIAL_ANALYSIS';
+        } else if (hasWarningOrInfo) {
+            outcome_category = 'SUCCESS_WITH_FINDINGS';
         }
 
         return {
             ok: isOk,
             status,
+            outcome_category,
             risk_score: riskSummary.score,
             strict_forensic_mode: strictMode,
             analyzerCoverage: analyzerCoverage ? {
@@ -131,7 +152,7 @@ class ReportBuilder {
             },
             analysis_type,
             analysis_status,
-            analysis_scope: (metadata.environmentFailure || (analyzerCoverage?.partial?.length > 0))
+            analysis_scope: (metadata.environmentFailure || missing_tools.length > 0 || (analyzerCoverage?.partial?.length > 0))
                 ? 'PARTIAL_ANALYSIS'
                 : 'FULL_ANALYSIS',
             certifiable: isCertifiable,
