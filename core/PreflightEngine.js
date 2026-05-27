@@ -194,8 +194,13 @@ class PreflightEngine {
         const path = require('path');
         const fs = require('fs-extra');
         const PdfFixEngine = require('../execution/PdfFixEngine');
+        const PdfArtifactDeltaAuditor = require('../execution/PdfArtifactDeltaAuditor');
         const fixEngine = new PdfFixEngine();
+        const auditor = new PdfArtifactDeltaAuditor();
         const { PDFDocument, PDFName } = require('pdf-lib');
+
+        const magicFixProfile = options.magicFixProfile || fixPlan.magicFixProfile || options.destructiveReviewMode || fixPlan.destructiveReviewMode || 'MAGIC_FIX_SAFE';
+        options.magicFixProfile = magicFixProfile;
 
         const ICC_DIR = process.env.ICC_PROFILES_DIR || path.resolve(__dirname, '../../../icc-profiles');
         const ICC_PROFILE_MAP = {
@@ -646,9 +651,29 @@ class PreflightEngine {
             }));
 
             const stratUsed = usedStrategy || requestedStrategy || 'UNKNOWN';
+            
+            // Run Delta Auditor
+            const artifact_delta = await auditor.audit(filePath, outputPath, finalRepairs);
+            
+            // Integrate Auditor Results
+            if (artifact_delta.requires_human_review) {
+                requiresHumanReview = true;
+            }
+            if (!artifact_delta.production_certified) {
+                // Production certified false if delta failed
+            }
+            if (artifact_delta.certification_blockers.length > 0) {
+                highestRisk = 'HIGH';
+            }
+
+            const production_certified = !requiresHumanReview && highestRisk !== 'HIGH';
+            const final_status = requiresHumanReview ? 'COMPLETED_WITH_REVIEW' : 'AUTOFIX_COMPLETED';
+
             return {
                 ok: true,
-                status: 'SUCCESS',
+                status: final_status,
+                final_status: final_status,
+                production_certified,
                 fix_id: options.jobId || `fix_${Date.now()}`,
                 input_issue_codes: uniqueFixes.length > 0 ? uniqueFixes : [stratUsed],
                 requested_fixes: uniqueFixes,
@@ -665,7 +690,23 @@ class PreflightEngine {
                 fixApplied: true,
                 rewritten: true,
                 fixedPath: outputPath,
-                artifacts: {
+                artifact_delta,
+                certification_blockers: artifact_delta.certification_blockers,
+                review_reasons: artifact_delta.certification_blockers,
+                artifacts: production_certified ? {
+                    certified_pdf: {
+                        path: outputPath,
+                        filename: path.basename(outputPath)
+                    },
+                    fixed_pdf: {
+                        path: outputPath,
+                        filename: path.basename(outputPath)
+                    }
+                } : {
+                    review_pdf: {
+                        path: outputPath,
+                        filename: path.basename(outputPath)
+                    },
                     fixed_pdf: {
                         path: outputPath,
                         filename: path.basename(outputPath)

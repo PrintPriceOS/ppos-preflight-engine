@@ -45,14 +45,17 @@ class FixPlanner {
             
             // Plan if strategy is known to ensure deterministic reporting
             if (strategy) {
+                const isCmyk = strategy === 'CONVERT_CMYK';
                 plan.push({
                     issue_id: issue.id || issue.code,
                     issue_code: issue.code || issue.id,
                     strategy,
                     status: 'PENDING',
                     fixRequired: issue.fixRequired ?? (issue.severity === 'error' || issue.severity === 'critical'),
-                    safeToAutofix: issue.safeToAutofix ?? (issue.fixable !== false),
-                    destructiveFixRisk: issue.destructiveFixRisk || "LOW"
+                    safeToAutofix: isCmyk ? false : (issue.safeToAutofix ?? (issue.fixable !== false)),
+                    destructiveFixRisk: isCmyk ? 'HIGH' : (issue.destructiveFixRisk || "LOW"),
+                    requires_human_review: isCmyk ? true : false,
+                    requiresExplicitReviewMode: isCmyk ? true : false
                 });
             }
         });

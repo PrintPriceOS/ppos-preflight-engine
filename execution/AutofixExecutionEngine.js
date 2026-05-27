@@ -198,32 +198,54 @@ class AutofixExecutionEngine {
         const warnings = result.error ? [result.error] : (result.warnings || []);
         const returnStatus = result.status || (result.success ? 'SUCCESS' : 'FAILURE');
 
+        const isDestructive = result.requires_human_review || result.destructiveFixRisk === 'HIGH' || result.production_certified === false;
+        
+        let finalStatus = returnStatus;
+        if (result.success) {
+            finalStatus = isDestructive ? 'COMPLETED_WITH_REVIEW' : 'AUTOFIX_COMPLETED';
+        }
+
+        const artifacts = {};
+        if (result.success) {
+            artifacts.fixed_pdf = {
+                path: output_path,
+                filename: path.basename(output_path)
+            };
+            if (isDestructive) {
+                artifacts.review_pdf = {
+                    path: output_path,
+                    filename: path.basename(output_path)
+                };
+            } else {
+                artifacts.certified_pdf = {
+                    path: output_path,
+                    filename: path.basename(output_path)
+                };
+            }
+        }
+
         return { 
             ok: result.success,
-            status: returnStatus,
+            status: finalStatus,
             fix_id: fixId,
             input_issue_codes: issueCodes,
             strategy: result.strategy || fix_hint,
             industrial_quality: result.industrial_quality || 'STANDARD',
             requires_human_review: result.requires_human_review || false,
+            production_certified: !isDestructive,
             bleed_fix_mode: result.bleed_fix_mode || null,
             applied: result.success,
             modified: result.success,
             output_path: result.success ? output_path : null,
             warnings,
-            verification_status: result.success ? (result.requires_human_review ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED') : 'FAILED',
+            verification_status: result.success ? (isDestructive ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED') : 'FAILED',
             // legacy compatibility fields:
             noopFix: false,
             fixApplied: result.success,
             rewritten: result.success,
             fixedPath: result.success ? output_path : null,
             findings: result.findings || [],
-            artifacts: result.success ? {
-                fixed_pdf: {
-                    path: output_path,
-                    filename: path.basename(output_path)
-                }
-            } : {},
+            artifacts,
             repairs: result.repairs || [{
                 code: fix_hint || 'UNKNOWN',
                 status: result.success ? 'APPLIED' : 'FAILED',

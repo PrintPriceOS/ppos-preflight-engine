@@ -11,6 +11,7 @@ const fs = require('fs-extra');
 class PdfFixEngine {
     /**
      * Converts a PDF to CMYK using the provided ICC profile.
+     * Respects magicFixProfile to prevent destructive recompression.
      */
     async applyCmyk(input, output, iccPath, opts = {}) {
         const path = require('path');
@@ -83,11 +84,44 @@ class PdfFixEngine {
             };
         }
 
+        const profileMode = opts.magicFixProfile || 'MAGIC_FIX_SAFE';
+        if (profileMode === 'MAGIC_FIX_SAFE') {
+            console.log('[ENGINE][AUTOFIX][CMYK] Blocked by MAGIC_FIX_SAFE profile');
+            return {
+                success: false,
+                status: 'DESTRUCTIVE_FIX_REQUIRES_EXPLICIT_REVIEW_MODE',
+                error: 'CONVERT_CMYK requires explicit destructive review mode.',
+                strategy: 'CONVERT_CMYK',
+                destructiveFixRisk: 'HIGH',
+                requires_human_review: true,
+                repairs: [
+                    {
+                        code: 'CONVERT_CMYK',
+                        status: 'SKIPPED',
+                        reason: 'Destructive color conversion requires explicit review mode.',
+                        destructiveFixRisk: 'HIGH',
+                        requires_human_review: true
+                    }
+                ]
+            };
+        }
+
         const args = [
             '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite',
             '-sColorConversionStrategy=CMYK',
             `-sDefaultCMYKProfile=${resolvedProfile}`,
             '-dProcessColorModel=/DeviceCMYK',
+            '-dDownsampleColorImages=false',
+            '-dDownsampleGrayImages=false',
+            '-dDownsampleMonoImages=false',
+            '-dAutoFilterColorImages=false',
+            '-dAutoFilterGrayImages=false',
+            '-dColorImageFilter=/FlateEncode',
+            '-dGrayImageFilter=/FlateEncode',
+            '-dEncodeColorImages=true',
+            '-dEncodeGrayImages=true',
+            '-dEncodeMonoImages=true',
+            '-dJPEGQ=95',
             '-o', output, input
         ];
 
@@ -112,6 +146,10 @@ class PdfFixEngine {
                 strategy: 'CONVERT_CMYK',
                 destructiveFixRisk: 'HIGH',
                 requires_human_review: true,
+                production_certified: false,
+                certification_blockers: ['CONVERT_CMYK_REQUIRES_REVIEW'],
+                ghostscript_profile: 'MAGIC_FIX_DESTRUCTIVE_REVIEW',
+                ghostscript_args_sanitized: args.filter(a => !a.includes(output) && !a.includes(input)),
                 repairs: result.ok ? [
                     {
                         code: 'CONVERT_CMYK',

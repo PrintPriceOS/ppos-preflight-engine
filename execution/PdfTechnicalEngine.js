@@ -31,6 +31,17 @@ class PdfTechnicalEngine {
             '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite',
             `-sOutputICCProfile=${iccPath}`,
             '-sColorConversionStrategy=UseDeviceIndependentColor',
+            '-dDownsampleColorImages=false',
+            '-dDownsampleGrayImages=false',
+            '-dDownsampleMonoImages=false',
+            '-dAutoFilterColorImages=false',
+            '-dAutoFilterGrayImages=false',
+            '-dColorImageFilter=/FlateEncode',
+            '-dGrayImageFilter=/FlateEncode',
+            '-dEncodeColorImages=true',
+            '-dEncodeGrayImages=true',
+            '-dEncodeMonoImages=true',
+            '-dJPEGQ=95',
             '-o', output, input
         ];
         return ghostscript.runGs(args, { ...opts, reqId: 'color-conv' });
