@@ -229,7 +229,7 @@ class PreflightEngine {
             if (fixPlan.type === 'bleed') requestedFixesArr.push('APPLY_BLEED');
             if (fixPlan.type === 'geometry') requestedFixesArr.push('REBUILD_TRIMBOX');
             if (fixPlan.type === 'color' || fixPlan.target === 'cmyk') requestedFixesArr.push('CONVERT_CMYK');
-            if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') requestedFixesArr.push('CONVERT_CMYK');
+            if (fixPlan.type === 'grayscale' || fixPlan.target === 'gray') requestedFixesArr.push('CONVERT_GRAYSCALE');
             if (fixPlan.forceBleed) requestedFixesArr.push('APPLY_BLEED');
             if (fixPlan.forceCmyk) requestedFixesArr.push('CONVERT_CMYK');
 
@@ -543,17 +543,17 @@ class PreflightEngine {
                 } else {
                     const isExplicitNoAction = fixCode === 'NO_ACTION';
                     if (!isExplicitNoAction) {
-                        console.log(`[ENGINE][AUTOFIX] Unrecognized fix strategy '${fixCode}', returning FIX_UNSUPPORTED.`);
+                        console.log(`[ENGINE][AUTOFIX] Unrecognized fix strategy '${fixCode}', returning UNSUPPORTED_FIX.`);
                         cumulativeRepairs.push({
                             code: fixCode,
                             status: 'UNSUPPORTED',
-                            reason: 'Requested fix strategy is not recognized or supported by the execution layer.',
+                            reason: 'Fix is not implemented in Engine yet',
                             destructiveFixRisk: 'LOW',
                             requires_human_review: true
                         });
-                        if (uniqueFixes.length === 1 || fixCode === requestedStrategy) {
-                            rootStatus = 'FIX_UNSUPPORTED';
-                            rootError = 'NO_SAFE_FIX_AVAILABLE';
+                        if (uniqueFixes.length === 1 || fixCode === requestedStrategy || ['CONVERT_GRAYSCALE', 'REBUILD_300DPI', 'BOOKLET_MODE', 'IMPOSE_BOOKLET'].includes(fixCode)) {
+                            rootStatus = 'UNSUPPORTED_FIX';
+                            rootError = 'Fix is not implemented in Engine yet';
                         }
                     }
                 }
@@ -566,10 +566,10 @@ class PreflightEngine {
 
             console.log(`[ENGINE][AUTOFIX][RESULT] JobId: ${options.jobId || 'N/A'} | Applied: ${anyApplied} | Modified: ${anyModified} | Status: ${rootStatus || (anyApplied ? 'SUCCESS' : 'NO_CHANGE')}`);
 
-            if (rootStatus === 'FIX_UNSUPPORTED') {
+            if (rootStatus === 'FIX_UNSUPPORTED' || rootStatus === 'UNSUPPORTED_FIX') {
                 return {
                     ok: false,
-                    status: 'FIX_UNSUPPORTED',
+                    status: 'UNSUPPORTED_FIX',
                     error: rootError || 'NO_SAFE_FIX_AVAILABLE',
                     fix_id: options.jobId || `fix_${Date.now()}`,
                     input_issue_codes: uniqueFixes.length > 0 ? uniqueFixes : [requestedStrategy || 'UNKNOWN'],
@@ -585,6 +585,10 @@ class PreflightEngine {
                     rewritten: false,
                     fixedPath: null,
                     repairs: cumulativeRepairs,
+                    failed_fixes: cumulativeRepairs.filter(r => r.status === 'UNSUPPORTED').map(r => ({ code: r.code, reason: r.reason })),
+                    failedFixes: cumulativeRepairs.filter(r => r.status === 'UNSUPPORTED').map(r => ({ code: r.code, reason: r.reason })),
+                    productionCertified: false,
+                    requiresHumanReview: true,
                     artifacts: {},
                     wrapper_metadata: { timestamp: new Date().toISOString() }
                 };
