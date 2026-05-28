@@ -439,8 +439,23 @@ class PreflightEngine {
                         });
                     }
                 } else if (fixCode === 'CONVERT_CMYK') {
+                    const profileMode = options.magicFixProfile || 'MAGIC_FIX_SAFE';
+                    const isAllowedByProfile = profileMode === 'MAGIC_FIX_REVIEW' || profileMode === 'MAGIC_FIX_FORCE_CMYK' || profileMode === 'MAGIC_FIX_OPERATOR';
                     const isForce = fixPlan.forceCmyk || fixPlan.target === 'cmyk' || fixPlan.type === 'color' || fixPlan.type === 'grayscale';
-                    if (finding && finding.safeToAutofix === false && !isForce) {
+
+                    if (!isAllowedByProfile && !isForce) {
+                        cumulativeRepairs.push({
+                            code: fixCode,
+                            status: 'SKIPPED',
+                            reason: 'Destructive color conversion requires explicit review mode.',
+                            destructiveFixRisk: 'HIGH',
+                            requires_human_review: true
+                        });
+                        console.log(`[ENGINE][AUTOFIX][SKIP] Code: ${fixCode} | Reason: magicFixProfile=${profileMode}`);
+                        continue;
+                    }
+
+                    if (finding && finding.safeToAutofix === false && !isForce && !isAllowedByProfile) {
                         cumulativeRepairs.push({
                             code: fixCode,
                             status: 'SKIPPED',
