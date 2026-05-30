@@ -144,15 +144,18 @@ class PdfTechnicalEngine {
                 const key = outputKey || bin;
                 const alias = toolAlias || key;
                 try {
-                    const { stdout } = await execFileAsync(bin, args, { timeout: 3000 });
-                    toolOutputs[key] = stdout;
+                    const { stdout, stderr } = await execFileAsync(bin, args, { timeout: 3000, shell: true });
+                    toolOutputs[key] = stdout || stderr || '';
                     probeResults[alias] = 'SUCCESS';
                 } catch (err) {
-                    const isNotInstalled = err.code === 'ENOENT' || (err.message && err.message.includes('ENOENT'));
+                    const isNotInstalled = err.code === 'ENOENT' || err.code === 127 ||
+                        (err.message && (err.message.includes('ENOENT') || err.message.includes('not found') || err.message.includes('not recognized')));
                     probeResults[alias] = isNotInstalled ? 'MISSING' : 'FAILED';
                     extractionErrors.push({ parser: alias, message: err.message, probeStatus: probeResults[alias] });
                     if (isNotInstalled) {
                         missingTools.push(alias);
+                    } else if (err.stdout) {
+                        toolOutputs[key] = err.stdout;
                     }
                 }
             };
