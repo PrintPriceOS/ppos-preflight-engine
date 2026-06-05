@@ -121,9 +121,14 @@ class PdfFixEngine {
 
             return {
                 success: result.ok,
+                status: result.ok ? 'APPLIED' : 'FAILED',
+                code: 'CONVERT_CMYK',
+                strategy: 'ghostscript_color_conversion',
+                description: 'Colorspace converted to CMYK via Ghostscript color strategy.',
                 output,
                 risk_level: 'HIGH',
                 requires_human_review: true,
+                production_safe: false,
                 message: 'Colorspace converted to CMYK via Ghostscript color strategy.',
                 evidence: {
                     ghostscript_profile: 'MAGIC_FIX_DESTRUCTIVE_REVIEW',
@@ -178,9 +183,14 @@ class PdfFixEngine {
 
             return {
                 success: true,
+                status: 'APPLIED',
+                code: 'APPLY_BLEED',
+                strategy: bleedFixMode,
+                description: isTrueArtwork ? `Artwork extended by ${bleedMm}mm.` : `BleedBox expanded ${bleedMm}mm on all sides (box expansion only, artwork not extended).`,
                 output,
                 risk_level: 'MEDIUM',
                 requires_human_review: humanReview,
+                production_safe: false,
                 message: isTrueArtwork ? `Artwork extended by ${bleedMm}mm.` : `BleedBox expanded ${bleedMm}mm on all sides (box expansion only, artwork not extended).`,
                 evidence: {
                     bleed_fix_mode: bleedFixMode,
@@ -232,9 +242,14 @@ class PdfFixEngine {
 
             return {
                 success: true,
+                status: 'APPLIED',
+                code: 'INJECT_OUTPUT_INTENT',
+                strategy: 'pdf_lib_catalog_injection',
+                description: 'OutputIntent with ICC profile injected into PDF catalog.',
                 output,
                 risk_level: 'LOW',
                 requires_human_review: false,
+                production_safe: true,
                 message: 'OutputIntent with ICC profile injected into PDF catalog.',
                 evidence: {
                     injected_profile: iccPath
@@ -270,9 +285,14 @@ class PdfFixEngine {
             
             return {
                 success: true,
+                status: 'APPLIED',
+                code: 'REBUILD_TRIMBOX',
+                strategy: 'pdf_lib_geometry_rebuild',
+                description: 'TrimBox rebuilt from MediaBox or inferred production geometry.',
                 output: outputPath,
                 risk_level: 'LOW',
                 requires_human_review: false,
+                production_safe: true,
                 message: 'TrimBox rebuilt from MediaBox or inferred production geometry.',
                 evidence: {
                     rebuilt_from: 'MediaBox'
@@ -320,9 +340,14 @@ class PdfFixEngine {
 
             return {
                 success: true,
+                status: 'APPLIED',
+                code: 'STRIP_JAVASCRIPT',
+                strategy: 'pdf_lib_catalog_sanitization',
+                description: 'JavaScript actions were neutralized.',
                 output: outputPath,
                 risk_level: 'LOW',
                 requires_human_review: false,
+                production_safe: true,
                 message: 'JavaScript actions were neutralized.',
                 evidence: {
                     removed_catalog_open_action: removedOpenAction,
@@ -360,9 +385,14 @@ class PdfFixEngine {
 
             return {
                 success: true,
+                status: 'APPLIED',
+                code: 'FLATTEN_ANNOTATIONS',
+                strategy: 'pdf_lib_annotation_removal',
+                description: 'Annotation references removed to reduce print-production risk.',
                 output: outputPath,
                 risk_level: 'LOW',
                 requires_human_review: false,
+                production_safe: true,
                 message: 'Annotation references removed to reduce print-production risk.',
                 evidence: {
                     pages_scanned: pagesScanned,
@@ -405,9 +435,14 @@ class PdfFixEngine {
 
             return {
                 success: true,
+                status: 'APPLIED',
+                code: 'FLATTEN_FORMS',
+                strategy: 'pdf_lib_acroform_flatten',
+                description: 'AcroForm fields flattened/removed to reduce print-production risk.',
                 output: outputPath,
                 risk_level: 'LOW',
-                requires_human_review: false,
+                requires_human_review: true,
+                production_safe: false,
                 message: 'AcroForm fields flattened/removed to reduce print-production risk.',
                 evidence: {
                     form_fields_before: fieldsBefore,
@@ -440,23 +475,41 @@ class PdfFixEngine {
                  };
             }
 
-            const { stderr } = await execFileAsync('qpdf', [inputPath, outputPath]);
+            let stderr = '';
+            try {
+                const res = await execFileAsync('qpdf', [inputPath, outputPath]);
+                stderr = res.stderr;
+            } catch (err) {
+                // qpdf exit code 3 means "warnings were issued" (usually because it successfully reconstructed the xref)
+                if (err.code === 3) {
+                    stderr = err.stderr;
+                } else {
+                    throw err;
+                }
+            }
             
             if (!(await fs.pathExists(outputPath))) {
                 return { success: false, error: 'qpdf finished but output file is missing' };
             }
 
+            const didRepair = stderr && stderr.trim().length > 0;
             return {
                 success: true,
+                status: didRepair ? 'APPLIED' : 'SKIPPED',
+                code: 'REBUILD_XREF',
+                strategy: 'qpdf_structural_repair',
+                description: didRepair ? 'Structural sanitization applied via qpdf.' : 'No structural repair was necessary.',
                 output: outputPath,
                 risk_level: 'LOW',
                 requires_human_review: false,
-                message: 'Structural sanitization attempted via qpdf.',
+                production_safe: true,
+                message: didRepair ? 'Structural sanitization applied via qpdf.' : 'No structural repair was necessary.',
                 evidence: {
                     tool: "qpdf",
                     command: `qpdf input output`,
                     structural_sanitization_attempted: true,
                     output_created: true,
+                    repair_applied: didRepair,
                     warnings: stderr ? [stderr] : []
                 }
             };
@@ -470,26 +523,191 @@ class PdfFixEngine {
     _scaffoldUnsupported(fixId, message) {
         return {
             success: false,
-            status: "UNSUPPORTED_IN_THIS_PHASE",
-            error: "Not implemented",
-            requires_human_review: true,
+            code: fixId,
+            status: "SKIPPED",
+            strategy: "UNSUPPORTED_TRANSPARENCY_OVERPRINT_FIX",
             risk_level: "HIGH",
-            message: "This fix is not implemented yet and remains diagnostic/recommended only.",
+            requires_human_review: true,
+            production_safe: false,
+            visually_sensitive: true,
+            destructive: true,
+            executable: false,
             evidence: {
-                implemented: false,
-                fixId
+                reason: "Transparency/overprint transformation is not implemented in this phase.",
+                limitations: [
+                    "May alter visual appearance",
+                    "Requires visual/operator review",
+                    "No real flattening execution was performed"
+                ]
             }
         };
     }
 
     async flattenTransparency(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("FLATTEN_TRANSPARENCY"); }
+    async flattenPdf(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("FLATTEN_PDF"); }
     async flattenOverprint(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("FLATTEN_OVERPRINT"); }
-    async embedFonts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("EMBED_FONTS"); }
+    async normalizeOverprint(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("NORMALIZE_OVERPRINT"); }
+    async removeSoftMasks(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REMOVE_SOFT_MASKS"); }
+    async rasterizeTransparency(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("RASTERIZE_TRANSPARENCY"); }
+    async convertToPdfxTransparencySafe(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("CONVERT_TO_PDFX_TRANSPARENCY_SAFE"); }
+    async embedFonts(inputPath, outputPath, options = {}) {
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const FontInspector = require('./FontInspector');
+            
+            const inputStat = fs.existsSync(inputPath) ? fs.statSync(inputPath) : null;
+            if (!inputStat) {
+                return { success: false, error: 'Input file not found' };
+            }
+
+            // Phase 51C: Pre-inspection
+            const inspectBefore = await FontInspector.inspectFonts(inputPath);
+
+            const gsCmdName = process.platform === 'win32' ? 'gswin64c' : 'gs';
+            const args = [
+                '-dSAFER', '-dBATCH', '-dNOPAUSE', '-sDEVICE=pdfwrite',
+                '-dEmbedAllFonts=true', '-dSubsetFonts=true', '-dPDFSETTINGS=/prepress',
+                `-sOutputFile=${outputPath}`, inputPath
+            ];
+            
+            // Execute Ghostscript
+            let stdout = '';
+            let stderr = '';
+            let exitCode = 0;
+            
+            try {
+                const out = await execFileAsync(gsCmdName, args);
+                stdout = out.stdout;
+                stderr = out.stderr;
+            } catch (err) {
+                // Ghostscript failed
+                exitCode = err.code || 1;
+                stdout = err.stdout || '';
+                stderr = err.stderr || err.message;
+                
+                return {
+                    success: false,
+                    status: 'FAILED',
+                    strategy: 'GHOSTSCRIPT_UNAVAILABLE',
+                    error: err.message,
+                    requires_human_review: true,
+                    risk_level: 'HIGH',
+                    message: "Ghostscript execution failed during font embedding.",
+                    evidence: {
+                        tool: "ghostscript",
+                        command: `${gsCmdName} ${args.join(' ')}`,
+                        exit_code: exitCode,
+                        stdout,
+                        stderr
+                    }
+                };
+            }
+
+            // Check if output was created
+            if (!fs.existsSync(outputPath)) {
+                return {
+                    success: false,
+                    status: 'FAILED',
+                    error: 'Output artifact missing after Ghostscript execution',
+                    requires_human_review: true,
+                    risk_level: 'HIGH',
+                    evidence: {
+                        tool: "ghostscript",
+                        command: cmd,
+                        exit_code: exitCode,
+                        stdout,
+                        stderr
+                    }
+                };
+            }
+
+            const outputStat = fs.statSync(outputPath);
+            if (outputStat.size === 0) {
+                return {
+                    success: false,
+                    status: 'FAILED',
+                    error: 'Ghostscript produced empty artifact',
+                    requires_human_review: true,
+                    risk_level: 'HIGH',
+                    evidence: {
+                        tool: "ghostscript",
+                        command: cmd,
+                        exit_code: exitCode,
+                        stdout,
+                        stderr
+                    }
+                };
+            }
+
+            // Phase 51C: Post-inspection
+            const inspectAfter = await FontInspector.inspectFonts(outputPath);
+
+            const nonEmbeddedBefore = inspectBefore.ok ? inspectBefore.non_embedded_fonts : [];
+            const nonEmbeddedAfter = inspectAfter.ok ? inspectAfter.non_embedded_fonts : [];
+            
+            const fontsBeforeNames = inspectBefore.ok ? inspectBefore.fonts.map(f => f.normalized_font_name).sort().join(',') : '';
+            const fontsAfterNames = inspectAfter.ok ? inspectAfter.fonts.map(f => f.normalized_font_name).sort().join(',') : '';
+            
+            const possibleFontSubstitution = inspectBefore.ok && inspectAfter.ok && fontsBeforeNames !== fontsAfterNames;
+
+            // Phase 51B/C: Successfully executed gs
+            return {
+                success: true,
+                code: 'EMBED_FONTS',
+                status: 'APPLIED',
+                strategy: 'GHOSTSCRIPT_EMBED_FONTS',
+                description: 'Font embedding was attempted/processed. Fonts were processed with Ghostscript.',
+                risk_level: 'HIGH',
+                requires_human_review: true,
+                production_safe: false,
+                message: 'Font embedding was attempted/processed.',
+                evidence: {
+                    tool: "ghostscript",
+                    command: `${gsCmdName} ${args.join(' ')}`,
+                    exit_code: exitCode,
+                    stdout,
+                    stderr,
+                    input_size_bytes: inputStat.size,
+                    output_size_bytes: outputStat.size,
+                    fonts_before: inspectBefore.ok ? inspectBefore.fonts : [],
+                    fonts_after: inspectAfter.ok ? inspectAfter.fonts : [],
+                    non_embedded_fonts_before: nonEmbeddedBefore,
+                    non_embedded_fonts_after: nonEmbeddedAfter,
+                    font_count_before: inspectBefore.ok ? inspectBefore.fonts.length : null,
+                    font_count_after: inspectAfter.ok ? inspectAfter.fonts.length : null,
+                    embedding_attempted: true,
+                    embedding_changed_pdf: outputStat.size !== inputStat.size,
+                    font_inspection_method: "pdf-lib-object-graph",
+                    font_inspection_limitations: [
+                        "Structural inspection only",
+                        "Does not validate glyph coverage",
+                        "Does not verify visual equivalence",
+                        "Does not validate font licensing"
+                    ],
+                    font_names_changed: possibleFontSubstitution,
+                    possible_font_substitution: possibleFontSubstitution,
+                    font_substitution_risk: possibleFontSubstitution ? "HIGH" : "LOW",
+                    remaining_font_risks: nonEmbeddedAfter.length > 0 ? ["Non-embedded fonts remain in the output"] : [],
+                    layout_risk: "HIGH",
+                    review_reason: "Font embedding may alter glyph rendering, kerning, line breaks, or layout."
+                }
+            };
+
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    }
+    async outlineFonts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("OUTLINE_FONTS"); }
+    async replaceMissingFonts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REPLACE_MISSING_FONTS"); }
+    async glyphRepair(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("GLYPH_REPAIR"); }
     async validatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("VALIDATE_PDFX"); }
     async generatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("GENERATE_PDFX"); }
     async detectTotalInkCoverage(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("DETECT_TOTAL_INK_COVERAGE"); }
     async mapRichBlackTextToKOnly(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("MAP_RICH_BLACK_TEXT_TO_K_ONLY"); }
     async mapRegistrationColorToBlack(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("MAP_REGISTRATION_COLOR_TO_BLACK"); }
+    async normalizeIccProfile(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("NORMALIZE_ICC_PROFILE"); }
+    async reduceTac(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REDUCE_TAC"); }
     async optimizeExcessiveImageResolution(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("OPTIMIZE_EXCESSIVE_IMAGE_RESOLUTION"); }
     async visualBleedExtension(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("VISUAL_BLEED_EXTENSION"); }
 }

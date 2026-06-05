@@ -1,0 +1,149 @@
+[
+  {
+    "capability": "FLATTEN_TRANSPARENCY",
+    "category": "transparency_overprint",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "Verified policy compliance"
+    ]
+  },
+  {
+    "capability": "FLATTEN_PDF",
+    "category": "transparency_overprint",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "Verified policy compliance"
+    ]
+  },
+  {
+    "capability": "FLATTEN_OVERPRINT",
+    "category": "transparency_overprint",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "Verified policy compliance"
+    ]
+  },
+  {
+    "capability": "NORMALIZE_OVERPRINT",
+    "category": "transparency_overprint",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "Verified policy compliance"
+    ]
+  },
+  {
+    "capability": "REMOVE_SOFT_MASKS",
+    "category": "transparency_overprint",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "Verified policy compliance"
+    ]
+  },
+  {
+    "capability": "RASTERIZE_TRANSPARENCY",
+    "category": "transparency_overprint",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "Verified policy compliance"
+    ]
+  },
+  {
+    "capability": "CONVERT_TO_PDFX_TRANSPARENCY_SAFE",
+    "category": "transparency_overprint",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "Verified policy compliance"
+    ]
+  }
+]

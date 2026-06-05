@@ -1,0 +1,11 @@
+[
+  {
+    "phase": "52A",
+    "scope": "engine-only",
+    "color_governance_truth": "verified",
+    "convert_cmyk_safe": false,
+    "convert_cmyk_implemented": true,
+    "scaffolds_implemented": false,
+    "pass": true
+  }
+]

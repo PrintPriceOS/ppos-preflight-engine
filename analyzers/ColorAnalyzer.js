@@ -152,8 +152,8 @@ class ColorAnalyzer {
                 category: "COLOR",
                 analyzer: "ColorAnalyzer",
                 confidence: 0.98,
-                fixable: false,
-                recommended_fix: null,
+                fixable: true,
+                recommended_fix: "REDUCE_TAC",
                 message: "Total ink coverage (TAC) exceeded maximum threshold.",
                 evidence: {
                     tool: ev.tool,
@@ -176,7 +176,7 @@ class ColorAnalyzer {
                 analyzer: "ColorAnalyzer",
                 confidence: 0.98,
                 fixable: true,
-                recommended_fix: "MAP_TO_BLACK",
+                recommended_fix: "MAP_REGISTRATION_COLOR_TO_BLACK",
                 message: "Registration colorant applied to non-mark layout elements.",
                 evidence: {
                     tool: ev.tool,

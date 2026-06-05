@@ -1,0 +1,318 @@
+[
+  {
+    "fixture": "rgb_text_device_rgb.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": true,
+    "engine_real_fix_execution": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": false,
+    "fixture_created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "RGB_DEVICE_COLOR",
+      "DEVICE_RGB_USAGE"
+    ],
+    "detected_findings": [
+      "IND_GEOM_003",
+      "IND_GEOM_004",
+      "IND_COLOR_006",
+      "IND_COMPLIANCE_001",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR"
+    ],
+    "expected_finding_detected": false,
+    "detector_gap": "Expected one of [RGB_DEVICE_COLOR, DEVICE_RGB_USAGE], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]",
+    "fix_attempted": false,
+    "fix_result": null,
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Expected one of [RGB_DEVICE_COLOR, DEVICE_RGB_USAGE], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]"
+    ]
+  },
+  {
+    "fixture": "rgb_image.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": true,
+    "engine_real_fix_execution": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": false,
+    "fixture_created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "RGB_IMAGES",
+      "RGB_DEVICE_COLOR"
+    ],
+    "detected_findings": [
+      "IND_GEOM_003",
+      "IND_GEOM_004",
+      "IND_COLOR_006",
+      "IND_COMPLIANCE_001",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR"
+    ],
+    "expected_finding_detected": false,
+    "detector_gap": "Expected one of [RGB_IMAGES, RGB_DEVICE_COLOR], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]",
+    "fix_attempted": false,
+    "fix_result": null,
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Expected one of [RGB_IMAGES, RGB_DEVICE_COLOR], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]"
+    ]
+  },
+  {
+    "fixture": "mixed_rgb_cmyk.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": true,
+    "engine_real_fix_execution": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": false,
+    "fixture_created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "MIXED_RGB_CMYK"
+    ],
+    "detected_findings": [
+      "IND_GEOM_003",
+      "IND_GEOM_004",
+      "IND_COLOR_006",
+      "IND_COMPLIANCE_001",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR"
+    ],
+    "expected_finding_detected": false,
+    "detector_gap": "Expected one of [MIXED_RGB_CMYK], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]",
+    "fix_attempted": false,
+    "fix_result": null,
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Expected one of [MIXED_RGB_CMYK], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]"
+    ]
+  },
+  {
+    "fixture": "missing_outputintent.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": true,
+    "engine_real_fix_execution": true,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": false,
+    "fixture_created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "MISSING_OUTPUT_INTENT"
+    ],
+    "detected_findings": [
+      "IND_GEOM_003",
+      "IND_GEOM_004",
+      "IND_COLOR_006",
+      "IND_COMPLIANCE_001",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR"
+    ],
+    "expected_finding_detected": false,
+    "detector_gap": "Expected one of [MISSING_OUTPUT_INTENT], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]",
+    "fix_attempted": true,
+    "fix_result": "SKIPPED",
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Expected one of [MISSING_OUTPUT_INTENT], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]",
+      "Fix status: SKIPPED"
+    ]
+  },
+  {
+    "fixture": "rgb_convert_cmyk.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": true,
+    "engine_real_fix_execution": true,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": false,
+    "fixture_created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "RGB_DEVICE_COLOR"
+    ],
+    "detected_findings": [
+      "IND_GEOM_003",
+      "IND_GEOM_004",
+      "IND_COLOR_006",
+      "IND_COMPLIANCE_001",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR"
+    ],
+    "expected_finding_detected": false,
+    "detector_gap": "Expected one of [RGB_DEVICE_COLOR], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]",
+    "fix_attempted": true,
+    "fix_result": "NO_CHANGE",
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Expected one of [RGB_DEVICE_COLOR], detected: [IND_GEOM_003, IND_GEOM_004, IND_COLOR_006, IND_COMPLIANCE_001, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR, IND_INTEGRITY_EXTRACTION_ERROR]",
+      "Fix status: NO_CHANGE"
+    ]
+  },
+  {
+    "fixture": "icc_mismatch_or_profile_conflict.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": false,
+    "engine_real_detection": false,
+    "engine_real_fix_execution": true,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": true,
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "ICC_MISMATCH",
+      "INVALID_OUTPUT_INTENT"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": "Deferred",
+    "fix_attempted": true,
+    "fix_result": "SKIPPED_UNSUPPORTED",
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Deferred: Difficult to generate reliable conflicting ICC profiles directly in pdf-lib"
+    ]
+  },
+  {
+    "fixture": "rich_black_text.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": false,
+    "engine_real_detection": false,
+    "engine_real_fix_execution": true,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": true,
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "RICH_BLACK_TEXT"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": "Deferred",
+    "fix_attempted": true,
+    "fix_result": "SKIPPED_UNSUPPORTED",
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Deferred: Explicit text rich black detection requires more complex objects"
+    ]
+  },
+  {
+    "fixture": "registration_color_misuse.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": false,
+    "engine_real_detection": false,
+    "engine_real_fix_execution": true,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": true,
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "REGISTRATION_COLOR_MISUSE"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": "Deferred",
+    "fix_attempted": true,
+    "fix_result": "SKIPPED_UNSUPPORTED",
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Deferred: Registration color misuse generation deferred"
+    ]
+  },
+  {
+    "fixture": "excessive_tac.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": false,
+    "engine_real_detection": false,
+    "engine_real_fix_execution": true,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": null,
+    "pass": true,
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "EXCESSIVE_TAC"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": "Deferred",
+    "fix_attempted": true,
+    "fix_result": "SKIPPED_UNSUPPORTED",
+    "output_artifact_non_empty": false,
+    "notes": [
+      "Deferred: Generating exact TAC coverage violations deferred"
+    ]
+  }
+]

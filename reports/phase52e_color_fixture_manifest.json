@@ -1,0 +1,94 @@
+[
+  {
+    "fixture": "rgb_text_device_rgb.pdf",
+    "created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "RGB_DEVICE_COLOR",
+      "DEVICE_RGB_USAGE"
+    ],
+    "notes": []
+  },
+  {
+    "fixture": "rgb_image.pdf",
+    "created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "RGB_IMAGES",
+      "RGB_DEVICE_COLOR"
+    ],
+    "notes": []
+  },
+  {
+    "fixture": "mixed_rgb_cmyk.pdf",
+    "created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "MIXED_RGB_CMYK"
+    ],
+    "notes": []
+  },
+  {
+    "fixture": "missing_outputintent.pdf",
+    "created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "MISSING_OUTPUT_INTENT"
+    ],
+    "notes": []
+  },
+  {
+    "fixture": "rgb_convert_cmyk.pdf",
+    "created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "RGB_DEVICE_COLOR"
+    ],
+    "notes": []
+  },
+  {
+    "fixture": "icc_mismatch_or_profile_conflict.pdf",
+    "created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "ICC_MISMATCH",
+      "INVALID_OUTPUT_INTENT"
+    ],
+    "notes": [
+      "Deferred: Difficult to generate reliable conflicting ICC profiles directly in pdf-lib"
+    ]
+  },
+  {
+    "fixture": "rich_black_text.pdf",
+    "created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "RICH_BLACK_TEXT"
+    ],
+    "notes": [
+      "Deferred: Explicit text rich black detection requires more complex objects"
+    ]
+  },
+  {
+    "fixture": "registration_color_misuse.pdf",
+    "created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "REGISTRATION_COLOR_MISUSE"
+    ],
+    "notes": [
+      "Deferred: Registration color misuse generation deferred"
+    ]
+  },
+  {
+    "fixture": "excessive_tac.pdf",
+    "created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "EXCESSIVE_TAC"
+    ],
+    "notes": [
+      "Deferred: Generating exact TAC coverage violations deferred"
+    ]
+  }
+]
