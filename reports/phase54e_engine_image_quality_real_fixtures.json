@@ -1,0 +1,149 @@
+[
+  {
+    "fixture": "low_res_image.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "NONE",
+    "pass": true,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ],
+    "engine_report": null
+  },
+  {
+    "fixture": "excessive_resolution_image.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "NONE",
+    "pass": true,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ],
+    "engine_report": null
+  },
+  {
+    "fixture": "jpeg_artifacts_image.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": false,
+    "fixture_gap": true,
+    "detector_gap": false,
+    "deferred": true,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "NONE",
+    "pass": true,
+    "notes": [
+      "Could not generate fixture with pdf-lib"
+    ],
+    "engine_report": null
+  },
+  {
+    "fixture": "bitmap_text_image.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "NONE",
+    "pass": true,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ],
+    "engine_report": null
+  },
+  {
+    "fixture": "rasterized_vector_image.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "NONE",
+    "pass": true,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ],
+    "engine_report": null
+  },
+  {
+    "fixture": "image_alpha.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "NONE",
+    "pass": true,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ],
+    "engine_report": null
+  },
+  {
+    "fixture": "damaged_image_object.pdf",
+    "validation_mode": "REAL_PDF",
+    "real_pdf_execution_verified": true,
+    "engine_real_detection": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "worker_real_policy_applied": false,
+    "service_real_hydration": false,
+    "control_plane_human_report": false,
+    "review_required": false,
+    "production_certified": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "NONE",
+    "pass": true,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ],
+    "engine_report": null
+  }
+]

@@ -251,8 +251,18 @@ class PdfFixEngine {
                 requires_human_review: false,
                 production_safe: true,
                 message: 'OutputIntent with ICC profile injected into PDF catalog.',
+                compliance_claim_allowed: false,
+                validator_required: false,
+                standard_claimed: null,
                 evidence: {
-                    injected_profile: iccPath
+                    injected_profile: iccPath,
+                    reason: "OutputIntent injection alone does not prove PDF/X compliance.",
+                    pdfx_compliance_claimed: false,
+                    pdfa_compliance_claimed: false,
+                    limitations: [
+                        "OutputIntent presence alone does not prove PDF/X compliance.",
+                        "No real standards validator or converter was executed."
+                    ]
                 }
             };
         } catch (e) {
@@ -701,8 +711,50 @@ class PdfFixEngine {
     async outlineFonts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("OUTLINE_FONTS"); }
     async replaceMissingFonts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REPLACE_MISSING_FONTS"); }
     async glyphRepair(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("GLYPH_REPAIR"); }
-    async validatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("VALIDATE_PDFX"); }
-    async generatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("GENERATE_PDFX"); }
+    async _scaffoldUnsupportedStandardsCertification(fixId) {
+        return {
+            success: false,
+            code: fixId,
+            status: "SKIPPED",
+            strategy: "UNSUPPORTED_STANDARDS_CERTIFICATION_CAPABILITY",
+            description: "No real standards validator or converter was executed.",
+            risk_level: "HIGH",
+            requires_human_review: true,
+            production_safe: false,
+            executable: false,
+            validator_required: true,
+            validator_available: false,
+            compliance_claim_allowed: false,
+            standard_claimed: null,
+            evidence: {
+                reason: "No real standards validator or converter was executed.",
+                validator_name: null,
+                validator_version: null,
+                validation_passed: false,
+                report_path: null,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                limitations: [
+                    "No PDF/X or PDF/A compliance was claimed.",
+                    "OutputIntent presence alone does not prove PDF/X compliance.",
+                    "A real validator is required before standards certification."
+                ]
+            }
+        };
+    }
+
+    async validatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("VALIDATE_PDFX"); }
+    async validatePdfa(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("VALIDATE_PDFA"); }
+    async generatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("GENERATE_PDFX"); }
+    async convertToPdfx(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("CONVERT_TO_PDFX"); }
+    async convertToPdfa(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("CONVERT_TO_PDFA"); }
+    async stripInvalidPdfxMetadata(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("STRIP_INVALID_PDFX_METADATA"); }
+    async stripInvalidPdfaMetadata(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("STRIP_INVALID_PDFA_METADATA"); }
+    async normalizeStandardMetadata(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("NORMALIZE_STANDARD_METADATA"); }
+    async repairPdfxOutputIntent(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("REPAIR_PDFX_OUTPUTINTENT"); }
+    async markStandardUncertified(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("MARK_STANDARD_UNCERTIFIED"); }
+    async revokeFalseCertification(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("REVOKE_FALSE_CERTIFICATION"); }
+    async generateStandardValidationReport(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("GENERATE_STANDARD_VALIDATION_REPORT"); }
     async detectTotalInkCoverage(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("DETECT_TOTAL_INK_COVERAGE"); }
     async mapRichBlackTextToKOnly(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("MAP_RICH_BLACK_TEXT_TO_K_ONLY"); }
     async mapRegistrationColorToBlack(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("MAP_REGISTRATION_COLOR_TO_BLACK"); }

@@ -21,8 +21,15 @@ class FixPlanner {
             
             if (cap) {
                 const implemented = isFixImplemented(fixId);
-                const autofixable = isFixAutofixable(fixId, policyMode);
+                let autofixable = isFixAutofixable(fixId, policyMode);
                 const isUserFixable = issue.fixable !== false;
+                
+                // Phase 55A: Standards Certification guardrail
+                if (cap.category === 'standards_certification' || cap.category === 'standards') {
+                    if (policyMode === "SAFE" && cap.validator_required && !cap.validator_available) {
+                        autofixable = false;
+                    }
+                }
                 
                 const planned = implemented && autofixable && isUserFixable;
                 const skipped = !planned;
@@ -30,7 +37,7 @@ class FixPlanner {
                 
                 if (!implemented) skipReason = "FIX_NOT_IMPLEMENTED";
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
-                else if (!autofixable) skipReason = "POLICY_MODE_RESTRICTION";
+                else if (!autofixable) skipReason = (cap.category === 'standards_certification' || cap.category === 'standards') ? "VALIDATOR_REQUIRED" : "POLICY_MODE_RESTRICTION";
 
                 plan.push({
                     fix_id: fixId,

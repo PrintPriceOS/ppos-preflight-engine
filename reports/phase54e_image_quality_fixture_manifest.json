@@ -1,0 +1,115 @@
+[
+  {
+    "fixture": "low_res_image.pdf",
+    "fixture_created": true,
+    "valid_pdf": false,
+    "expected_findings": [
+      "LOW_RES_IMAGES"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ]
+  },
+  {
+    "fixture": "excessive_resolution_image.pdf",
+    "fixture_created": true,
+    "valid_pdf": false,
+    "expected_findings": [
+      "EXCESSIVE_RESOLUTION"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ]
+  },
+  {
+    "fixture": "jpeg_artifacts_image.pdf",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "JPEG_ARTIFACTS",
+      "IMAGE_COMPRESSION_RISK"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "fixture_gap": true,
+    "detector_gap": false,
+    "deferred": true,
+    "notes": [
+      "Could not generate fixture with pdf-lib"
+    ]
+  },
+  {
+    "fixture": "bitmap_text_image.pdf",
+    "fixture_created": true,
+    "valid_pdf": false,
+    "expected_findings": [
+      "BITMAP_TEXT_RISK"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ]
+  },
+  {
+    "fixture": "rasterized_vector_image.pdf",
+    "fixture_created": true,
+    "valid_pdf": false,
+    "expected_findings": [
+      "RASTERIZED_VECTOR_RISK"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ]
+  },
+  {
+    "fixture": "image_alpha.pdf",
+    "fixture_created": true,
+    "valid_pdf": false,
+    "expected_findings": [
+      "IMAGE_ALPHA_RISK"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ]
+  },
+  {
+    "fixture": "damaged_image_object.pdf",
+    "fixture_created": true,
+    "valid_pdf": false,
+    "expected_findings": [
+      "IMAGE_OBJECT_DAMAGED"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "fixture_gap": false,
+    "detector_gap": true,
+    "deferred": false,
+    "notes": [
+      "Engine did not detect expected finding (detector_gap)"
+    ]
+  }
+]

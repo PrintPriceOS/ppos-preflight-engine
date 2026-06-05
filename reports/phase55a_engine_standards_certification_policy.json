@@ -1,0 +1,420 @@
+{
+  "phase": "55A",
+  "name": "Engine PDF/X Standards Certification Policy",
+  "timestamp": "2026-06-05T23:22:57.648Z",
+  "capabilities": [
+    {
+      "capability": "VALIDATE_PDFX",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "REVIEW_REQUIRED",
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "VALIDATE_PDFA",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "REVIEW_REQUIRED",
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "CONVERT_TO_PDFX",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "CONVERT_TO_PDFA",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "GENERATE_PDFX",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "STRIP_INVALID_PDFX_METADATA",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "REVIEW_REQUIRED",
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "STRIP_INVALID_PDFA_METADATA",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "REVIEW_REQUIRED",
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "NORMALIZE_STANDARD_METADATA",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "REPAIR_PDFX_OUTPUTINTENT",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "HIGH",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    },
+    {
+      "capability": "MARK_STANDARD_UNCERTIFIED",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "MEDIUM",
+      "validator_required": false,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "REVIEW_REQUIRED",
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "GOVERNANCE_ONLY"
+    },
+    {
+      "capability": "REVOKE_FALSE_CERTIFICATION",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "MEDIUM",
+      "validator_required": false,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "REVIEW_REQUIRED",
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "GOVERNANCE_ONLY"
+    },
+    {
+      "capability": "GENERATE_STANDARD_VALIDATION_REPORT",
+      "category": "standards_certification",
+      "implemented": false,
+      "autofixable": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "risk_level": "MEDIUM",
+      "validator_required": true,
+      "validator_available": false,
+      "compliance_claim_allowed": false,
+      "standard_claimed": null,
+      "supported_modes": [
+        "EXPERIMENTAL"
+      ],
+      "execution_status": "SKIPPED_UNSUPPORTED",
+      "truth_status": "VALIDATOR_REQUIRED"
+    }
+  ],
+  "tests": [
+    {
+      "status": "PASSED",
+      "message": "Capability VALIDATE_PDFX must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability VALIDATE_PDFA must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability CONVERT_TO_PDFX must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "CONVERT_TO_PDFX must not be implemented without real validator"
+    },
+    {
+      "status": "PASSED",
+      "message": "CONVERT_TO_PDFX must not be production safe"
+    },
+    {
+      "status": "PASSED",
+      "message": "CONVERT_TO_PDFX requires human review"
+    },
+    {
+      "status": "PASSED",
+      "message": "CONVERT_TO_PDFX requires a validator"
+    },
+    {
+      "status": "PASSED",
+      "message": "CONVERT_TO_PDFX must not allow compliance claim without validation"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability CONVERT_TO_PDFA must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability GENERATE_PDFX must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "GENERATE_PDFX must not be implemented without real validator"
+    },
+    {
+      "status": "PASSED",
+      "message": "GENERATE_PDFX must not be production safe"
+    },
+    {
+      "status": "PASSED",
+      "message": "GENERATE_PDFX requires human review"
+    },
+    {
+      "status": "PASSED",
+      "message": "GENERATE_PDFX requires a validator"
+    },
+    {
+      "status": "PASSED",
+      "message": "GENERATE_PDFX must not allow compliance claim without validation"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability STRIP_INVALID_PDFX_METADATA must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability STRIP_INVALID_PDFA_METADATA must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability NORMALIZE_STANDARD_METADATA must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability REPAIR_PDFX_OUTPUTINTENT must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability MARK_STANDARD_UNCERTIFIED must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability REVOKE_FALSE_CERTIFICATION must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "Capability GENERATE_STANDARD_VALIDATION_REPORT must exist in FixRegistry"
+    },
+    {
+      "status": "PASSED",
+      "message": "PDFX_MISSING with CONVERT_TO_PDFX should not be planned as SAFE"
+    },
+    {
+      "status": "PASSED",
+      "message": "Unsupported standards fix must be skipped"
+    },
+    {
+      "status": "PASSED",
+      "message": "Must skip due to unimplemented or validator required"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of VALIDATE_PDFX must return SKIPPED_UNSUPPORTED"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of VALIDATE_PDFX must return ok=false"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of VALIDATE_PDFX must not overclaim PDF/X compliant"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of CONVERT_TO_PDFX must return SKIPPED_UNSUPPORTED"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of CONVERT_TO_PDFX must return ok=false"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of CONVERT_TO_PDFX must not overclaim PDF/X compliant"
+    },
+    {
+      "status": "PASSED",
+      "message": "INJECT_OUTPUT_INTENT capability must explicitly deny compliance claims"
+    },
+    {
+      "status": "PASSED",
+      "message": "PdfFixEngine validatePdfX must return SKIPPED"
+    },
+    {
+      "status": "PASSED",
+      "message": "validatePdfX evidence must not claim compliance"
+    },
+    {
+      "status": "PASSED",
+      "message": "validatePdfX evidence must have limitation note"
+    },
+    {
+      "status": "PASSED",
+      "message": "Finding code IND_COMPLIANCE_003 safely ignored by planner"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of finding code IND_COMPLIANCE_003 must not apply"
+    },
+    {
+      "status": "PASSED",
+      "message": "Finding code IND_COMPLIANCE_004 safely ignored by planner"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of finding code IND_COMPLIANCE_004 must not apply"
+    },
+    {
+      "status": "PASSED",
+      "message": "Finding code IND_COMPLIANCE_005 safely ignored by planner"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of finding code IND_COMPLIANCE_005 must not apply"
+    },
+    {
+      "status": "PASSED",
+      "message": "Finding code IND_COMPLIANCE_015 safely ignored by planner"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of finding code IND_COMPLIANCE_015 must not apply"
+    },
+    {
+      "status": "PASSED",
+      "message": "Finding code IND_COMPLIANCE_016 safely ignored by planner"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of finding code IND_COMPLIANCE_016 must not apply"
+    },
+    {
+      "status": "PASSED",
+      "message": "Finding code IND_COMPLIANCE_017 safely ignored by planner"
+    },
+    {
+      "status": "PASSED",
+      "message": "Execution of finding code IND_COMPLIANCE_017 must not apply"
+    }
+  ],
+  "passed": true
+}
