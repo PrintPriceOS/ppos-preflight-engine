@@ -1,0 +1,102 @@
+[
+  {
+    "fixture": "transparency_basic.pdf",
+    "fixture_created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "TRANSPARENCY_PRESENT"
+    ],
+    "generation_method": "pdf-lib",
+    "fixture_gap": false,
+    "deferred": false,
+    "notes": [
+      "Generated using pdf-lib rectangle with opacity"
+    ]
+  },
+  {
+    "fixture": "soft_mask.pdf",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "SOFT_MASK_PRESENT"
+    ],
+    "generation_method": "deferred",
+    "fixture_gap": true,
+    "deferred": true,
+    "notes": [
+      "pdf-lib lacks native soft mask API"
+    ]
+  },
+  {
+    "fixture": "blend_mode.pdf",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "BLEND_MODE_PRESENT"
+    ],
+    "generation_method": "deferred",
+    "fixture_gap": true,
+    "deferred": true,
+    "notes": [
+      "pdf-lib lacks native blend mode API"
+    ]
+  },
+  {
+    "fixture": "overprint_basic.pdf",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "OVERPRINT_PRESENT",
+      "OVERPRINT_MODE_PRESENT"
+    ],
+    "generation_method": "deferred",
+    "fixture_gap": true,
+    "deferred": true,
+    "notes": [
+      "pdf-lib lacks native overprint API"
+    ]
+  },
+  {
+    "fixture": "knockout_group.pdf",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "KNOCKOUT_GROUP_PRESENT"
+    ],
+    "generation_method": "deferred",
+    "fixture_gap": true,
+    "deferred": true,
+    "notes": [
+      "pdf-lib lacks native knockout group API"
+    ]
+  },
+  {
+    "fixture": "rasterization_risk.pdf",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "RASTERIZATION_RISK",
+      "TRANSPARENCY_PRESENT"
+    ],
+    "generation_method": "deferred",
+    "fixture_gap": true,
+    "deferred": true,
+    "notes": [
+      "Complex transparency tree not easily generated"
+    ]
+  },
+  {
+    "fixture": "pdfx_transparency_conflict.pdf",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "UNSUPPORTED_TRANSPARENCY_FOR_PDFX"
+    ],
+    "generation_method": "deferred",
+    "fixture_gap": true,
+    "deferred": true,
+    "notes": [
+      "PDF/X simulated conflict not easily generated"
+    ]
+  }
+]

@@ -1,0 +1,148 @@
+[
+  {
+    "fixture": "transparency_basic.pdf",
+    "validation_mode": "REAL_PDF",
+    "fixture_created": true,
+    "valid_pdf": true,
+    "expected_findings": [
+      "TRANSPARENCY_PRESENT"
+    ],
+    "detected_findings": [
+      "IND_GEOM_003",
+      "IND_GEOM_004",
+      "IND_COLOR_006",
+      "IND_COMPLIANCE_001",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR",
+      "IND_INTEGRITY_EXTRACTION_ERROR"
+    ],
+    "expected_finding_detected": false,
+    "detector_gap": true,
+    "deferred": false,
+    "engine_real_detection": true,
+    "unsupported_fix_verified": true,
+    "pass": true,
+    "notes": [
+      "Generated using pdf-lib rectangle with opacity",
+      "Detector gap: missed TRANSPARENCY_PRESENT"
+    ]
+  },
+  {
+    "fixture": "soft_mask.pdf",
+    "validation_mode": "REAL_PDF",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "SOFT_MASK_PRESENT"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": false,
+    "deferred": true,
+    "engine_real_detection": false,
+    "unsupported_fix_verified": true,
+    "pass": true,
+    "notes": [
+      "pdf-lib lacks native soft mask API"
+    ]
+  },
+  {
+    "fixture": "blend_mode.pdf",
+    "validation_mode": "REAL_PDF",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "BLEND_MODE_PRESENT"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": false,
+    "deferred": true,
+    "engine_real_detection": false,
+    "unsupported_fix_verified": true,
+    "pass": true,
+    "notes": [
+      "pdf-lib lacks native blend mode API"
+    ]
+  },
+  {
+    "fixture": "overprint_basic.pdf",
+    "validation_mode": "REAL_PDF",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "OVERPRINT_PRESENT",
+      "OVERPRINT_MODE_PRESENT"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": false,
+    "deferred": true,
+    "engine_real_detection": false,
+    "unsupported_fix_verified": true,
+    "pass": true,
+    "notes": [
+      "pdf-lib lacks native overprint API"
+    ]
+  },
+  {
+    "fixture": "knockout_group.pdf",
+    "validation_mode": "REAL_PDF",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "KNOCKOUT_GROUP_PRESENT"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": false,
+    "deferred": true,
+    "engine_real_detection": false,
+    "unsupported_fix_verified": true,
+    "pass": true,
+    "notes": [
+      "pdf-lib lacks native knockout group API"
+    ]
+  },
+  {
+    "fixture": "rasterization_risk.pdf",
+    "validation_mode": "REAL_PDF",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "RASTERIZATION_RISK",
+      "TRANSPARENCY_PRESENT"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": false,
+    "deferred": true,
+    "engine_real_detection": false,
+    "unsupported_fix_verified": true,
+    "pass": true,
+    "notes": [
+      "Complex transparency tree not easily generated"
+    ]
+  },
+  {
+    "fixture": "pdfx_transparency_conflict.pdf",
+    "validation_mode": "REAL_PDF",
+    "fixture_created": false,
+    "valid_pdf": false,
+    "expected_findings": [
+      "UNSUPPORTED_TRANSPARENCY_FOR_PDFX"
+    ],
+    "detected_findings": [],
+    "expected_finding_detected": false,
+    "detector_gap": false,
+    "deferred": true,
+    "engine_real_detection": false,
+    "unsupported_fix_verified": true,
+    "pass": true,
+    "notes": [
+      "PDF/X simulated conflict not easily generated"
+    ]
+  }
+]
