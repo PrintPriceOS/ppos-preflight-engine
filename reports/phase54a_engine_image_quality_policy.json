@@ -1,0 +1,204 @@
+[
+  {
+    "capability": "UPSCALE_LOW_RES_IMAGES",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "DOWNSAMPLE_EXCESSIVE_RESOLUTION",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "MEDIUM",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "RECOMPRESS_IMAGES",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "REPLACE_LOW_RES_IMAGES",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "REPAIR_JPEG_ARTIFACTS",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "NORMALIZE_IMAGE_COLORSPACE",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "REVIEW_REQUIRED",
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "REMOVE_IMAGE_ALPHA",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "REPAIR_DAMAGED_IMAGE_OBJECT",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "HIGH",
+    "visually_sensitive": false,
+    "destructive": false,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "VECTORIZE_BITMAP_TEXT",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "CRITICAL",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  },
+  {
+    "capability": "RESTORE_RASTERIZED_VECTOR",
+    "category": "image_quality",
+    "implemented": false,
+    "autofixable": false,
+    "production_safe": false,
+    "requires_human_review": true,
+    "risk_level": "CRITICAL",
+    "visually_sensitive": true,
+    "destructive": true,
+    "supported_modes": [
+      "EXPERIMENTAL"
+    ],
+    "execution_status": "SKIPPED_UNSUPPORTED",
+    "truth_status": "DECLARED_NOT_IMPLEMENTED",
+    "pass": true,
+    "notes": [
+      "OK: Policy honored."
+    ]
+  }
+]

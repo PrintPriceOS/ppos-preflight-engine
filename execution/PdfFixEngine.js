@@ -710,6 +710,40 @@ class PdfFixEngine {
     async reduceTac(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REDUCE_TAC"); }
     async optimizeExcessiveImageResolution(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("OPTIMIZE_EXCESSIVE_IMAGE_RESOLUTION"); }
     async visualBleedExtension(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("VISUAL_BLEED_EXTENSION"); }
+    async _scaffoldUnsupportedImageQuality(fixId) {
+        return {
+            success: false,
+            code: fixId,
+            status: "SKIPPED",
+            strategy: "UNSUPPORTED_IMAGE_QUALITY_FIX",
+            risk_level: "HIGH",
+            requires_human_review: true,
+            production_safe: false,
+            visually_sensitive: true,
+            destructive: true,
+            executable: false,
+            evidence: {
+                reason: "Image quality operations may alter visual output.",
+                finding_codes: [],
+                limitations: [
+                    "Image quality operations may alter visual output.",
+                    "No image resampling/recompression/replacement was performed.",
+                    "Human review/source assets may be required."
+                ]
+            }
+        };
+    }
+
+    async upscaleLowResImages(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("UPSCALE_LOW_RES_IMAGES"); }
+    async downsampleExcessiveResolution(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("DOWNSAMPLE_EXCESSIVE_RESOLUTION"); }
+    async recompressImages(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("RECOMPRESS_IMAGES"); }
+    async replaceLowResImages(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("REPLACE_LOW_RES_IMAGES"); }
+    async repairJpegArtifacts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("REPAIR_JPEG_ARTIFACTS"); }
+    async normalizeImageColorspace(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("NORMALIZE_IMAGE_COLORSPACE"); }
+    async removeImageAlpha(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("REMOVE_IMAGE_ALPHA"); }
+    async repairDamagedImageObject(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("REPAIR_DAMAGED_IMAGE_OBJECT"); }
+    async vectorizeBitmapText(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("VECTORIZE_BITMAP_TEXT"); }
+    async restoreRasterizedVector(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("RESTORE_RASTERIZED_VECTOR"); }
 }
 
 module.exports = PdfFixEngine;

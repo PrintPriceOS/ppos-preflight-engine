@@ -52,7 +52,17 @@ class AutofixExecutionEngine {
             'NORMALIZE_ICC_PROFILE': 'normalizeIccProfile',
             'REDUCE_TAC': 'reduceTac',
             'OPTIMIZE_EXCESSIVE_IMAGE_RESOLUTION': 'optimizeExcessiveImageResolution',
-            'VISUAL_BLEED_EXTENSION': 'visualBleedExtension'
+            'VISUAL_BLEED_EXTENSION': 'visualBleedExtension',
+            'UPSCALE_LOW_RES_IMAGES': 'upscaleLowResImages',
+            'DOWNSAMPLE_EXCESSIVE_RESOLUTION': 'downsampleExcessiveResolution',
+            'RECOMPRESS_IMAGES': 'recompressImages',
+            'REPLACE_LOW_RES_IMAGES': 'replaceLowResImages',
+            'REPAIR_JPEG_ARTIFACTS': 'repairJpegArtifacts',
+            'NORMALIZE_IMAGE_COLORSPACE': 'normalizeImageColorspace',
+            'REMOVE_IMAGE_ALPHA': 'removeImageAlpha',
+            'REPAIR_DAMAGED_IMAGE_OBJECT': 'repairDamagedImageObject',
+            'VECTORIZE_BITMAP_TEXT': 'vectorizeBitmapText',
+            'RESTORE_RASTERIZED_VECTOR': 'restoreRasterizedVector'
         };
     }
 
