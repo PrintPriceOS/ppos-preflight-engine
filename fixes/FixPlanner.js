@@ -4,76 +4,92 @@
  * Maps findings to technical fix strategies.
  * Source: Refactored from autofixRegistry.js
  */
-const { CODES: FindingCodes } = require('../interpretation/IndustrialFindingCodes');
+const { normalizeFixId, getFixCapability, isFixImplemented, isFixAutofixable } = require('./FixRegistry');
 
 class FixPlanner {
     constructor() {
-        this.strategyMap = {
-            'BLEED_MISSING': 'ADD_BLEED',
-            'COLOR_PROFILE_MISMATCH': 'CONVERT_CMYK',
-            'TRANSPARENCY_PRESENT': 'FLATTEN_PDF',
-            'TRIMBOX_MISSING': 'REBUILD_TRIMBOX',
-            'TRIMBOX_INVALID': 'REBUILD_TRIMBOX',
-            'TRIMBOX_OUTSIDE_MEDIABOX': 'REBUILD_TRIMBOX',
-            'GEOM_TRIMBOX_MISSING': 'REBUILD_TRIMBOX',
-            'TRIM_BOX_ANOMALY': 'REBUILD_TRIMBOX',
-            'BLEEDBOX_MISSING': 'APPLY_BLEED',
-            'IND_COLOR_001': 'CONVERT_CMYK',
-            'IND_COLOR_002': 'INJECT_OUTPUT_INTENT',
-            'IND_COLOR_006': 'INJECT_OUTPUT_INTENT',
-            [FindingCodes.GEOM_BLEED_MISSING]: 'APPLY_BLEED',
-            [FindingCodes.GEOM_BLEED_INSUFFICIENT]: 'APPLY_BLEED',
-            [FindingCodes.GEOM_BLEEDBOX_MISSING]: 'APPLY_BLEED',
-            [FindingCodes.GEOM_TRIMBOX_MISSING]: 'REBUILD_TRIMBOX',
-            [FindingCodes.GEOM_TRIMBOX_INVALID]: 'REBUILD_TRIMBOX',
-            [FindingCodes.GEOM_TRIMBOX_OUTSIDE_MEDIABOX]: 'REBUILD_TRIMBOX',
-            [FindingCodes.COLOR_RGB_OBJECTS_DETECTED]: 'CONVERT_CMYK',
-            [FindingCodes.COLOR_ICC_PROFILE_MISSING]: 'INJECT_OUTPUT_INTENT',
-            [FindingCodes.COLOR_MIXED_COLOR_SPACES]: 'CONVERT_CMYK',
-            [FindingCodes.COLOR_OUTPUT_INTENT_MISSING]: 'INJECT_OUTPUT_INTENT',
-            [FindingCodes.TRANS_TRANSPARENCY_DETECTED]: 'FLATTEN_PDF'
-        };
     }
 
-    plan(issues) {
+    plan(issues, policyMode = "SAFE") {
         const plan = [];
         if (!Array.isArray(issues)) return plan;
 
         issues.forEach(issue => {
-            // Respect repairStrategy, fix_method, recommended_fix if available, otherwise look up canonical code/id
-            const strategy = issue.repairStrategy || issue.fix_method || issue.recommended_fix || this.strategyMap[issue.code] || this.strategyMap[issue.id];
+            const rawStrategy = issue.repairStrategy || issue.fix_method || issue.recommended_fix || issue.code || issue.id;
+            const fixId = normalizeFixId(rawStrategy);
+            const cap = getFixCapability(fixId);
             
-            // Plan if strategy is known to ensure deterministic reporting
-            if (strategy) {
-                const isCmyk = strategy === 'CONVERT_CMYK';
+            if (cap) {
+                const implemented = isFixImplemented(fixId);
+                const autofixable = isFixAutofixable(fixId, policyMode);
+                const isUserFixable = issue.fixable !== false;
+                
+                const planned = implemented && autofixable && isUserFixable;
+                const skipped = !planned;
+                let skipReason = null;
+                
+                if (!implemented) skipReason = "FIX_NOT_IMPLEMENTED";
+                else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
+                else if (!autofixable) skipReason = "POLICY_MODE_RESTRICTION";
+
                 plan.push({
-                    issue_id: issue.id || issue.code,
-                    issue_code: issue.code || issue.id,
-                    strategy,
+                    fix_id: fixId,
+                    detected: true,
+                    planned: planned,
+                    executable: planned,
+                    skipped: skipped,
+                    skip_reason: skipReason,
+                    risk_level: cap.risk_level,
+                    requires_human_review: cap.requires_human_review,
+                    implemented: implemented,
+                    autofixable: cap.autofixable,
+                    policy_mode: policyMode,
+                    source_finding: issue.id || issue.code,
+                    // Legacy properties needed by upstream
+                    strategy: fixId,
                     status: 'PENDING',
                     fixRequired: issue.fixRequired ?? (issue.severity === 'error' || issue.severity === 'critical'),
-                    safeToAutofix: isCmyk ? false : (issue.safeToAutofix ?? (issue.fixable !== false)),
-                    destructiveFixRisk: isCmyk ? 'HIGH' : (issue.destructiveFixRisk || "LOW"),
-                    requires_human_review: isCmyk ? true : false,
-                    requiresExplicitReviewMode: isCmyk ? true : false
+                    safeToAutofix: planned,
+                    destructiveFixRisk: cap.risk_level === 'HIGH' ? 'HIGH' : (cap.risk_level === 'MEDIUM' ? 'MEDIUM' : 'LOW'),
+                    requiresExplicitReviewMode: cap.requires_human_review
                 });
+            } else {
+                // If it's completely unknown but somehow passed as a strategy
+                if (rawStrategy && rawStrategy !== issue.code && rawStrategy !== issue.id) {
+                     plan.push({
+                        fix_id: rawStrategy,
+                        detected: true,
+                        planned: false,
+                        executable: false,
+                        skipped: true,
+                        skip_reason: "UNKNOWN_FIX_CAPABILITY",
+                        risk_level: "HIGH",
+                        requires_human_review: true,
+                        implemented: false,
+                        autofixable: false,
+                        policy_mode: policyMode,
+                        source_finding: issue.id || issue.code,
+                        strategy: rawStrategy,
+                        status: 'PENDING',
+                        safeToAutofix: false
+                     });
+                }
             }
         });
 
-        // Deduplicate plan strategies to avoid running e.g. CONVERT_CMYK 5 times for 5 RGB objects
+        // Deduplicate plan strategies
         const uniquePlan = [];
         const seenStrategies = new Set();
         for (const item of plan) {
-            if (!seenStrategies.has(item.strategy)) {
-                seenStrategies.add(item.strategy);
+            if (!seenStrategies.has(item.fix_id)) {
+                seenStrategies.add(item.fix_id);
                 uniquePlan.push(item);
             } else {
-                // If already seen, append the issue_code to the existing plan step
-                const existing = uniquePlan.find(p => p.strategy === item.strategy);
+                const existing = uniquePlan.find(p => p.fix_id === item.fix_id);
                 if (existing) {
-                    existing.associated_issues = existing.associated_issues || [existing.issue_code];
-                    if (!existing.associated_issues.includes(item.issue_code)) {
-                        existing.associated_issues.push(item.issue_code);
+                    existing.associated_issues = existing.associated_issues || [existing.source_finding];
+                    if (!existing.associated_issues.includes(item.source_finding)) {
+                        existing.associated_issues.push(item.source_finding);
                     }
                 }
             }
@@ -84,3 +100,4 @@ class FixPlanner {
 }
 
 module.exports = FixPlanner;
+

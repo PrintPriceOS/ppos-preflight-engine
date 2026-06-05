@@ -1,7 +1,7 @@
 const PdfFixEngine = require('./PdfFixEngine');
 const path = require('path');
 const fs = require('fs-extra');
-const { CODES: FindingCodes } = require('../interpretation/IndustrialFindingCodes');
+const { normalizeFixId, getFixCapability, isFixImplemented } = require('../fixes/FixRegistry');
 
 /**
  * AutofixExecutionEngine
@@ -25,24 +25,27 @@ class AutofixExecutionEngine {
     constructor(config = {}) {
         this.config = config;
         this.pdfFixEngine = new PdfFixEngine();
-        // Technical mapping of finding codes to engine methods
-        this.fixStrategies = {
-            [FindingCodes.GEOM_BLEED_MISSING]: 'applyBleed',
-            [FindingCodes.GEOM_BLEED_INSUFFICIENT]: 'applyBleed',
-            [FindingCodes.GEOM_TRIMBOX_MISSING]: 'rebuildTrimBox',
-            [FindingCodes.GEOM_TRIMBOX_INVALID]: 'rebuildTrimBox',
-            [FindingCodes.GEOM_TRIMBOX_OUTSIDE_MEDIABOX]: 'rebuildTrimBox',
-            'TRIMBOX_MISSING': 'rebuildTrimBox',
-            'IND_GEOM_003': 'rebuildTrimBox',
-            'TRIM_BOX_ANOMALY': 'rebuildTrimBox',
-            'APPLY_BLEED': 'applyBleed',
-            'ADD_BLEED': 'applyBleed',
+        
+        // Maps fix_id to method name in PdfFixEngine
+        this.fixMethods = {
             'REBUILD_TRIMBOX': 'rebuildTrimBox',
+            'APPLY_BLEED': 'applyBleed',
             'CONVERT_CMYK': 'applyCmyk',
-            'CONVERT_TO_CMYK': 'applyCmyk',
             'INJECT_OUTPUT_INTENT': 'injectOutputIntent',
-            'FLATTEN_PDF': 'flattenPdf',
-            'NO_ACTION': 'noop'
+            'STRIP_JAVASCRIPT': 'stripJavascript',
+            'FLATTEN_ANNOTATIONS': 'flattenAnnotations',
+            'FLATTEN_FORMS': 'flattenForms',
+            'REBUILD_XREF': 'rebuildXref',
+            'FLATTEN_TRANSPARENCY': 'flattenTransparency',
+            'FLATTEN_OVERPRINT': 'flattenOverprint',
+            'EMBED_FONTS': 'embedFonts',
+            'VALIDATE_PDFX': 'validatePdfX',
+            'GENERATE_PDFX': 'generatePdfX',
+            'DETECT_TOTAL_INK_COVERAGE': 'detectTotalInkCoverage',
+            'MAP_RICH_BLACK_TEXT_TO_K_ONLY': 'mapRichBlackTextToKOnly',
+            'MAP_REGISTRATION_COLOR_TO_BLACK': 'mapRegistrationColorToBlack',
+            'OPTIMIZE_EXCESSIVE_IMAGE_RESOLUTION': 'optimizeExcessiveImageResolution',
+            'VISUAL_BLEED_EXTENSION': 'visualBleedExtension'
         };
     }
 
@@ -51,229 +54,200 @@ class AutofixExecutionEngine {
      */
     async executeFix(paramsObj) {
         const { input_path, output_path, fix_hint } = paramsObj;
-        const { PDFDocument, PDFName } = require('pdf-lib');
+        const fixId = normalizeFixId(fix_hint || paramsObj.fix_id);
+        const capability = getFixCapability(fixId);
         
-        const fixId = paramsObj.fix_id || paramsObj.jobId || `fix_${Date.now()}`;
-        const issueCodes = Array.isArray(paramsObj.issue_codes) ? paramsObj.issue_codes : [fix_hint || 'UNKNOWN'];
+        // Contract setup
+        const payload = {
+            fix_id: fixId,
+            detected: true,
+            planned: paramsObj.planned !== false, // Default to true if executeFix is called directly
+            executable: capability ? capability.autofixable : false,
+            applied: false,
+            skipped: false,
+            failed: false,
+            status: "PENDING",
+            risk_level: capability ? capability.risk_level : "HIGH",
+            requires_human_review: capability ? capability.requires_human_review : true,
+            before_state: {},
+            after_state: {},
+            evidence: {},
+            toolchain: capability ? capability.toolchain : [],
+            message: ""
+        };
 
-        // MANDATORY RULE 1: Si el fix no está reconocido, devolver error explícito
-        const method = this.fixStrategies[fix_hint];
-        if (!method) {
+        if (!capability) {
             console.log(`[AUTOFIX-ENGINE] executeFix: Unrecognized fix hint '${fix_hint}', returning FIX_UNSUPPORTED.`);
+            payload.skipped = true;
+            payload.status = "SKIPPED_UNSUPPORTED";
+            payload.skip_reason = "UNKNOWN_FIX_CAPABILITY";
+            payload.message = "Requested fix strategy is not recognized or supported.";
+            
             return {
+                ...payload,
                 ok: false,
-                status: 'FIX_UNSUPPORTED',
-                error: 'NO_SAFE_FIX_AVAILABLE',
-                fix_id: fixId,
-                input_issue_codes: issueCodes,
-                strategy: fix_hint || 'UNKNOWN',
-                applied: false,
-                modified: false,
                 output_path: null,
-                warnings: ['Requested fix strategy is not recognized or supported.'],
+                warnings: [payload.message],
                 verification_status: 'FAILED',
-                // legacy compatibility fields:
+                // legacy
                 noopFix: false,
                 fixApplied: false,
                 rewritten: false,
                 fixedPath: null,
-                findings: [],
-                artifacts: {},
-                repairs: [{
-                    code: fix_hint || 'UNKNOWN',
-                    status: 'UNSUPPORTED',
-                    reason: 'Requested fix strategy is not recognized or supported.',
-                    destructiveFixRisk: 'LOW',
-                    requires_human_review: true
-                }]
+                artifacts: {}
             };
         }
-        
-        // 1. Technical No-Op Detection (Selective)
-        if (fix_hint === 'REBUILD_TRIMBOX' || fix_hint === 'NO_ACTION') {
-            try {
-                const bytes = await fs.readFile(input_path);
-                const pdfDoc = await PDFDocument.load(bytes);
-                const pages = pdfDoc.getPages();
-                let allValid = fix_hint === 'NO_ACTION';
 
-                if (!allValid) {
-                    allValid = true;
-                    for (const page of pages) {
-                        const trimBox = page.node.lookup(PDFName.of('TrimBox'));
-                        const mediaBox = page.node.lookup(PDFName.of('MediaBox'));
-                        if (!trimBox || !mediaBox) { allValid = false; break; }
-                        
-                        const trimArray = trimBox.asArray().map(v => v.asNumber());
-                        const mediaArray = mediaBox.asArray().map(v => v.asNumber());
-                        const width = trimArray[2] - trimArray[0];
-                        const height = trimArray[3] - trimArray[1];
-                        const isFinite = trimArray.every(n => Number.isFinite(n));
-                        const isInside = trimArray[0] >= mediaArray[0] && trimArray[1] >= mediaArray[1] &&
-                                        trimArray[2] <= mediaArray[2] && trimArray[3] <= mediaArray[3];
+        if (!capability.implemented) {
+            console.log(`[AUTOFIX-ENGINE] executeFix: Fix '${fixId}' is scaffolded but not implemented.`);
+            payload.skipped = true;
+            payload.status = "SKIPPED_UNSUPPORTED";
+            payload.skip_reason = "FIX_NOT_IMPLEMENTED";
+            payload.message = capability.customer_message;
+            payload.evidence = { implemented: false };
+            payload.executable = false;
 
-                        if (!isFinite || width <= 0 || height <= 0 || !isInside) { allValid = false; break; }
-                    }
-                }
+            return {
+                ...payload,
+                ok: false,
+                output_path: null,
+                warnings: [payload.message],
+                verification_status: 'FAILED',
+                // legacy
+                noopFix: false,
+                fixApplied: false,
+                rewritten: false,
+                fixedPath: null,
+                artifacts: {}
+            };
+        }
 
-                if (allValid) {
-                    console.log(`[ENGINE][AUTOFIX] No-op detected: Document already compliant or copied without changes.`);
-                    if (output_path && input_path !== output_path) {
-                        try {
-                            await fs.copy(input_path, output_path);
-                        } catch (err) {
-                            console.warn(`[AUTOFIX-ENGINE] Failed to copy unmodified source: ${err.message}`);
-                        }
-                    }
-                    const finalPath = (output_path && input_path !== output_path && await fs.pathExists(output_path)) ? output_path : input_path;
+        const methodName = this.fixMethods[fixId];
+        if (!methodName || typeof this.pdfFixEngine[methodName] !== 'function') {
+             console.log(`[AUTOFIX-ENGINE] executeFix: Method mapping missing for '${fixId}'.`);
+             payload.failed = true;
+             payload.status = "FAILED";
+             payload.error_code = "METHOD_MISSING";
+             payload.error_message = `Fix engine method missing for ${fixId}`;
+             
+             return {
+                 ...payload,
+                 ok: false,
+                 output_path: null,
+                 warnings: [payload.error_message],
+                 verification_status: 'FAILED'
+             };
+        }
 
-                    return {
-                        ok: false, // MANDATORY RULE 3: Nunca devolver ok: true si no se ha modificado realmente el PDF
-                        status: 'NO_CHANGE', // MANDATORY RULE 5: status:NO_CHANGE
-                        fix_id: fixId,
-                        input_issue_codes: issueCodes,
-                        strategy: fix_hint,
-                        applied: false, // MANDATORY RULE 5: applied:false
-                        modified: false, // MANDATORY RULE 5: modified:false
-                        output_path: finalPath,
-                        warnings: ['Document copied without modification.'],
-                        verification_status: 'VERIFIED',
-                        // legacy compatibility fields:
-                        noopFix: true,
-                        fixApplied: false,
-                        rewritten: false,
-                        certificationMode: "CERTIFIED_WITHOUT_MODIFICATION",
-                        fixedPath: finalPath,
-                        artifacts: {
-                            certified_pdf: {
-                                source_preserved: true,
-                                rewrite: false,
-                                path: finalPath,
-                                filename: path.basename(finalPath)
-                            },
-                            fixed_pdf: {
-                                path: finalPath,
-                                filename: path.basename(finalPath),
-                                is_certified_original: true
-                            }
-                        },
-                        findings: [],
-                        repairs: [{
-                            code: fix_hint || 'UNKNOWN',
-                            status: 'SKIPPED',
-                            reason: 'Document copied without modification.',
-                            destructiveFixRisk: 'LOW',
-                            requires_human_review: false
-                        }]
+        console.log(`[AUTOFIX-ENGINE] executeFix: resolving ${fixId} to ${methodName}`);
+
+        try {
+            let result;
+            const methodParams = this._extractParams(methodName, this.config);
+            
+            // Execute method from PdfFixEngine
+            if (methodParams.length > 0) {
+                 result = await this.pdfFixEngine[methodName](input_path, output_path, ...methodParams, this.config);
+            } else {
+                 result = await this.pdfFixEngine[methodName](input_path, output_path, this.config);
+            }
+
+            // Map result to contract
+            if (result.success || result.ok) {
+                 payload.applied = true;
+                 payload.status = "APPLIED";
+                 payload.message = result.message || capability.customer_message;
+                 payload.evidence = result.evidence || {};
+                 payload.before_state = result.before_state || {};
+                 payload.after_state = result.after_state || {};
+                 
+                 // Update dynamic risk or review requirement from result
+                 if (result.requires_human_review !== undefined) {
+                     payload.requires_human_review = result.requires_human_review;
+                 }
+                 if (result.risk_level) {
+                     payload.risk_level = result.risk_level;
+                 }
+                 
+                 if (result.status === 'NO_CHANGE') {
+                      payload.applied = false;
+                      payload.skipped = true;
+                      payload.status = "NO_CHANGE";
+                 }
+            } else {
+                 payload.failed = true;
+                 payload.status = result.status || "FAILED";
+                 payload.error_code = result.error_code || "EXECUTION_ERROR";
+                 payload.error_message = result.error || "Unknown execution error";
+                 payload.evidence = result.evidence || {};
+            }
+
+            const warnings = result.error ? [result.error] : (result.warnings || []);
+            const isDestructive = payload.requires_human_review || payload.risk_level === 'HIGH' || payload.risk_level === 'CRITICAL';
+            
+            const artifacts = {};
+            if (payload.applied && output_path) {
+                artifacts.fixed_pdf = {
+                    path: output_path,
+                    filename: path.basename(output_path)
+                };
+                if (isDestructive) {
+                    artifacts.review_pdf = {
+                        path: output_path,
+                        filename: path.basename(output_path)
+                    };
+                } else {
+                    artifacts.certified_pdf = {
+                        path: output_path,
+                        filename: path.basename(output_path)
                     };
                 }
-            } catch (err) {
-                console.warn(`[AUTOFIX-ENGINE] Pre-fix validation failed, proceeding with fix: ${err.message}`);
             }
-        }
 
-        // 2. Technical Execution
-        console.log(`[AUTOFIX-ENGINE] executeFix: resolving ${fix_hint} to ${method}`);
-
-        let result;
-        if (method === 'rebuildTrimBox') {
-            result = await this.pdfFixEngine.rebuildTrimBox(input_path, output_path);
-        } else if (method === 'applyBleed') {
-            result = await this.pdfFixEngine.applyBleed(input_path, output_path, this.config.minBleedMm || 3, this.config);
-        } else if (method === 'applyCmyk') {
-            result = await this.pdfFixEngine.applyCmyk(input_path, output_path, this.config.iccPath);
-        } else if (method === 'injectOutputIntent') {
-            const iccPath = this.config.iccPath || resolveIccPath(this.config.iccProfile || 'iso_coated_v3');
-            result = await this.pdfFixEngine.injectOutputIntent(input_path, output_path, iccPath);
-        } else {
-            result = { success: false, error: `Strategy method ${method} not implemented` };
-        }
-        
-        if (result.success) {
-            console.log(`[ENGINE][AUTOFIX][OUTPUT-GENERATED] Successfully generated fixed file: ${output_path}`);
-        } else {
-            console.log(`[ENGINE][AUTOFIX][NO-OUTPUT] Fix engine failed: ${result.error || 'Unknown error'}`);
-        }
-
-        const warnings = result.error ? [result.error] : (result.warnings || []);
-        const returnStatus = result.status || (result.success ? 'SUCCESS' : 'FAILURE');
-
-        const isDestructive = result.requires_human_review || result.destructiveFixRisk === 'HIGH' || result.production_certified === false;
-        
-        let finalStatus = returnStatus;
-        if (result.success) {
-            finalStatus = isDestructive ? 'COMPLETED_WITH_REVIEW' : 'AUTOFIX_COMPLETED';
-        }
-
-        const artifacts = {};
-        if (result.success) {
-            artifacts.fixed_pdf = {
-                path: output_path,
-                filename: path.basename(output_path)
+            return {
+                ...payload,
+                ok: payload.applied, // Use applied for ok
+                industrial_quality: result.industrial_quality || 'STANDARD',
+                production_certified: !isDestructive && payload.applied,
+                output_path: payload.applied ? output_path : (result.output_path || null),
+                warnings,
+                verification_status: payload.applied ? (isDestructive ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED') : 'FAILED',
+                // legacy
+                noopFix: payload.status === 'NO_CHANGE',
+                fixApplied: payload.applied,
+                rewritten: payload.applied,
+                fixedPath: payload.applied ? output_path : null,
+                findings: result.findings || [],
+                artifacts
             };
-            if (isDestructive) {
-                artifacts.review_pdf = {
-                    path: output_path,
-                    filename: path.basename(output_path)
-                };
-            } else {
-                artifacts.certified_pdf = {
-                    path: output_path,
-                    filename: path.basename(output_path)
-                };
-            }
-        }
 
-        return { 
-            ok: result.success,
-            status: finalStatus,
-            fix_id: fixId,
-            input_issue_codes: issueCodes,
-            strategy: result.strategy || fix_hint,
-            industrial_quality: result.industrial_quality || 'STANDARD',
-            requires_human_review: result.requires_human_review || false,
-            production_certified: !isDestructive,
-            bleed_fix_mode: result.bleed_fix_mode || null,
-            applied: result.success,
-            modified: result.success,
-            output_path: result.success ? output_path : null,
-            warnings,
-            verification_status: result.success ? (isDestructive ? 'HUMAN_REVIEW_REQUIRED' : 'VERIFIED') : 'FAILED',
-            // legacy compatibility fields:
-            noopFix: false,
-            fixApplied: result.success,
-            rewritten: result.success,
-            fixedPath: result.success ? output_path : null,
-            findings: result.findings || [],
-            artifacts,
-            repairs: result.repairs || [{
-                code: fix_hint || 'UNKNOWN',
-                status: result.success ? 'APPLIED' : 'FAILED',
-                strategy: result.strategy || fix_hint,
-                reason: result.error,
-                destructiveFixRisk: result.destructiveFixRisk || 'LOW',
-                requires_human_review: result.requires_human_review || false
-            }]
-        };
+        } catch (error) {
+             console.error(`[AUTOFIX-ENGINE] Exception during ${methodName}:`, error);
+             payload.failed = true;
+             payload.status = "FAILED";
+             payload.error_code = "EXCEPTION";
+             payload.error_message = error.message;
+             
+             return {
+                 ...payload,
+                 ok: false,
+                 output_path: null,
+                 warnings: [error.message],
+                 verification_status: 'FAILED'
+             };
+        }
     }
 
     /**
      * Executes a planned fix step.
-     * Agnostic of monolith-specific paths or asset objects.
      */
     async executeStep(findingCode, inputPath, outputPath, options = {}) {
-        const method = this.fixStrategies[findingCode];
-        if (!method || typeof this.pdfFixEngine[method] !== 'function') {
-            return { success: false, error: `No fix strategy for code: ${findingCode}` };
-        }
-
-        // Extract technical parameters from options
-        const params = this._extractParams(method, options);
-
-        // Security/Concurrency: Ensure unique temporary isolation
-        console.log(`[AUTOFIX-ENGINE] Executing ${method} for ${findingCode}`);
-        return this.pdfFixEngine[method](inputPath, outputPath, ...params, {
-            reqId: options.jobId || `fix_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+        const fixId = normalizeFixId(findingCode);
+        return this.executeFix({
+            input_path: inputPath,
+            output_path: outputPath,
+            fix_hint: fixId,
+            jobId: options.jobId
         });
     }
 
@@ -288,7 +262,8 @@ class AutofixExecutionEngine {
      * Determines if a technical finding code is fixable by this engine.
      */
     isFixable(findingCode) {
-        return !!this.fixStrategies[findingCode];
+        const fixId = normalizeFixId(findingCode);
+        return isFixImplemented(fixId);
     }
 }
 
