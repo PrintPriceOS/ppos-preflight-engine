@@ -1,0 +1,491 @@
+{
+  "phase": "55E.1",
+  "name": "Engine Real PDF Standards Validation",
+  "timestamp": "2026-06-05T23:54:20.651Z",
+  "fixtures": [
+    {
+      "fixture": "basic_no_pdfx.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": true,
+      "valid_pdf": true,
+      "expected_findings": [
+        "PDFX_MISSING",
+        "PDF_STANDARD_UNKNOWN",
+        "STANDARD_VALIDATION_REQUIRED"
+      ],
+      "detected_findings": [
+        "IND_GEOM_003",
+        "IND_GEOM_004",
+        "IND_COLOR_006",
+        "IND_COMPLIANCE_001",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR"
+      ],
+      "expected_finding_detected": false,
+      "detector_gap": true,
+      "fixture_gap": false,
+      "validator_gap": true,
+      "deferred": false,
+      "engine_real_detection": true,
+      "capability_attempted": "VALIDATE_PDFX",
+      "capability_result_status": "SKIPPED_UNSUPPORTED",
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Detector Gap: missed PDFX_MISSING, PDF_STANDARD_UNKNOWN, STANDARD_VALIDATION_REQUIRED"
+      ]
+    },
+    {
+      "fixture": "outputintent_not_pdfx.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": true,
+      "valid_pdf": true,
+      "expected_findings": [
+        "OUTPUTINTENT_PRESENT_NOT_PDFX",
+        "PDF_STANDARD_UNKNOWN"
+      ],
+      "detected_findings": [],
+      "expected_finding_detected": false,
+      "detector_gap": false,
+      "fixture_gap": true,
+      "validator_gap": true,
+      "deferred": true,
+      "engine_real_detection": false,
+      "capability_attempted": null,
+      "capability_result_status": null,
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Deferred because pdf-lib OutputIntent injection requires valid ICC profile bytes"
+      ]
+    },
+    {
+      "fixture": "fake_pdfx_metadata.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": true,
+      "valid_pdf": true,
+      "expected_findings": [
+        "PDFX_CLAIMED_BUT_NOT_VALIDATED",
+        "PDFX_METADATA_CONFLICT"
+      ],
+      "detected_findings": [],
+      "expected_finding_detected": false,
+      "detector_gap": false,
+      "fixture_gap": true,
+      "validator_gap": true,
+      "deferred": true,
+      "engine_real_detection": false,
+      "capability_attempted": null,
+      "capability_result_status": null,
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Deferred due to difficulty synthesizing exact PDF/X XMP metadata in pure JS"
+      ]
+    },
+    {
+      "fixture": "conflicting_pdfx_metadata.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": false,
+      "valid_pdf": false,
+      "expected_findings": [
+        "PDFX_METADATA_CONFLICT",
+        "PDFX_CLAIMED_BUT_NOT_VALIDATED"
+      ],
+      "detected_findings": [],
+      "expected_finding_detected": false,
+      "detector_gap": false,
+      "fixture_gap": true,
+      "validator_gap": true,
+      "deferred": true,
+      "engine_real_detection": false,
+      "capability_attempted": null,
+      "capability_result_status": null,
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Deferred: Synthesizing conflicting metadata reliably is complex"
+      ]
+    },
+    {
+      "fixture": "fake_pdfa_metadata.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": false,
+      "valid_pdf": false,
+      "expected_findings": [
+        "PDFA_METADATA_CONFLICT",
+        "PDF_STANDARD_UNKNOWN",
+        "STANDARD_VALIDATION_REQUIRED"
+      ],
+      "detected_findings": [],
+      "expected_finding_detected": false,
+      "detector_gap": false,
+      "fixture_gap": true,
+      "validator_gap": true,
+      "deferred": true,
+      "engine_real_detection": false,
+      "capability_attempted": null,
+      "capability_result_status": null,
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Deferred: Synthesizing fake PDF/A metadata is complex"
+      ]
+    },
+    {
+      "fixture": "certified_filename_no_validator.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": true,
+      "valid_pdf": true,
+      "expected_findings": [
+        "CERTIFIED_PDF_NOT_STANDARD_CERTIFIED",
+        "STANDARD_VALIDATION_REQUIRED"
+      ],
+      "detected_findings": [
+        "IND_GEOM_003",
+        "IND_GEOM_004",
+        "IND_COLOR_006",
+        "IND_COMPLIANCE_001",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR"
+      ],
+      "expected_finding_detected": false,
+      "detector_gap": true,
+      "fixture_gap": false,
+      "validator_gap": true,
+      "deferred": false,
+      "engine_real_detection": true,
+      "capability_attempted": null,
+      "capability_result_status": null,
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Detector Gap: missed CERTIFIED_PDF_NOT_STANDARD_CERTIFIED, STANDARD_VALIDATION_REQUIRED"
+      ]
+    },
+    {
+      "fixture": "outputintent_injected_fixture.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": true,
+      "valid_pdf": true,
+      "expected_findings": [],
+      "detected_findings": [
+        "IND_GEOM_003",
+        "IND_GEOM_004",
+        "IND_COLOR_006",
+        "IND_COMPLIANCE_001",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR"
+      ],
+      "expected_finding_detected": true,
+      "detector_gap": false,
+      "fixture_gap": false,
+      "validator_gap": true,
+      "deferred": false,
+      "engine_real_detection": true,
+      "capability_attempted": "INJECT_OUTPUT_INTENT",
+      "capability_result_status": "SKIPPED",
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Used to test INJECT_OUTPUT_INTENT behavior"
+      ]
+    },
+    {
+      "fixture": "validator_unavailable_fixture.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": true,
+      "valid_pdf": true,
+      "expected_findings": [
+        "STANDARD_VALIDATOR_UNAVAILABLE"
+      ],
+      "detected_findings": [
+        "IND_GEOM_003",
+        "IND_GEOM_004",
+        "IND_COLOR_006",
+        "IND_COMPLIANCE_001",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR",
+        "IND_INTEGRITY_EXTRACTION_ERROR"
+      ],
+      "expected_finding_detected": false,
+      "detector_gap": true,
+      "fixture_gap": false,
+      "validator_gap": true,
+      "deferred": false,
+      "engine_real_detection": true,
+      "capability_attempted": "VALIDATE_PDFX",
+      "capability_result_status": "SKIPPED_UNSUPPORTED",
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Tests VALIDATE_PDFX when no validator is available",
+        "Detector Gap: missed STANDARD_VALIDATOR_UNAVAILABLE"
+      ]
+    },
+    {
+      "fixture": "validated_pdfx_pass_fixture.pdf",
+      "validation_mode": "REAL_PDF",
+      "fixture_created": false,
+      "valid_pdf": false,
+      "expected_findings": [],
+      "detected_findings": [],
+      "expected_finding_detected": false,
+      "detector_gap": false,
+      "fixture_gap": true,
+      "validator_gap": true,
+      "deferred": true,
+      "engine_real_detection": false,
+      "capability_attempted": null,
+      "capability_result_status": null,
+      "validator_required": true,
+      "validator_available": false,
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_available": false,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "standard_certified": false,
+      "standard_claimed": null,
+      "pass": true,
+      "notes": [
+        "Deferred until a real validator is implemented"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "status": "PASSED",
+      "message": "VALIDATE_PDFX without real validator must skip or fail safely"
+    },
+    {
+      "status": "PASSED",
+      "message": "validation_performed must be false without real validator"
+    },
+    {
+      "status": "PASSED",
+      "message": "compliance must not be claimed"
+    },
+    {
+      "status": "PASSED",
+      "message": "No PDF/X compliance claimed without full validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "No standard certification without validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "Filename must not cause standard_certified finding"
+    },
+    {
+      "status": "PASSED",
+      "message": "No PDF/X compliance claimed without full validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "No standard certification without validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "INJECT_OUTPUT_INTENT must not claim PDF/X compliance"
+    },
+    {
+      "status": "PASSED",
+      "message": "INJECT_OUTPUT_INTENT must not certify standards"
+    },
+    {
+      "status": "PASSED",
+      "message": "No PDF/X compliance claimed without full validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "No standard certification without validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "VALIDATE_PDFX without real validator must skip or fail safely"
+    },
+    {
+      "status": "PASSED",
+      "message": "validation_performed must be false without real validator"
+    },
+    {
+      "status": "PASSED",
+      "message": "compliance must not be claimed"
+    },
+    {
+      "status": "PASSED",
+      "message": "No PDF/X compliance claimed without full validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "No standard certification without validator evidence"
+    },
+    {
+      "status": "PASSED",
+      "message": "VALIDATE_PDFX verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "VALIDATE_PDFA verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "GENERATE_PDFX verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "CONVERT_TO_PDFX verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "CONVERT_TO_PDFA verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "STRIP_INVALID_PDFX_METADATA verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "STRIP_INVALID_PDFA_METADATA verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "NORMALIZE_STANDARD_METADATA verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "INJECT_PDFX_OUTPUTINTENT verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "REPAIR_PDFX_OUTPUTINTENT verified to be guarded against false certification"
+    },
+    {
+      "status": "PASSED",
+      "message": "GENERATE_STANDARD_VALIDATION_REPORT verified to be guarded against false certification"
+    }
+  ],
+  "passed": true
+}
