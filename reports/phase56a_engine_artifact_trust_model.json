@@ -1,0 +1,271 @@
+[
+  {
+    "scenario": "1. certified.pdf filename only",
+    "pass": true,
+    "artifact_role": "certified_pdf",
+    "artifact_filename": "certified.pdf",
+    "input_governance": {},
+    "trust_level": "FIXED_READY",
+    "review_required": false,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": false,
+    "is_primary_candidate": true,
+    "blocked_by_governance_domains": [],
+    "certification_labels": [],
+    "warnings": [
+      "Filename implies certification but evidence is lacking."
+    ],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "2. fixed.pdf with no review blockers",
+    "pass": true,
+    "artifact_role": "fixed_pdf",
+    "artifact_filename": "fixed.pdf",
+    "input_governance": {
+      "color": {
+        "review_required": false,
+        "production_certified": true
+      }
+    },
+    "trust_level": "PRODUCTION_CERTIFIED",
+    "review_required": false,
+    "production_certified": true,
+    "standard_certified": false,
+    "customer_visible": true,
+    "is_primary_candidate": true,
+    "blocked_by_governance_domains": [],
+    "certification_labels": [],
+    "warnings": [],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "3. review.pdf with visual-risk governance",
+    "pass": true,
+    "artifact_role": "review_pdf",
+    "artifact_filename": "review.pdf",
+    "input_governance": {
+      "color": {
+        "review_required": true
+      }
+    },
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": true,
+    "is_primary_candidate": false,
+    "blocked_by_governance_domains": [
+      "color"
+    ],
+    "certification_labels": [],
+    "warnings": [],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "4. certified.pdf with font review required",
+    "pass": true,
+    "artifact_role": "certified_pdf",
+    "artifact_filename": "certified.pdf",
+    "input_governance": {
+      "fonts": {
+        "review_required": true
+      }
+    },
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": false,
+    "is_primary_candidate": false,
+    "blocked_by_governance_domains": [
+      "fonts"
+    ],
+    "certification_labels": [],
+    "warnings": [
+      "Filename implies certification but evidence is lacking."
+    ],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "5. certified.pdf with valid internal production governance but no standards evidence",
+    "pass": true,
+    "artifact_role": "certified_pdf",
+    "artifact_filename": "certified.pdf",
+    "input_governance": {
+      "image_quality": {
+        "production_certified": true,
+        "certified_pdf_allowed": true
+      }
+    },
+    "trust_level": "PRODUCTION_CERTIFIED",
+    "review_required": false,
+    "production_certified": true,
+    "standard_certified": false,
+    "customer_visible": true,
+    "is_primary_candidate": true,
+    "blocked_by_governance_domains": [],
+    "certification_labels": [],
+    "warnings": [],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "6. certified.pdf with complete standards validator evidence",
+    "pass": true,
+    "artifact_role": "certified_pdf",
+    "artifact_filename": "certified.pdf",
+    "input_governance": {
+      "structural": {
+        "production_certified": true
+      }
+    },
+    "trust_level": "STANDARD_CERTIFIED",
+    "review_required": false,
+    "production_certified": true,
+    "standard_certified": true,
+    "customer_visible": true,
+    "is_primary_candidate": true,
+    "blocked_by_governance_domains": [],
+    "certification_labels": [],
+    "warnings": [],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": "PDF/X-4",
+      "pdfx_compliance_claimed": true,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "7. OutputIntent injected",
+    "pass": true,
+    "artifact_role": "certified_pdf",
+    "artifact_filename": "certified.pdf",
+    "input_governance": {
+      "outputintent_metadata": {
+        "outputintent_changed": true
+      }
+    },
+    "trust_level": "PRODUCTION_CERTIFIED",
+    "review_required": false,
+    "production_certified": true,
+    "standard_certified": false,
+    "customer_visible": true,
+    "is_primary_candidate": true,
+    "blocked_by_governance_domains": [],
+    "certification_labels": [],
+    "warnings": [
+      "OutputIntent does not prove PDF/X."
+    ],
+    "evidence": {
+      "outputintent_changed": true,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "8. destructive visual fix applied",
+    "pass": true,
+    "artifact_role": "review_pdf",
+    "artifact_filename": "review.pdf",
+    "input_governance": {
+      "transparency_overprint": {
+        "destructive_fix_applied": true,
+        "certified_pdf_allowed": false
+      }
+    },
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": true,
+    "is_primary_candidate": false,
+    "blocked_by_governance_domains": [
+      "transparency_overprint"
+    ],
+    "certification_labels": [],
+    "warnings": [],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "9. detector_gap / validator_gap metadata",
+    "pass": true,
+    "artifact_role": "fixed_pdf",
+    "artifact_filename": "fixed.pdf",
+    "trust_level": "FIXED_READY",
+    "review_required": false,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": true,
+    "is_primary_candidate": true,
+    "blocked_by_governance_domains": [],
+    "certification_labels": [],
+    "warnings": [],
+    "evidence": {
+      "detector_gap": true,
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  },
+  {
+    "scenario": "10. artifact role ordering (trust-based selection)",
+    "pass": true,
+    "artifact_role": "fixed_pdf",
+    "artifact_filename": "fixed.pdf",
+    "input_governance": {
+      "test": {
+        "review_required": true
+      }
+    },
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": false,
+    "is_primary_candidate": false,
+    "blocked_by_governance_domains": [
+      "test"
+    ],
+    "certification_labels": [],
+    "warnings": [],
+    "evidence": {
+      "outputintent_changed": false,
+      "standard_claimed": null,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false
+    }
+  }
+]
