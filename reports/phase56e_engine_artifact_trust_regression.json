@@ -1,0 +1,232 @@
+[
+  {
+    "scenario": "1. certified.pdf filename only",
+    "input_artifact": "certified.pdf",
+    "input_governance": {},
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_READY",
+    "review_required": false,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": false,
+    "certified_pdf_allowed": true,
+    "primary_artifact_type": "certified_pdf",
+    "blocked_by_governance_domains": [],
+    "primary_disallowed_reasons": [],
+    "warnings": [
+      "Filename implies certification but evidence is lacking."
+    ],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "2. fixed.pdf with no blockers",
+    "input_artifact": "fixed.pdf",
+    "input_governance": {},
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_READY",
+    "review_required": false,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": true,
+    "certified_pdf_allowed": true,
+    "primary_artifact_type": "fixed_pdf",
+    "blocked_by_governance_domains": [],
+    "primary_disallowed_reasons": [],
+    "warnings": [],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "3. review.pdf required due to visual governance",
+    "input_artifact": "review.pdf",
+    "input_governance": {
+      "color": {
+        "review_required": true
+      }
+    },
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": true,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "review_pdf",
+    "blocked_by_governance_domains": [
+      "color"
+    ],
+    "primary_disallowed_reasons": [
+      "color"
+    ],
+    "warnings": [],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "4. certified.pdf with font/color/image/transparency review blocker",
+    "input_artifact": "certified.pdf",
+    "input_governance": {
+      "fonts": {
+        "review_required": true
+      }
+    },
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": false,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "certified_pdf",
+    "blocked_by_governance_domains": [
+      "fonts"
+    ],
+    "primary_disallowed_reasons": [
+      "fonts"
+    ],
+    "warnings": [
+      "Filename implies certification but evidence is lacking."
+    ],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "5. certified.pdf production-certified but not standards-certified",
+    "input_artifact": "certified.pdf",
+    "input_governance": {
+      "internal": {
+        "production_certified": true,
+        "certified_pdf_allowed": true
+      }
+    },
+    "artifact_trust": "evaluated",
+    "trust_level": "PRODUCTION_CERTIFIED",
+    "review_required": false,
+    "production_certified": true,
+    "standard_certified": false,
+    "customer_visible": true,
+    "certified_pdf_allowed": true,
+    "primary_artifact_type": "certified_pdf",
+    "blocked_by_governance_domains": [],
+    "primary_disallowed_reasons": [],
+    "warnings": [],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "6. certified.pdf standards-certified with complete validator evidence",
+    "input_artifact": "certified.pdf",
+    "input_governance": {
+      "internal": {
+        "production_certified": true,
+        "certified_pdf_allowed": true
+      }
+    },
+    "artifact_trust": "evaluated",
+    "trust_level": "STANDARD_CERTIFIED",
+    "review_required": false,
+    "production_certified": true,
+    "standard_certified": true,
+    "customer_visible": true,
+    "certified_pdf_allowed": true,
+    "primary_artifact_type": "certified_pdf",
+    "blocked_by_governance_domains": [],
+    "primary_disallowed_reasons": [],
+    "warnings": [],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "7. OutputIntent injected",
+    "input_artifact": "certified.pdf",
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_READY",
+    "review_required": false,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": false,
+    "certified_pdf_allowed": true,
+    "primary_artifact_type": "certified_pdf",
+    "blocked_by_governance_domains": [],
+    "primary_disallowed_reasons": [],
+    "warnings": [
+      "OutputIntent does not prove PDF/X.",
+      "Filename implies certification but evidence is lacking."
+    ],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "8. destructive visual fix applied",
+    "input_artifact": "review.pdf",
+    "input_governance": {
+      "transparency_overprint": {
+        "destructive_fix_applied": true,
+        "certified_pdf_allowed": false
+      }
+    },
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": true,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "review_pdf",
+    "blocked_by_governance_domains": [
+      "transparency_overprint"
+    ],
+    "primary_disallowed_reasons": [
+      "transparency_overprint"
+    ],
+    "warnings": [],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "9. detector_gap / validator_gap metadata",
+    "input_artifact": "certified.pdf",
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_READY",
+    "review_required": false,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": false,
+    "certified_pdf_allowed": true,
+    "primary_artifact_type": "certified_pdf",
+    "blocked_by_governance_domains": [],
+    "primary_disallowed_reasons": [],
+    "warnings": [
+      "Filename implies certification but evidence is lacking."
+    ],
+    "pass": true,
+    "notes": "As expected"
+  },
+  {
+    "scenario": "10. artifact role ordering",
+    "input_artifact": "review.pdf",
+    "input_governance": {
+      "color": {
+        "review_required": true
+      }
+    },
+    "artifact_trust": "evaluated",
+    "trust_level": "FIXED_REVIEW_REQUIRED",
+    "review_required": true,
+    "production_certified": false,
+    "standard_certified": false,
+    "customer_visible": true,
+    "certified_pdf_allowed": false,
+    "primary_artifact_type": "review_pdf",
+    "blocked_by_governance_domains": [
+      "color"
+    ],
+    "primary_disallowed_reasons": [
+      "color"
+    ],
+    "warnings": [],
+    "pass": true,
+    "notes": "As expected"
+  }
+]
