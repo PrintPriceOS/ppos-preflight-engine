@@ -1,0 +1,35 @@
+{
+  "name": "Phase 61A Structural and Metadata Fixtures",
+  "fixtures": [
+    {
+      "id": "object_streams_candidate",
+      "file": "object_streams_candidate.pdf",
+      "description": "PDF to normalize object streams"
+    },
+    {
+      "id": "fake_pdfx_claim",
+      "file": "fake_pdfx_claim.pdf",
+      "description": "Fake PDF/X claim"
+    },
+    {
+      "id": "fake_pdfa_claim",
+      "file": "fake_pdfa_claim.pdf",
+      "description": "Fake PDF/A claim"
+    },
+    {
+      "id": "conflicting_standard_metadata",
+      "file": "conflicting_standard_metadata.pdf",
+      "description": "Conflicting standards claims"
+    },
+    {
+      "id": "certified_filename_no_standard",
+      "file": "certified_filename_no_standard.pdf",
+      "description": "Certified filename but no claim inside"
+    },
+    {
+      "id": "clean_control",
+      "file": "clean_control.pdf",
+      "description": "Clean normal PDF"
+    }
+  ]
+}

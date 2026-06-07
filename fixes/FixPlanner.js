@@ -15,7 +15,23 @@ class FixPlanner {
         if (!Array.isArray(issues)) return plan;
 
         issues.forEach(issue => {
-            const rawStrategy = issue.repairStrategy || issue.fix_method || issue.recommended_fix || issue.code || issue.id;
+            let rawStrategy = issue.repairStrategy || issue.fix_method || issue.recommended_fix || issue.code || issue.id;
+
+            // Phase 61A planning rules: map structural and metadata finding codes
+            if (rawStrategy === 'IND_STRUCT_007' || rawStrategy === 'OBJECT_STREAMS_INCONSISTENT' || 
+                rawStrategy === 'IND_STRUCT_008' || rawStrategy === 'PDF_STRUCTURE_NEEDS_NORMALIZATION') {
+                rawStrategy = 'NORMALIZE_OBJECT_STREAMS';
+            } else if (rawStrategy === 'IND_COMPLIANCE_005' || rawStrategy === 'PDFX_CLAIMED_BUT_NOT_VALIDATED' || 
+                       rawStrategy === 'IND_COMPLIANCE_022' || rawStrategy === 'STANDARD_CLAIM_WITHOUT_VALIDATOR_EVIDENCE') {
+                rawStrategy = 'REVOKE_FALSE_CERTIFICATION';
+            } else if (rawStrategy === 'IND_COMPLIANCE_006' || rawStrategy === 'PDFX_METADATA_CONFLICT') {
+                rawStrategy = 'STRIP_INVALID_PDFX_METADATA';
+            } else if (rawStrategy === 'IND_COMPLIANCE_007' || rawStrategy === 'PDFA_METADATA_CONFLICT') {
+                rawStrategy = 'STRIP_INVALID_PDFA_METADATA';
+            } else if (rawStrategy === 'IND_COMPLIANCE_015' || rawStrategy === 'STANDARD_VALIDATION_REQUIRED') {
+                rawStrategy = 'GENERATE_STANDARD_VALIDATION_REPORT_INTERNAL';
+            }
+
             const fixId = normalizeFixId(rawStrategy);
             const cap = getFixCapability(fixId);
             
