@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-06-07T07:06:10.764Z",
+  "fixtures": [
+    {
+      "filename": "missing_crop_marks_safe_margin.pdf",
+      "path": "C:\\Users\\KIKE\\Downloads\\ppos-preflight-engine\\fixtures\\phase62a\\missing_crop_marks_safe_margin.pdf",
+      "expected": "safe"
+    },
+    {
+      "filename": "missing_crop_marks_no_margin.pdf",
+      "path": "C:\\Users\\KIKE\\Downloads\\ppos-preflight-engine\\fixtures\\phase62a\\missing_crop_marks_no_margin.pdf",
+      "expected": "unsafe_margin"
+    },
+    {
+      "filename": "existing_registration_marks_outside_trim.pdf",
+      "path": "C:\\Users\\KIKE\\Downloads\\ppos-preflight-engine\\fixtures\\phase62a\\existing_registration_marks_outside_trim.pdf",
+      "expected": "outside"
+    },
+    {
+      "filename": "registration_marks_inside_trim.pdf",
+      "path": "C:\\Users\\KIKE\\Downloads\\ppos-preflight-engine\\fixtures\\phase62a\\registration_marks_inside_trim.pdf",
+      "expected": "inside"
+    },
+    {
+      "filename": "inconsistent_page_marks.pdf",
+      "path": "C:\\Users\\KIKE\\Downloads\\ppos-preflight-engine\\fixtures\\phase62a\\inconsistent_page_marks.pdf",
+      "expected": "inconsistent"
+    },
+    {
+      "filename": "clean_control.pdf",
+      "path": "C:\\Users\\KIKE\\Downloads\\ppos-preflight-engine\\fixtures\\phase62a\\clean_control.pdf",
+      "expected": "clean"
+    }
+  ]
+}

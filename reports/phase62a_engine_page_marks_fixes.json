@@ -1,0 +1,288 @@
+{
+  "generated_at": "2026-06-07T07:06:11.341Z",
+  "smoke_passed": true,
+  "results": [
+    {
+      "scenario": "ADD_CROP_MARKS safe margin",
+      "fixture": "missing_crop_marks_safe_margin.pdf",
+      "capability": "ADD_CROP_MARKS",
+      "status": "APPLIED",
+      "output_pdf_valid": true,
+      "pages_processed": 1,
+      "mark_geometry": [
+        {
+          "start": {
+            "x": 95,
+            "y": 100
+          },
+          "end": {
+            "x": 85,
+            "y": 100
+          },
+          "page": 0
+        },
+        {
+          "start": {
+            "x": 100,
+            "y": 95
+          },
+          "end": {
+            "x": 100,
+            "y": 85
+          },
+          "page": 0
+        },
+        {
+          "start": {
+            "x": 505,
+            "y": 100
+          },
+          "end": {
+            "x": 515,
+            "y": 100
+          },
+          "page": 0
+        },
+        {
+          "start": {
+            "x": 500,
+            "y": 95
+          },
+          "end": {
+            "x": 500,
+            "y": 85
+          },
+          "page": 0
+        },
+        {
+          "start": {
+            "x": 95,
+            "y": 700
+          },
+          "end": {
+            "x": 85,
+            "y": 700
+          },
+          "page": 0
+        },
+        {
+          "start": {
+            "x": 100,
+            "y": 705
+          },
+          "end": {
+            "x": 100,
+            "y": 715
+          },
+          "page": 0
+        },
+        {
+          "start": {
+            "x": 505,
+            "y": 700
+          },
+          "end": {
+            "x": 515,
+            "y": 700
+          },
+          "page": 0
+        },
+        {
+          "start": {
+            "x": 500,
+            "y": 705
+          },
+          "end": {
+            "x": 500,
+            "y": 715
+          },
+          "page": 0
+        }
+      ],
+      "page_boxes_before": [
+        {
+          "trimBox": {
+            "x": 100,
+            "y": 100,
+            "width": 400,
+            "height": 600
+          },
+          "mediaBox": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 800
+          },
+          "cropBox": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 800
+          }
+        }
+      ],
+      "page_boxes_after": [
+        {
+          "trimBox": {
+            "x": 100,
+            "y": 100,
+            "width": 400,
+            "height": 600
+          },
+          "mediaBox": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 800
+          },
+          "cropBox": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 800
+          }
+        }
+      ],
+      "safety_checks": [],
+      "detection_confidence": null,
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "visually_sensitive": false,
+      "evidence_present": true,
+      "fixture_gap": false,
+      "tool_gap": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "ADD_CROP_MARKS no margin",
+      "fixture": "missing_crop_marks_no_margin.pdf",
+      "capability": "ADD_CROP_MARKS",
+      "status": "SKIPPED",
+      "output_pdf_valid": true,
+      "page_boxes_before": [
+        {
+          "trimBox": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 800
+          },
+          "mediaBox": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 800
+          },
+          "cropBox": {
+            "x": 0,
+            "y": 0,
+            "width": 600,
+            "height": 800
+          }
+        }
+      ],
+      "safety_checks": [
+        "Margin insufficient. Required: 15pt. Found L:0, R:0, T:0, B:0"
+      ],
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "visually_sensitive": false,
+      "evidence_present": true,
+      "fixture_gap": false,
+      "tool_gap": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "REMOVE_REGISTRATION_MARKS outside TrimBox",
+      "fixture": "existing_registration_marks_outside_trim.pdf",
+      "capability": "REMOVE_REGISTRATION_MARKS",
+      "status": "SKIPPED",
+      "output_pdf_valid": true,
+      "pages_processed": 0,
+      "safety_checks": [
+        "Avoided ambiguous artwork removal."
+      ],
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "visually_sensitive": false,
+      "evidence_present": true,
+      "fixture_gap": false,
+      "tool_gap": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "REMOVE_REGISTRATION_MARKS inside TrimBox",
+      "fixture": "registration_marks_inside_trim.pdf",
+      "capability": "REMOVE_REGISTRATION_MARKS",
+      "status": "SKIPPED",
+      "output_pdf_valid": true,
+      "pages_processed": 0,
+      "safety_checks": [
+        "Avoided ambiguous artwork removal."
+      ],
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "visually_sensitive": false,
+      "evidence_present": true,
+      "fixture_gap": false,
+      "tool_gap": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "NORMALIZE_PAGE_MARKS inconsistent",
+      "fixture": "inconsistent_page_marks.pdf",
+      "capability": "NORMALIZE_PAGE_MARKS",
+      "status": "SKIPPED",
+      "output_pdf_valid": true,
+      "pages_processed": 0,
+      "safety_checks": [],
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "visually_sensitive": false,
+      "evidence_present": true,
+      "fixture_gap": false,
+      "tool_gap": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "clean control",
+      "fixture": "clean_control.pdf",
+      "capability": "NORMALIZE_PAGE_MARKS",
+      "status": "SKIPPED",
+      "output_pdf_valid": true,
+      "pages_processed": 0,
+      "safety_checks": [],
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "visually_sensitive": false,
+      "evidence_present": true,
+      "fixture_gap": false,
+      "tool_gap": false,
+      "pass": true,
+      "notes": []
+    }
+  ]
+}

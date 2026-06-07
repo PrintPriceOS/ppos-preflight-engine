@@ -30,6 +30,13 @@ class FixPlanner {
                 rawStrategy = 'STRIP_INVALID_PDFA_METADATA';
             } else if (rawStrategy === 'IND_COMPLIANCE_015' || rawStrategy === 'STANDARD_VALIDATION_REQUIRED') {
                 rawStrategy = 'GENERATE_STANDARD_VALIDATION_REPORT_INTERNAL';
+            } else if (rawStrategy === 'CROP_MARKS_MISSING' || rawStrategy === 'IND_MARK_004') {
+                rawStrategy = 'ADD_CROP_MARKS';
+            } else if (rawStrategy === 'CROP_MARKS_INVALID' || rawStrategy === 'IND_MARK_005' || 
+                       rawStrategy === 'PAGE_MARKS_INCONSISTENT' || rawStrategy === 'IND_MARK_010') {
+                rawStrategy = 'NORMALIZE_PAGE_MARKS';
+            } else if (rawStrategy === 'REGISTRATION_MARKS_PRESENT' || rawStrategy === 'IND_MARK_007') {
+                rawStrategy = 'REMOVE_REGISTRATION_MARKS';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -47,13 +54,39 @@ class FixPlanner {
                     }
                 }
                 
+                // Phase 62A: Page Marks guardrails
+                if (cap.category === 'page_marks') {
+                    if (policyMode === "SAFE") {
+                        autofixable = false; // Cannot run in SAFE mode
+                    }
+                    if (fixId === 'ADD_CROP_MARKS') {
+                        // If finding is insufficient margin or trimbox missing/required
+                        if (issue.id === 'INSUFFICIENT_MARGIN_FOR_CROP_MARKS' || issue.id === 'IND_MARK_013' ||
+                            issue.id === 'TRIMBOX_REQUIRED_FOR_MARKS' || issue.id === 'IND_MARK_012') {
+                            autofixable = false;
+                        }
+                    }
+                    if (issue.id === 'PAGE_MARKS_UNCERTAIN_GEOMETRY' || issue.id === 'IND_MARK_011') {
+                        autofixable = false;
+                    }
+                }
+                
                 const planned = implemented && autofixable && isUserFixable;
                 const skipped = !planned;
                 let skipReason = null;
                 
                 if (!implemented) skipReason = "FIX_NOT_IMPLEMENTED";
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
-                else if (!autofixable) skipReason = (cap.category === 'standards_certification' || cap.category === 'standards') ? "VALIDATOR_REQUIRED" : "POLICY_MODE_RESTRICTION";
+                else if (!autofixable) {
+                    if (cap.category === 'standards_certification' || cap.category === 'standards') skipReason = "VALIDATOR_REQUIRED";
+                    else if (cap.category === 'page_marks') {
+                        if (policyMode === "SAFE") skipReason = "SAFE_MODE_RESTRICTION";
+                        else if (issue.id === 'INSUFFICIENT_MARGIN_FOR_CROP_MARKS' || issue.id === 'IND_MARK_013') skipReason = "INSUFFICIENT_MARGIN";
+                        else if (issue.id === 'TRIMBOX_REQUIRED_FOR_MARKS' || issue.id === 'IND_MARK_012') skipReason = "TRIMBOX_MISSING";
+                        else if (issue.id === 'PAGE_MARKS_UNCERTAIN_GEOMETRY' || issue.id === 'IND_MARK_011') skipReason = "UNCERTAIN_GEOMETRY";
+                        else skipReason = "POLICY_MODE_RESTRICTION";
+                    } else skipReason = "POLICY_MODE_RESTRICTION";
+                }
 
                 plan.push({
                     fix_id: fixId,

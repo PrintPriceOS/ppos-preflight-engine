@@ -74,7 +74,10 @@ class AutofixExecutionEngine {
             'REMOVE_IMAGE_ALPHA': 'removeImageAlpha',
             'REPAIR_DAMAGED_IMAGE_OBJECT': 'repairDamagedImageObject',
             'VECTORIZE_BITMAP_TEXT': 'vectorizeBitmapText',
-            'RESTORE_RASTERIZED_VECTOR': 'restoreRasterizedVector'
+            'RESTORE_RASTERIZED_VECTOR': 'restoreRasterizedVector',
+            'ADD_CROP_MARKS': 'addCropMarks',
+            'REMOVE_REGISTRATION_MARKS': 'removeRegistrationMarks',
+            'NORMALIZE_PAGE_MARKS': 'normalizePageMarks'
         };
     }
 

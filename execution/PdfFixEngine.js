@@ -1053,6 +1053,224 @@ class PdfFixEngine {
     async repairDamagedImageObject(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("REPAIR_DAMAGED_IMAGE_OBJECT"); }
     async vectorizeBitmapText(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("VECTORIZE_BITMAP_TEXT"); }
     async restoreRasterizedVector(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("RESTORE_RASTERIZED_VECTOR"); }
+
+    // --- Phase 62A Page Marks Fixes ---
+
+    async addCropMarks(inputPath, outputPath, options = {}) {
+        const { PDFDocument, PDFName, rgb } = require('pdf-lib');
+        try {
+            const bytes = await fs.readFile(inputPath);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+
+            const markLength = options.markLength || 10; // pts
+            const markOffset = options.markOffset || 5; // pts
+            const strokeWidth = options.strokeWidth || 0.25; // pts
+
+            let applied = false;
+            let skipped = false;
+            let skipReason = null;
+            let safetyChecks = [];
+            let markGeometry = [];
+            let pagesProcessed = 0;
+            let pageBoxesBefore = [];
+            let pageBoxesAfter = [];
+
+            const pages = pdfDoc.getPages();
+            
+            for (let i = 0; i < pages.length; i++) {
+                const page = pages[i];
+                const trimBox = page.getTrimBox();
+                const mediaBox = page.getMediaBox();
+                const cropBox = page.getCropBox() || mediaBox;
+
+                pageBoxesBefore.push({ trimBox, mediaBox, cropBox });
+
+                if (!page.node.has(PDFName.of('TrimBox'))) {
+                    skipped = true;
+                    skipReason = 'TRIMBOX_MISSING';
+                    safetyChecks.push('TrimBox is required but missing.');
+                    break;
+                }
+
+                const bleedMarginLeft = trimBox.x - cropBox.x;
+                const bleedMarginBottom = trimBox.y - cropBox.y;
+                const bleedMarginRight = (cropBox.x + cropBox.width) - (trimBox.x + trimBox.width);
+                const bleedMarginTop = (cropBox.y + cropBox.height) - (trimBox.y + trimBox.height);
+
+                const requiredMargin = markLength + markOffset;
+
+                if (bleedMarginLeft < requiredMargin || bleedMarginBottom < requiredMargin ||
+                    bleedMarginRight < requiredMargin || bleedMarginTop < requiredMargin) {
+                    skipped = true;
+                    skipReason = 'INSUFFICIENT_MARGIN';
+                    safetyChecks.push(`Margin insufficient. Required: ${requiredMargin}pt. Found L:${bleedMarginLeft}, R:${bleedMarginRight}, T:${bleedMarginTop}, B:${bleedMarginBottom}`);
+                    break;
+                }
+
+                // Calculate marks
+                const tLeft = trimBox.x;
+                const tRight = trimBox.x + trimBox.width;
+                const tBottom = trimBox.y;
+                const tTop = trimBox.y + trimBox.height;
+
+                const lines = [
+                    // Bottom Left
+                    { start: { x: tLeft - markOffset, y: tBottom }, end: { x: tLeft - markOffset - markLength, y: tBottom } },
+                    { start: { x: tLeft, y: tBottom - markOffset }, end: { x: tLeft, y: tBottom - markOffset - markLength } },
+                    // Bottom Right
+                    { start: { x: tRight + markOffset, y: tBottom }, end: { x: tRight + markOffset + markLength, y: tBottom } },
+                    { start: { x: tRight, y: tBottom - markOffset }, end: { x: tRight, y: tBottom - markOffset - markLength } },
+                    // Top Left
+                    { start: { x: tLeft - markOffset, y: tTop }, end: { x: tLeft - markOffset - markLength, y: tTop } },
+                    { start: { x: tLeft, y: tTop + markOffset }, end: { x: tLeft, y: tTop + markOffset + markLength } },
+                    // Top Right
+                    { start: { x: tRight + markOffset, y: tTop }, end: { x: tRight + markOffset + markLength, y: tTop } },
+                    { start: { x: tRight, y: tTop + markOffset }, end: { x: tRight, y: tTop + markOffset + markLength } }
+                ];
+
+                // Safety validation: Ensure no line intersects TrimBox or goes outside CropBox
+                for (const line of lines) {
+                    const lx1 = Math.min(line.start.x, line.end.x);
+                    const lx2 = Math.max(line.start.x, line.end.x);
+                    const ly1 = Math.min(line.start.y, line.end.y);
+                    const ly2 = Math.max(line.start.y, line.end.y);
+
+                    // Check TrimBox intersection (must be strictly outside)
+                    if (!(lx2 <= tLeft || lx1 >= tRight || ly2 <= tBottom || ly1 >= tTop)) {
+                        skipped = true;
+                        skipReason = 'UNSAFE_MARK_GEOMETRY';
+                        safetyChecks.push('Mark intersects TrimBox.');
+                        break;
+                    }
+
+                    // Check CropBox boundary
+                    if (lx1 < cropBox.x || lx2 > cropBox.x + cropBox.width ||
+                        ly1 < cropBox.y || ly2 > cropBox.y + cropBox.height) {
+                        skipped = true;
+                        skipReason = 'UNSAFE_MARK_GEOMETRY';
+                        safetyChecks.push('Mark falls outside CropBox.');
+                        break;
+                    }
+                }
+
+                if (skipped) break;
+
+                // Draw marks using simple RGB black (avoid registration color semantics for now)
+                for (const line of lines) {
+                    page.drawLine({
+                        start: line.start,
+                        end: line.end,
+                        thickness: strokeWidth,
+                        color: rgb(0, 0, 0)
+                    });
+                    markGeometry.push({ ...line, page: i });
+                }
+
+                applied = true;
+                pagesProcessed++;
+                pageBoxesAfter.push({ trimBox: page.getTrimBox(), mediaBox: page.getMediaBox(), cropBox: page.getCropBox() });
+            }
+
+            if (skipped) {
+                return {
+                    success: false,
+                    status: 'SKIPPED',
+                    code: 'ADD_CROP_MARKS',
+                    error: skipReason,
+                    evidence: {
+                        reason: skipReason,
+                        safety_checks: safetyChecks,
+                        page_boxes_before: pageBoxesBefore
+                    }
+                };
+            }
+
+            const modifiedBytes = await pdfDoc.save();
+            await fs.writeFile(outputPath, modifiedBytes);
+
+            if (!(await fs.pathExists(outputPath))) return { success: false, error: 'Output file missing' };
+            const stats = await fs.stat(outputPath);
+            if (stats.size === 0) return { success: false, error: 'Output file is empty' };
+
+            // Verify output starts with %PDF
+            const fd = await fs.open(outputPath, 'r');
+            const buffer = Buffer.alloc(4);
+            await fs.read(fd, buffer, 0, 4, 0);
+            await fs.close(fd);
+            if (buffer.toString('utf8', 0, 4) !== '%PDF') {
+                return { success: false, error: 'Output file does not start with %PDF' };
+            }
+
+            return {
+                success: true,
+                status: 'APPLIED',
+                code: 'ADD_CROP_MARKS',
+                strategy: 'pdf_lib_draw_crop_marks',
+                description: 'Crop marks were added outside TrimBox.',
+                output: outputPath,
+                risk_level: 'MEDIUM',
+                requires_human_review: true,
+                production_safe: false,
+                visually_sensitive: true,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                compliance_claim_allowed: false,
+                message: 'Crop marks added successfully.',
+                evidence: {
+                    pages_processed: pagesProcessed,
+                    page_boxes_before: pageBoxesBefore,
+                    page_boxes_after: pageBoxesAfter,
+                    mark_geometry: markGeometry,
+                    safety_checks: safetyChecks,
+                    detection_confidence: null,
+                    warnings: [],
+                    limitations: ["Simple RGB black stroke used. Not standard registration color."]
+                }
+            };
+
+        } catch (e) {
+             return {
+                 success: false,
+                 status: 'FAILED',
+                 code: 'ADD_CROP_MARKS',
+                 error: e.message,
+                 evidence: { error: e.message }
+             };
+        }
+    }
+
+    async removeRegistrationMarks(inputPath, outputPath, options = {}) {
+        return {
+            success: false,
+            status: 'SKIPPED',
+            code: 'REMOVE_REGISTRATION_MARKS',
+            error: 'DETECTION_OR_REMOVAL_NOT_SAFE',
+            evidence: {
+                reason: 'Physical removal of page marks is not yet safely verifiable at the content stream level.',
+                pages_processed: 0,
+                safety_checks: ['Avoided ambiguous artwork removal.'],
+                warnings: ['Removal of complex stream objects deferred to prevent artwork corruption.'],
+                limitations: []
+            }
+        };
+    }
+
+    async normalizePageMarks(inputPath, outputPath, options = {}) {
+        return {
+            success: false,
+            status: 'SKIPPED',
+            code: 'NORMALIZE_PAGE_MARKS',
+            error: 'SKIPPED_UNSUPPORTED_PARTIAL',
+            evidence: {
+                reason: 'No safe non-artwork normalization was possible.',
+                pages_processed: 0,
+                safety_checks: [],
+                warnings: [],
+                limitations: ['Safe physical metadata normalization for marks not yet implemented.']
+            }
+        };
+    }
 }
 
 module.exports = PdfFixEngine;
