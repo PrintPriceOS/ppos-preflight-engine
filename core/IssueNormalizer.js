@@ -243,6 +243,81 @@ class IssueNormalizer {
                 normalized.destructiveFixRisk = 'LOW';
             }
 
+            // Phase 66A: Font fix findings — runs after prefix checks to ensure FONT category
+            // enrichment with font_governance routing. Font fixes require strong evidence and
+            // are never auto-applied without human visual review; missing glyphs are never invented.
+            const fontsNotEmbeddedCodes = ['FONTS_NOT_EMBEDDED', 'IND_FONT_001', 'NON_EMBEDDED_FONTS', 'FONT_NOT_EMBEDDED'];
+            const fontSubsetCodes = ['FONT_SUBSET', 'IND_FONT_002'];
+            const type3FontsCodes = ['TYPE3_FONTS_PRESENT', 'IND_FONT_003', 'TYPE3_FONTS', 'FONT_TYPE3_FONT_DETECTED'];
+            const missingGlyphsCodes = ['MISSING_GLYPHS', 'IND_FONT_004', 'FONT_GLYPH_MISSING'];
+            const fontEncodingInvalidCodes = ['FONT_ENCODING_INVALID', 'IND_FONT_005'];
+
+            if (fontsNotEmbeddedCodes.includes(rawCode) || fontsNotEmbeddedCodes.includes(mappedCode)) {
+                normalized.category = 'FONT';
+                normalized.fixable = false;
+                normalized.fix_method = 'EMBED_FONTS';
+                normalized.recommended_fix = 'EMBED_FONTS';
+                normalized.repairStrategy = 'EMBED_FONTS';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (fontSubsetCodes.includes(rawCode) || fontSubsetCodes.includes(mappedCode)) {
+                normalized.category = 'FONT';
+                normalized.fixable = false;
+                normalized.fix_method = 'SUBSET_EMBEDDED_FONTS';
+                normalized.recommended_fix = 'SUBSET_EMBEDDED_FONTS';
+                normalized.repairStrategy = 'SUBSET_EMBEDDED_FONTS';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (type3FontsCodes.includes(rawCode) || type3FontsCodes.includes(mappedCode)) {
+                normalized.category = 'FONT';
+                normalized.fixable = false;
+                normalized.fix_method = 'OUTLINE_TYPE3_FONTS';
+                normalized.recommended_fix = 'OUTLINE_TYPE3_FONTS';
+                normalized.repairStrategy = 'OUTLINE_TYPE3_FONTS';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (fontEncodingInvalidCodes.includes(rawCode) || fontEncodingInvalidCodes.includes(mappedCode)) {
+                normalized.category = 'FONT';
+                normalized.fixable = false;
+                normalized.fix_method = 'REPAIR_FONT_ENCODING';
+                normalized.recommended_fix = 'REPAIR_FONT_ENCODING';
+                normalized.repairStrategy = 'REPAIR_FONT_ENCODING';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (missingGlyphsCodes.includes(rawCode) || missingGlyphsCodes.includes(mappedCode)) {
+                normalized.category = 'FONT';
+                normalized.fixable = false;
+                normalized.fix_method = 'FLAG_MISSING_GLYPHS_UNFIXABLE';
+                normalized.recommended_fix = 'FLAG_MISSING_GLYPHS_UNFIXABLE';
+                normalized.repairStrategy = 'FLAG_MISSING_GLYPHS_UNFIXABLE';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = false;
+                normalized.destructiveFixRisk = 'LOW';
+            }
+
             return normalized;
         });
     }
@@ -277,6 +352,11 @@ class IssueNormalizer {
             'IND_FONT_002': 'Font Subset Detected',
             'IND_FONT_003': 'Type3 Font Detected',
             'IND_FONT_004': 'Missing Glyph Detected',
+            'IND_FONT_005': 'Font Encoding Invalid',
+            'FONTS_NOT_EMBEDDED': 'Font Not Embedded',
+            'TYPE3_FONTS_PRESENT': 'Type3 Font Detected',
+            'MISSING_GLYPHS': 'Missing Glyph Detected',
+            'FONT_ENCODING_INVALID': 'Font Encoding Invalid',
             'IND_IMG_001': 'Image Low Resolution',
             'IND_IMG_002': 'Image Excessive Resolution',
             'IND_IMG_003': 'JPEG Artifacts Detected',

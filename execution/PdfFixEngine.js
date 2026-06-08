@@ -1366,6 +1366,136 @@ class PdfFixEngine {
     async outlineFonts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("OUTLINE_FONTS"); }
     async replaceMissingFonts(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REPLACE_MISSING_FONTS"); }
     async glyphRepair(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("GLYPH_REPAIR"); }
+
+    // --- Phase 66A Engine Font Fixes (font_governance) ---
+
+    async _inspectFontSource(inputPath) {
+        try {
+            const FontInspector = require('./FontInspector');
+            const inspection = await FontInspector.inspectFonts(inputPath);
+            const nonEmbedded = inspection.ok ? inspection.non_embedded_fonts : [];
+            return {
+                ok: inspection.ok,
+                fonts: inspection.ok ? inspection.fonts : [],
+                non_embedded_fonts: nonEmbedded,
+                font_source_available: inspection.ok && nonEmbedded.length === 0
+            };
+        } catch (e) {
+            return { ok: false, fonts: [], non_embedded_fonts: [], font_source_available: false, error: e.message };
+        }
+    }
+
+    _scaffoldFontGovernanceFix(fixId, message, evidenceOverrides = {}) {
+        return {
+            success: false,
+            code: fixId,
+            status: "SKIPPED_UNSUPPORTED",
+            strategy: "UNSUPPORTED_FONT_GOVERNANCE_FIX",
+            risk_level: evidenceOverrides.risk_level || "HIGH",
+            requires_human_review: true,
+            production_safe: false,
+            visually_sensitive: evidenceOverrides.visually_sensitive !== undefined ? evidenceOverrides.visually_sensitive : true,
+            destructive: evidenceOverrides.destructive !== undefined ? evidenceOverrides.destructive : true,
+            executable: false,
+            visual_change_expected: evidenceOverrides.visual_change_expected !== undefined ? evidenceOverrides.visual_change_expected : true,
+            review_required: true,
+            production_certified: false,
+            compliance_claim_allowed: false,
+            evidence: Object.assign({
+                reason: message || "Font fixes require strong evidence (font source availability, safe encoding mapping) and cannot be safely automated without human review.",
+                font_source_available: false,
+                fonts_subset_count: 0,
+                type3_fonts_outlined_count: 0,
+                encodings_repaired_count: 0,
+                glyphs_synthesized_count: 0,
+                glyph_synthesis_performed: false,
+                visual_change_expected: evidenceOverrides.visual_change_expected !== undefined ? evidenceOverrides.visual_change_expected : true,
+                review_required: true,
+                production_certified: false,
+                limitations: evidenceOverrides.limitations || [
+                    "Font fixes require strong evidence of an available font source or a verifiably safe Ghostscript embedding path.",
+                    "No font, glyph, or encoding mapping is ever invented or guessed.",
+                    "Human review and source font assets / customer approval are required."
+                ],
+                warnings: []
+            }, evidenceOverrides.evidence || {})
+        };
+    }
+
+    async subsetEmbeddedFonts(inputPath, outputPath, options = {}) {
+        const inspection = await this._inspectFontSource(inputPath);
+        if (!inspection.font_source_available) {
+            return this._scaffoldFontGovernanceFix(
+                "SUBSET_EMBEDDED_FONTS",
+                "Font subsetting requires already-embedded fonts as the source; no safely embeddable font source was found in this document.",
+                {
+                    evidence: {
+                        font_source_available: false,
+                        fonts_detected: inspection.fonts.length,
+                        non_embedded_fonts: inspection.non_embedded_fonts,
+                        skip_code: "SKIPPED_UNAVAILABLE_FONT_SOURCE"
+                    }
+                }
+            );
+        }
+        return this._scaffoldFontGovernanceFix(
+            "SUBSET_EMBEDDED_FONTS",
+            "Subsetting embedded fonts can drop glyphs required for later edits or reflow; requires before/after glyph-coverage evidence and human visual review not currently automatable.",
+            {
+                evidence: {
+                    font_source_available: true,
+                    fonts_detected: inspection.fonts.length,
+                    non_embedded_fonts: inspection.non_embedded_fonts
+                }
+            }
+        );
+    }
+
+    async outlineType3Fonts(inputPath, outputPath, options = {}) {
+        return this._scaffoldFontGovernanceFix(
+            "OUTLINE_TYPE3_FONTS",
+            "Converting Type 3 (bitmap/procedure-based) fonts to vector outlines changes glyph rendering; requires visual before/after evidence and human review not currently automatable.",
+            { destructive: true, visually_sensitive: true }
+        );
+    }
+
+    async repairFontEncoding(inputPath, outputPath, options = {}) {
+        const inspection = await this._inspectFontSource(inputPath);
+        return this._scaffoldFontGovernanceFix(
+            "REPAIR_FONT_ENCODING",
+            "Repairing a font's encoding/CMap requires a verified correct character-to-glyph mapping; an incorrect repair would silently corrupt rendered text. No mapping is guessed.",
+            {
+                evidence: {
+                    font_source_available: inspection.font_source_available,
+                    fonts_detected: inspection.fonts.length,
+                    non_embedded_fonts: inspection.non_embedded_fonts,
+                    skip_code: inspection.font_source_available ? undefined : "SKIPPED_UNAVAILABLE_FONT_SOURCE"
+                }
+            }
+        );
+    }
+
+    async flagMissingGlyphsUnfixable(inputPath, outputPath, options = {}) {
+        return this._scaffoldFontGovernanceFix(
+            "FLAG_MISSING_GLYPHS_UNFIXABLE",
+            "Missing glyphs are flagged for review only. Synthesizing or substituting glyphs would invent visual content not present in the source and is never performed; source font assets or customer approval are required.",
+            {
+                risk_level: "LOW",
+                destructive: false,
+                visually_sensitive: false,
+                visual_change_expected: false,
+                limitations: [
+                    "Missing glyphs cannot be safely repaired automatically.",
+                    "Glyph synthesis/substitution is never performed because it would invent content not present in the source.",
+                    "Source font assets or customer approval are required to resolve."
+                ],
+                evidence: {
+                    font_source_available: false,
+                    glyph_synthesis_performed: false
+                }
+            }
+        );
+    }
     async _scaffoldUnsupportedStandardsCertification(fixId) {
         return {
             success: false,

@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-06-08T20:06:44.438Z",
+  "phase": "phase66a",
+  "category": "font_governance",
+  "note": "Fixtures are metadata-annotated PDFs representing font fix scenarios. Physical per-font embedding/encoding/glyph-coverage extraction requires font-dictionary parsing beyond pdf-lib drawing primitives.",
+  "fixtures": [
+    {
+      "filename": "fonts_not_embedded.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase66a\\fonts_not_embedded.pdf",
+      "expected": "fonts_not_embedded"
+    },
+    {
+      "filename": "font_subset.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase66a\\font_subset.pdf",
+      "expected": "font_subset"
+    },
+    {
+      "filename": "type3_fonts_present.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase66a\\type3_fonts_present.pdf",
+      "expected": "type3_fonts_present"
+    },
+    {
+      "filename": "font_encoding_invalid.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase66a\\font_encoding_invalid.pdf",
+      "expected": "font_encoding_invalid"
+    },
+    {
+      "filename": "missing_glyphs.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase66a\\missing_glyphs.pdf",
+      "expected": "missing_glyphs"
+    },
+    {
+      "filename": "clean_control.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase66a\\clean_control.pdf",
+      "expected": "clean"
+    }
+  ]
+}

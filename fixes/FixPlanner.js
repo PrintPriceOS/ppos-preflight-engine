@@ -137,6 +137,13 @@ class FixPlanner {
                     autofixable = false; // Selective image transforms require human visual review evidence
                 }
 
+                // Phase 66A: Font governance guardrails — font fixes require strong evidence
+                // (font source availability, safe encoding mapping); never auto-applied and
+                // missing glyphs are never invented.
+                if (cap.category === 'font_governance') {
+                    autofixable = false; // No font fix is safe without an available font source and human visual review
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -155,6 +162,8 @@ class FixPlanner {
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
                 else if (!autofixable) {
                     if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
+                    else if (cap.category === 'font_governance' && fixId === 'FLAG_MISSING_GLYPHS_UNFIXABLE') skipReason = "MISSING_GLYPHS_UNFIXABLE_NO_SYNTHESIS";
+                    else if (cap.category === 'font_governance') skipReason = "FONT_SOURCE_EVIDENCE_REQUIRED";
                     else if (cap.category === 'image_quality' && fixId === 'FLAG_LOW_RES_IMAGES_UNFIXABLE') skipReason = "LOW_RES_UNFIXABLE_NO_UPSCALE";
                     else if (cap.category === 'image_quality' &&
                              (fixId === 'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE' || fixId === 'TAG_UNTAGGED_IMAGES' ||

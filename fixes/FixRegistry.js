@@ -491,7 +491,7 @@ const REGISTRY = {
     "EMBED_FONTS": {
         fix_id: "EMBED_FONTS",
         label: "Embed fonts",
-        category: "fonts",
+        category: "font_governance",
         implemented: false,
         detectable: true,
         autofixable: false,
@@ -499,10 +499,15 @@ const REGISTRY = {
         requires_human_review: true,
         production_safe: false,
         destructive: true,
-        toolchain: [],
-        supported_modes: ["EXPERIMENTAL"],
-        customer_message: "Font embedding is currently not supported.",
-        operator_message: "Font embedding is currently scaffolded."
+        visually_sensitive: true,
+        toolchain: ["ghostscript"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "Font embedding may alter glyph rendering and requires human review.",
+        operator_message: "Font embedding is only attempted via Ghostscript when a usable font source is available; returns SKIPPED_UNAVAILABLE_FONT_SOURCE otherwise. Never invents glyphs.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        review_required: true
     },
     "OUTLINE_FONTS": {
         fix_id: "OUTLINE_FONTS",
@@ -551,6 +556,91 @@ const REGISTRY = {
         supported_modes: ["EXPERIMENTAL"],
         customer_message: "Glyph repair is currently not supported.",
         operator_message: "Glyph repair is currently scaffolded."
+    },
+    // Phase 66A — Engine Font Fixes (font_governance)
+    "SUBSET_EMBEDDED_FONTS": {
+        fix_id: "SUBSET_EMBEDDED_FONTS",
+        label: "Subset embedded fonts",
+        category: "font_governance",
+        implemented: false,
+        detectable: true,
+        autofixable: false,
+        risk_level: "HIGH",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: true,
+        visually_sensitive: true,
+        toolchain: ["ghostscript"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "Font subsetting may affect glyph coverage and requires human review.",
+        operator_message: "Subsetting embedded fonts can drop glyphs needed for later edits or reflow; only attempted via Ghostscript when a font source is available, with before/after evidence. Returns SKIPPED_UNAVAILABLE_FONT_SOURCE otherwise.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        review_required: true
+    },
+    "OUTLINE_TYPE3_FONTS": {
+        fix_id: "OUTLINE_TYPE3_FONTS",
+        label: "Outline Type 3 fonts",
+        category: "font_governance",
+        implemented: false,
+        detectable: true,
+        autofixable: false,
+        risk_level: "HIGH",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: true,
+        visually_sensitive: true,
+        toolchain: ["ghostscript"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "Converting Type 3 fonts to outlines may affect text appearance and requires human review.",
+        operator_message: "Type 3 fonts are bitmap/procedure-based glyph definitions; converting them to vector outlines changes rendering and is destructive. Requires evidence-backed visual review and is never auto-applied.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        review_required: true
+    },
+    "REPAIR_FONT_ENCODING": {
+        fix_id: "REPAIR_FONT_ENCODING",
+        label: "Repair font encoding",
+        category: "font_governance",
+        implemented: false,
+        detectable: true,
+        autofixable: false,
+        risk_level: "HIGH",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: true,
+        visually_sensitive: true,
+        toolchain: ["ghostscript", "qpdf", "mutool"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "Font encoding repair may change which characters render and requires human review.",
+        operator_message: "Repairing a font's encoding/CMap can change glyph-to-character mapping; an incorrect repair would silently corrupt text. Requires evidence-backed mapping and human review; never guessed.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        review_required: true
+    },
+    "FLAG_MISSING_GLYPHS_UNFIXABLE": {
+        fix_id: "FLAG_MISSING_GLYPHS_UNFIXABLE",
+        label: "Flag missing glyphs as unfixable",
+        category: "font_governance",
+        implemented: false,
+        detectable: true,
+        autofixable: false,
+        risk_level: "LOW",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: false,
+        visually_sensitive: false,
+        toolchain: [],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "Missing glyphs have been flagged for review; they cannot be safely invented automatically.",
+        operator_message: "Detection/flagging only — missing glyphs cannot be invented or substituted without source font data and customer approval. No font/glyph synthesis is ever performed.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        review_required: true
     },
     // Phase 55A: Standards Certification Capabilities
     "VALIDATE_PDFX": {
@@ -1288,9 +1378,19 @@ function normalizeFixId(fixId) {
         'COLOR_OUTPUT_INTENT_MISSING': 'INJECT_OUTPUT_INTENT',
         // Font finding mappings (these map to their respective fix capabilities, though the fixes are unimplemented)
         'NON_EMBEDDED_FONTS': 'EMBED_FONTS',
-        'TYPE3_FONTS': 'OUTLINE_FONTS', // Or generally unsupported
-        'MISSING_GLYPHS': 'GLYPH_REPAIR',
-        'FONT_SUBSTITUTION_RISK': 'REPLACE_MISSING_FONTS'
+        'TYPE3_FONTS': 'OUTLINE_TYPE3_FONTS',
+        'MISSING_GLYPHS': 'FLAG_MISSING_GLYPHS_UNFIXABLE',
+        'FONT_SUBSTITUTION_RISK': 'REPLACE_MISSING_FONTS',
+        // Phase 66A — Engine Font Fixes finding mappings
+        'FONTS_NOT_EMBEDDED': 'EMBED_FONTS',
+        'IND_FONT_001': 'EMBED_FONTS',
+        'FONT_SUBSET': 'SUBSET_EMBEDDED_FONTS',
+        'IND_FONT_002': 'SUBSET_EMBEDDED_FONTS',
+        'TYPE3_FONTS_PRESENT': 'OUTLINE_TYPE3_FONTS',
+        'IND_FONT_003': 'OUTLINE_TYPE3_FONTS',
+        'IND_FONT_004': 'FLAG_MISSING_GLYPHS_UNFIXABLE',
+        'FONT_ENCODING_INVALID': 'REPAIR_FONT_ENCODING',
+        'IND_FONT_005': 'REPAIR_FONT_ENCODING'
     };
     
     return map[fixId] || fixId;

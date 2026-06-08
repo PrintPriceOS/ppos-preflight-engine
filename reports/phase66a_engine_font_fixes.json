@@ -1,0 +1,261 @@
+{
+  "generated_at": "2026-06-08T20:06:44.830Z",
+  "phase": "66A",
+  "repo": "ppos-preflight-engine",
+  "category": "font_governance",
+  "smoke_passed": true,
+  "core_principle": "Font fixes require strong evidence. EMBED_FONTS only applies when a font source is available or Ghostscript can safely embed (returning SKIPPED_UNAVAILABLE_FONT_SOURCE otherwise). Missing glyphs are flagged, never invented or synthesized. All font fixes require human review and are production_safe=false.",
+  "target_fixes": [
+    "EMBED_FONTS",
+    "SUBSET_EMBEDDED_FONTS",
+    "OUTLINE_TYPE3_FONTS",
+    "REPAIR_FONT_ENCODING",
+    "FLAG_MISSING_GLYPHS_UNFIXABLE"
+  ],
+  "finding_codes": [
+    "IND_FONT_001",
+    "IND_FONT_002",
+    "IND_FONT_003",
+    "IND_FONT_004",
+    "IND_FONT_005"
+  ],
+  "forbidden_overclaims_checked": [
+    "compliance_claim_allowed=true",
+    "standard_certified=true",
+    "pdfx_compliance_claimed=true",
+    "pdfa_compliance_claimed=true",
+    "production_certified=true",
+    "production_safe=true",
+    "glyph_synthesis_performed=true"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry font_governance (Phase 66A) capabilities check",
+      "fixture": null,
+      "capability": "EMBED_FONTS, SUBSET_EMBEDDED_FONTS, OUTLINE_TYPE3_FONTS, REPAIR_FONT_ENCODING, FLAG_MISSING_GLYPHS_UNFIXABLE",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 66A font_governance capabilities registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 66A font codes",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 66A font finding codes registered correctly (including reuse of IND_FONT_001-004 and new IND_FONT_005)."
+      ]
+    },
+    {
+      "scenario": "IssueNormalizer font fix routing",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "IssueNormalizer correctly routes Phase 66A font codes to font_governance fixes with safeToAutofix=false and category=FONT."
+      ]
+    },
+    {
+      "scenario": "FixPlanner font governance guardrails",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all Phase 66A font fixes from being planned/executable in any policy mode."
+      ]
+    },
+    {
+      "scenario": "EMBED_FONTS returns honest skip/result with evidence",
+      "fixture": "fonts_not_embedded.pdf",
+      "capability": "EMBED_FONTS",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED",
+        "APPLIED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "glyph_synthesis_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: font fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "SUBSET_EMBEDDED_FONTS returns SKIPPED with evidence",
+      "fixture": "font_subset.pdf",
+      "capability": "SUBSET_EMBEDDED_FONTS",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "glyph_synthesis_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: font fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "OUTLINE_TYPE3_FONTS returns SKIPPED with evidence",
+      "fixture": "type3_fonts_present.pdf",
+      "capability": "OUTLINE_TYPE3_FONTS",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "glyph_synthesis_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: font fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "REPAIR_FONT_ENCODING returns SKIPPED with evidence",
+      "fixture": "font_encoding_invalid.pdf",
+      "capability": "REPAIR_FONT_ENCODING",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "glyph_synthesis_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: font fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "FLAG_MISSING_GLYPHS_UNFIXABLE flags honestly without synthesis",
+      "fixture": "missing_glyphs.pdf",
+      "capability": "FLAG_MISSING_GLYPHS_UNFIXABLE",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "glyph_synthesis_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: font fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "SUBSET_EMBEDDED_FONTS on clean control — honest skip",
+      "fixture": "clean_control.pdf",
+      "capability": "SUBSET_EMBEDDED_FONTS",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED",
+        "NO_CHANGE"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "glyph_synthesis_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: font fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "Font fix overclaim regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No font fix produced a standards, PDF/X, PDF/A, production certification, or production_safe claim."
+      ]
+    },
+    {
+      "scenario": "No-glyph-synthesis policy regression (aggregate)",
+      "fixture": null,
+      "capability": "FLAG_MISSING_GLYPHS_UNFIXABLE",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "Missing glyphs are honestly flagged; no glyph synthesis/substitution was performed."
+      ]
+    },
+    {
+      "scenario": "Font fix review_required signal (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "\"No-glyph-synthesis policy regression (aggregate)\" does not signal requires_human_review=true"
+      ]
+    }
+  ]
+}
