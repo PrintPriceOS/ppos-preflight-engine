@@ -315,38 +315,66 @@ class PdfFixEngine {
 
     // --- New Low-Risk Fixes ---
 
+    async _verifyOutputPdf(outputPath) {
+        if (!(await fs.pathExists(outputPath))) return { valid: false, reason: 'Output file missing' };
+        const stats = await fs.stat(outputPath);
+        if (stats.size === 0) return { valid: false, reason: 'Output file is empty' };
+        const fd = await fs.open(outputPath, 'r');
+        const buffer = Buffer.alloc(4);
+        await fs.read(fd, buffer, 0, 4, 0);
+        await fs.close(fd);
+        if (buffer.toString('utf8', 0, 4) !== '%PDF') return { valid: false, reason: 'Output file does not start with %PDF' };
+        return { valid: true };
+    }
+
     async stripJavascript(inputPath, outputPath, options = {}) {
         const { PDFDocument, PDFName } = require('pdf-lib');
         try {
             const bytes = await fs.readFile(inputPath);
-            const pdfDoc = await PDFDocument.load(bytes);
-            
-            let removedOpenAction = false;
-            let removedNames = 0;
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
 
-            // Remove OpenAction
+            let removedOpenAction = false;
+            let removedAA = false;
+            let javascriptRemovedCount = 0;
+
+            // Remove catalog OpenAction if it carries a JavaScript action
             if (pdfDoc.catalog.has(PDFName.of('OpenAction'))) {
                 pdfDoc.catalog.delete(PDFName.of('OpenAction'));
                 removedOpenAction = true;
+                javascriptRemovedCount++;
             }
 
-            // Remove AA (Additional Actions) from catalog
+            // Remove AA (Additional Actions) from catalog (commonly used for JS triggers)
             if (pdfDoc.catalog.has(PDFName.of('AA'))) {
                 pdfDoc.catalog.delete(PDFName.of('AA'));
+                removedAA = true;
+                javascriptRemovedCount++;
             }
 
-            // Names -> JavaScript
+            // Names -> JavaScript name tree
             const namesRef = pdfDoc.catalog.lookup(PDFName.of('Names'));
-            if (namesRef) {
-                // PDFDict
-                if (typeof namesRef.has === 'function' && namesRef.has(PDFName.of('JavaScript'))) {
-                    namesRef.delete(PDFName.of('JavaScript'));
-                    removedNames = 1;
+            if (namesRef && typeof namesRef.has === 'function' && namesRef.has(PDFName.of('JavaScript'))) {
+                const jsTree = namesRef.lookup(PDFName.of('JavaScript'));
+                if (jsTree && typeof jsTree.lookup === 'function') {
+                    const namesArray = jsTree.lookup(PDFName.of('Names'));
+                    if (namesArray && typeof namesArray.size === 'function') {
+                        javascriptRemovedCount += Math.floor(namesArray.size() / 2);
+                    } else {
+                        javascriptRemovedCount++;
+                    }
+                } else {
+                    javascriptRemovedCount++;
                 }
+                namesRef.delete(PDFName.of('JavaScript'));
             }
 
             const modifiedBytes = await pdfDoc.save();
             await fs.writeFile(outputPath, modifiedBytes);
+
+            const verification = await this._verifyOutputPdf(outputPath);
+            if (!verification.valid) {
+                return { success: false, status: 'FAILED', code: 'STRIP_JAVASCRIPT', error: verification.reason };
+            }
 
             return {
                 success: true,
@@ -356,30 +384,466 @@ class PdfFixEngine {
                 description: 'JavaScript actions were neutralized.',
                 output: outputPath,
                 risk_level: 'LOW',
-                requires_human_review: false,
-                production_safe: true,
+                requires_human_review: true,
+                production_safe: false,
+                security_sensitive: true,
+                compliance_claim_allowed: false,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
                 message: 'JavaScript actions were neutralized.',
                 evidence: {
+                    objects_scanned: pdfDoc.context.enumerateIndirectObjects().length,
                     removed_catalog_open_action: removedOpenAction,
-                    removed_javascript_names: removedNames,
+                    removed_catalog_additional_actions: removedAA,
+                    javascript_removed_count: javascriptRemovedCount,
+                    actions_removed_count: javascriptRemovedCount,
+                    output_pdf_valid: true,
+                    warnings: [],
+                    limitations: ["Embedded JavaScript inside content streams or third-party annotations may not be fully enumerable."]
+                }
+            };
+        } catch (e) {
+            return { success: false, status: 'FAILED', code: 'STRIP_JAVASCRIPT', error: e.message, evidence: { error: e.message } };
+        }
+    }
+
+    async _stripActionsByType(inputPath, outputPath, opts) {
+        const { code, actionSubtype, scope, description, message } = opts;
+        const { PDFDocument, PDFName, PDFDict, PDFArray } = require('pdf-lib');
+        try {
+            const bytes = await fs.readFile(inputPath);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+
+            let removedCount = 0;
+            let objectsScanned = 0;
+            const targetType = PDFName.of(actionSubtype);
+
+            const isMatchingAction = (actionDict) => {
+                if (!actionDict || typeof actionDict.lookup !== 'function') return false;
+                const subtype = actionDict.lookup(PDFName.of('S'));
+                return subtype === targetType;
+            };
+
+            const stripFromActionContainer = (container, key) => {
+                if (!container || typeof container.has !== 'function' || !container.has(PDFName.of(key))) return;
+                const action = container.lookup(PDFName.of(key));
+                objectsScanned++;
+                if (isMatchingAction(action)) {
+                    container.delete(PDFName.of(key));
+                    removedCount++;
+                }
+            };
+
+            const stripFromAA = (aaDict) => {
+                if (!aaDict || typeof aaDict.entries !== 'function') return;
+                for (const [keyName] of aaDict.entries()) {
+                    const key = keyName.decodeText ? keyName.decodeText() : String(keyName);
+                    stripFromActionContainer(aaDict, key);
+                }
+            };
+
+            if (scope === 'catalog' || scope === 'document') {
+                objectsScanned++;
+                stripFromActionContainer(pdfDoc.catalog, 'OpenAction');
+                const aa = pdfDoc.catalog.lookup(PDFName.of('AA'));
+                if (aa instanceof PDFDict) stripFromAA(aa);
+            }
+
+            if (scope === 'pages') {
+                const pages = pdfDoc.getPages();
+                for (const page of pages) {
+                    objectsScanned++;
+                    const aa = page.node.lookup(PDFName.of('AA'));
+                    if (aa instanceof PDFDict) stripFromAA(aa);
+                }
+            }
+
+            if (scope === 'annotations') {
+                const pages = pdfDoc.getPages();
+                for (const page of pages) {
+                    const annots = page.node.lookup(PDFName.of('Annots'));
+                    if (annots instanceof PDFArray) {
+                        for (let i = 0; i < annots.size(); i++) {
+                            const annot = annots.lookup(i);
+                            if (!(annot instanceof PDFDict)) continue;
+                            objectsScanned++;
+                            stripFromActionContainer(annot, 'A');
+                            const aa = annot.lookup(PDFName.of('AA'));
+                            if (aa instanceof PDFDict) stripFromAA(aa);
+                        }
+                    }
+                }
+            }
+
+            const modifiedBytes = await pdfDoc.save();
+            await fs.writeFile(outputPath, modifiedBytes);
+
+            const verification = await this._verifyOutputPdf(outputPath);
+            if (!verification.valid) {
+                return { success: false, status: 'FAILED', code, error: verification.reason };
+            }
+
+            return {
+                success: true,
+                status: 'APPLIED',
+                code,
+                strategy: 'pdf_lib_action_dictionary_sanitization',
+                description,
+                output: outputPath,
+                risk_level: 'LOW',
+                requires_human_review: true,
+                production_safe: false,
+                security_sensitive: true,
+                compliance_claim_allowed: false,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                message,
+                evidence: {
+                    objects_scanned: objectsScanned,
+                    actions_removed_count: removedCount,
+                    output_pdf_valid: true,
+                    warnings: [],
+                    limitations: ["Action enumeration is limited to standard catalog/page/annotation action dictionaries."]
+                }
+            };
+        } catch (e) {
+            return { success: false, status: 'FAILED', code, error: e.message, evidence: { error: e.message } };
+        }
+    }
+
+    async removeLaunchActions(inputPath, outputPath, options = {}) {
+        const result = await this._stripActionsByType(inputPath, outputPath, {
+            code: 'REMOVE_LAUNCH_ACTIONS',
+            actionSubtype: 'Launch',
+            scope: 'annotations',
+            description: 'Launch actions were removed from the document.',
+            message: 'Removed /Launch actions from catalog, pages, and annotations.'
+        });
+        if (!result.success) return result;
+
+        // Also sweep catalog and page-level launch actions
+        const { PDFDocument, PDFName, PDFDict } = require('pdf-lib');
+        try {
+            const bytes = await fs.readFile(outputPath);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+            let extra = 0;
+
+            const stripIfLaunch = (container, key) => {
+                if (!container || typeof container.has !== 'function' || !container.has(PDFName.of(key))) return;
+                const action = container.lookup(PDFName.of(key));
+                if (action && typeof action.lookup === 'function' && action.lookup(PDFName.of('S')) === PDFName.of('Launch')) {
+                    container.delete(PDFName.of(key));
+                    extra++;
+                }
+            };
+
+            stripIfLaunch(pdfDoc.catalog, 'OpenAction');
+            const catAA = pdfDoc.catalog.lookup(PDFName.of('AA'));
+            if (catAA instanceof PDFDict) {
+                for (const [keyName] of catAA.entries()) {
+                    stripIfLaunch(catAA, keyName.decodeText ? keyName.decodeText() : String(keyName));
+                }
+            }
+            for (const page of pdfDoc.getPages()) {
+                const aa = page.node.lookup(PDFName.of('AA'));
+                if (aa instanceof PDFDict) {
+                    for (const [keyName] of aa.entries()) {
+                        stripIfLaunch(aa, keyName.decodeText ? keyName.decodeText() : String(keyName));
+                    }
+                }
+            }
+
+            if (extra > 0) {
+                const modifiedBytes = await pdfDoc.save();
+                await fs.writeFile(outputPath, modifiedBytes);
+            }
+
+            result.evidence.actions_removed_count += extra;
+            result.evidence.launch_actions_removed_count = result.evidence.actions_removed_count;
+            return result;
+        } catch (e) {
+            result.evidence.launch_actions_removed_count = result.evidence.actions_removed_count;
+            result.evidence.warnings.push(`Secondary catalog/page launch action sweep failed: ${e.message}`);
+            return result;
+        }
+    }
+
+    async removeDocumentOpenActions(inputPath, outputPath, options = {}) {
+        const { PDFDocument, PDFName } = require('pdf-lib');
+        try {
+            const bytes = await fs.readFile(inputPath);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+
+            let removedOpenAction = false;
+            let removedAA = false;
+            let objectsScanned = 1;
+
+            if (pdfDoc.catalog.has(PDFName.of('OpenAction'))) {
+                pdfDoc.catalog.delete(PDFName.of('OpenAction'));
+                removedOpenAction = true;
+            }
+            if (pdfDoc.catalog.has(PDFName.of('AA'))) {
+                pdfDoc.catalog.delete(PDFName.of('AA'));
+                removedAA = true;
+            }
+
+            const documentActionsRemoved = (removedOpenAction ? 1 : 0) + (removedAA ? 1 : 0);
+
+            const modifiedBytes = await pdfDoc.save();
+            await fs.writeFile(outputPath, modifiedBytes);
+
+            const verification = await this._verifyOutputPdf(outputPath);
+            if (!verification.valid) {
+                return { success: false, status: 'FAILED', code: 'REMOVE_DOCUMENT_OPEN_ACTIONS', error: verification.reason };
+            }
+
+            return {
+                success: true,
+                status: 'APPLIED',
+                code: 'REMOVE_DOCUMENT_OPEN_ACTIONS',
+                strategy: 'pdf_lib_catalog_action_removal',
+                description: 'Document-open actions were removed.',
+                output: outputPath,
+                risk_level: 'LOW',
+                requires_human_review: true,
+                production_safe: false,
+                security_sensitive: true,
+                compliance_claim_allowed: false,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                message: 'Removed catalog /OpenAction and document-level /AA entries.',
+                evidence: {
+                    objects_scanned: objectsScanned,
+                    removed_open_action: removedOpenAction,
+                    removed_additional_actions: removedAA,
+                    document_actions_removed_count: documentActionsRemoved,
+                    actions_removed_count: documentActionsRemoved,
+                    output_pdf_valid: true,
+                    warnings: [],
                     limitations: []
                 }
             };
         } catch (e) {
-            return { success: false, error: e.message };
+            return { success: false, status: 'FAILED', code: 'REMOVE_DOCUMENT_OPEN_ACTIONS', error: e.message, evidence: { error: e.message } };
         }
+    }
+
+    async removePageOpenActions(inputPath, outputPath, options = {}) {
+        const { PDFDocument, PDFName, PDFDict } = require('pdf-lib');
+        try {
+            const bytes = await fs.readFile(inputPath);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+
+            const pages = pdfDoc.getPages();
+            let pageActionsRemoved = 0;
+
+            for (const page of pages) {
+                if (page.node.has(PDFName.of('AA'))) {
+                    const aa = page.node.lookup(PDFName.of('AA'));
+                    if (aa instanceof PDFDict) {
+                        pageActionsRemoved += aa.entries().length;
+                    } else {
+                        pageActionsRemoved++;
+                    }
+                    page.node.delete(PDFName.of('AA'));
+                }
+            }
+
+            const modifiedBytes = await pdfDoc.save();
+            await fs.writeFile(outputPath, modifiedBytes);
+
+            const verification = await this._verifyOutputPdf(outputPath);
+            if (!verification.valid) {
+                return { success: false, status: 'FAILED', code: 'REMOVE_PAGE_OPEN_ACTIONS', error: verification.reason };
+            }
+
+            return {
+                success: true,
+                status: 'APPLIED',
+                code: 'REMOVE_PAGE_OPEN_ACTIONS',
+                strategy: 'pdf_lib_page_action_removal',
+                description: 'Page-open actions were removed.',
+                output: outputPath,
+                risk_level: 'LOW',
+                requires_human_review: true,
+                production_safe: false,
+                security_sensitive: true,
+                compliance_claim_allowed: false,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                message: 'Removed page-level /AA (additional actions) entries.',
+                evidence: {
+                    objects_scanned: pages.length,
+                    pages_scanned: pages.length,
+                    page_actions_removed_count: pageActionsRemoved,
+                    actions_removed_count: pageActionsRemoved,
+                    output_pdf_valid: true,
+                    warnings: [],
+                    limitations: []
+                }
+            };
+        } catch (e) {
+            return { success: false, status: 'FAILED', code: 'REMOVE_PAGE_OPEN_ACTIONS', error: e.message, evidence: { error: e.message } };
+        }
+    }
+
+    async removeEmbeddedFiles(inputPath, outputPath, options = {}) {
+        const { PDFDocument, PDFName, PDFDict, PDFArray } = require('pdf-lib');
+        try {
+            const bytes = await fs.readFile(inputPath);
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+
+            let embeddedFilesRemovedCount = 0;
+            let objectsScanned = 0;
+            let removedNameTree = false;
+
+            const namesRef = pdfDoc.catalog.lookup(PDFName.of('Names'));
+            if (namesRef instanceof PDFDict) {
+                objectsScanned++;
+                if (namesRef.has(PDFName.of('EmbeddedFiles'))) {
+                    const efTree = namesRef.lookup(PDFName.of('EmbeddedFiles'));
+                    if (efTree instanceof PDFDict && efTree.has(PDFName.of('Names'))) {
+                        const namesArray = efTree.lookup(PDFName.of('Names'));
+                        if (namesArray instanceof PDFArray) {
+                            embeddedFilesRemovedCount += Math.floor(namesArray.size() / 2);
+                        }
+                    }
+                    if (embeddedFilesRemovedCount === 0) embeddedFilesRemovedCount = 1;
+                    namesRef.delete(PDFName.of('EmbeddedFiles'));
+                    removedNameTree = true;
+                }
+            }
+
+            // Remove file attachment annotations referencing embedded file specifications
+            let annotationsRemoved = 0;
+            for (const page of pdfDoc.getPages()) {
+                const annots = page.node.lookup(PDFName.of('Annots'));
+                if (annots instanceof PDFArray) {
+                    const kept = [];
+                    for (let i = 0; i < annots.size(); i++) {
+                        const annot = annots.lookup(i);
+                        objectsScanned++;
+                        if (annot instanceof PDFDict && annot.lookup(PDFName.of('Subtype')) === PDFName.of('FileAttachment')) {
+                            annotationsRemoved++;
+                            continue;
+                        }
+                        kept.push(annots.get(i));
+                    }
+                    if (annotationsRemoved > 0) {
+                        const newArray = PDFArray.withContext(pdfDoc.context);
+                        kept.forEach(ref => newArray.push(ref));
+                        page.node.set(PDFName.of('Annots'), newArray);
+                    }
+                }
+            }
+
+            embeddedFilesRemovedCount += annotationsRemoved;
+
+            const modifiedBytes = await pdfDoc.save();
+            await fs.writeFile(outputPath, modifiedBytes);
+
+            const verification = await this._verifyOutputPdf(outputPath);
+            if (!verification.valid) {
+                return { success: false, status: 'FAILED', code: 'REMOVE_EMBEDDED_FILES', error: verification.reason };
+            }
+
+            return {
+                success: true,
+                status: 'APPLIED',
+                code: 'REMOVE_EMBEDDED_FILES',
+                strategy: 'pdf_lib_embedded_file_removal',
+                description: 'Embedded files were removed from the document.',
+                output: outputPath,
+                risk_level: 'LOW',
+                requires_human_review: true,
+                production_safe: false,
+                destructive: true,
+                security_sensitive: true,
+                compliance_claim_allowed: false,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                message: 'Removed Names/EmbeddedFiles entries and associated file attachment annotations.',
+                evidence: {
+                    objects_scanned: objectsScanned,
+                    removed_embedded_files_name_tree: removedNameTree,
+                    file_attachment_annotations_removed: annotationsRemoved,
+                    embedded_files_removed_count: embeddedFilesRemovedCount,
+                    objects_removed_count: embeddedFilesRemovedCount,
+                    output_pdf_valid: true,
+                    warnings: [],
+                    limitations: ["Embedded file specifications referenced only from custom/private dictionaries may not be enumerable."]
+                }
+            };
+        } catch (e) {
+            return { success: false, status: 'FAILED', code: 'REMOVE_EMBEDDED_FILES', error: e.message, evidence: { error: e.message } };
+        }
+    }
+
+    async _scanAnnotationAppearance(pdfDoc) {
+        const { PDFName, PDFDict, PDFArray } = require('pdf-lib');
+        let annotationsDetected = 0;
+        let annotationsWithVisualAppearance = 0;
+        const unsupportedSubtypes = new Set();
+
+        for (const page of pdfDoc.getPages()) {
+            const annots = page.node.lookup(PDFName.of('Annots'));
+            if (!(annots instanceof PDFArray)) continue;
+            for (let i = 0; i < annots.size(); i++) {
+                const annot = annots.lookup(i);
+                if (!(annot instanceof PDFDict)) continue;
+                annotationsDetected++;
+                const subtypeName = annot.lookup(PDFName.of('Subtype'));
+                const subtype = subtypeName && subtypeName.decodeText ? subtypeName.decodeText() : (subtypeName ? String(subtypeName) : 'Unknown');
+                const ap = annot.lookup(PDFName.of('AP'));
+                const hasVisualAppearance = ap instanceof PDFDict && ap.has(PDFName.of('N')) &&
+                    subtype !== 'Link' && subtype !== 'Popup';
+                if (hasVisualAppearance) {
+                    annotationsWithVisualAppearance++;
+                    unsupportedSubtypes.add(subtype);
+                }
+            }
+        }
+
+        return { annotationsDetected, annotationsWithVisualAppearance, unsupportedSubtypes: Array.from(unsupportedSubtypes) };
     }
 
     async flattenAnnotations(inputPath, outputPath, options = {}) {
         const { PDFDocument, PDFName } = require('pdf-lib');
         try {
             const bytes = await fs.readFile(inputPath);
-            const pdfDoc = await PDFDocument.load(bytes);
-            
-            const pages = pdfDoc.getPages();
-            let pagesScanned = pages.length;
-            let annotationsRemoved = 0;
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
 
+            const pages = pdfDoc.getPages();
+            const scan = await this._scanAnnotationAppearance(pdfDoc);
+
+            // pdf-lib cannot physically render annotation appearance streams onto page
+            // content, so visually-meaningful annotations cannot be safely flattened
+            // without risking a silent appearance change. Be honest and skip.
+            if (scan.annotationsWithVisualAppearance > 0 && !options.forceUnsafeFlatten) {
+                return {
+                    success: false,
+                    status: 'SKIPPED_UNSUPPORTED',
+                    code: 'FLATTEN_ANNOTATIONS',
+                    error: 'APPEARANCE_PRESERVATION_NOT_VERIFIABLE',
+                    evidence: {
+                        pages_scanned: pages.length,
+                        annotations_detected_count: scan.annotationsDetected,
+                        annotations_flattened_count: 0,
+                        unsupported_objects: scan.unsupportedSubtypes,
+                        output_pdf_valid: false,
+                        reason: 'Visually significant annotation appearances cannot be physically drawn into page content with the available toolchain.',
+                        warnings: ['Flattening would remove visual annotations without a verified appearance-preserving render.'],
+                        limitations: ['pdf-lib cannot rasterize/draw annotation appearance streams onto page content streams.']
+                    }
+                };
+            }
+
+            let annotationsRemoved = 0;
             for (const page of pages) {
                 if (page.node.has(PDFName.of('Annots'))) {
                     const annots = page.node.lookup(PDFName.of('Annots'));
@@ -393,78 +857,169 @@ class PdfFixEngine {
             const modifiedBytes = await pdfDoc.save();
             await fs.writeFile(outputPath, modifiedBytes);
 
+            const verification = await this._verifyOutputPdf(outputPath);
+            if (!verification.valid) {
+                return { success: false, status: 'FAILED', code: 'FLATTEN_ANNOTATIONS', error: verification.reason };
+            }
+
             return {
                 success: true,
                 status: 'APPLIED',
                 code: 'FLATTEN_ANNOTATIONS',
-                strategy: 'pdf_lib_annotation_removal',
-                description: 'Annotation references removed to reduce print-production risk.',
+                strategy: 'pdf_lib_annotation_removal_no_visual_appearance',
+                description: 'Annotation references without visual appearance were flattened/removed.',
                 output: outputPath,
                 risk_level: 'LOW',
-                requires_human_review: false,
-                production_safe: true,
-                message: 'Annotation references removed to reduce print-production risk.',
+                requires_human_review: true,
+                production_safe: false,
+                destructive: true,
+                security_sensitive: true,
+                visually_sensitive: true,
+                compliance_claim_allowed: false,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                message: 'Annotation references were flattened because no visually significant appearance was detected.',
                 evidence: {
-                    pages_scanned: pagesScanned,
-                    annotations_before: annotationsRemoved, // roughly
-                    annotations_after: 0,
-                    action: "REMOVED_ANNOTATION_REFERENCES",
-                    limitations: ["Annotation appearances were not visually flattened."]
+                    pages_scanned: pages.length,
+                    annotations_detected_count: scan.annotationsDetected,
+                    annotations_flattened_count: annotationsRemoved,
+                    unsupported_objects: scan.unsupportedSubtypes,
+                    output_pdf_valid: true,
+                    warnings: [],
+                    limitations: ["Annotation references were removed; no appearance stream was physically rendered because none was visually significant."]
                 }
             };
         } catch (e) {
-            return { success: false, error: e.message };
+            return { success: false, status: 'FAILED', code: 'FLATTEN_ANNOTATIONS', error: e.message, evidence: { error: e.message } };
         }
     }
 
     async flattenForms(inputPath, outputPath, options = {}) {
-        const { PDFDocument, PDFName } = require('pdf-lib');
+        const { PDFDocument, PDFName, PDFDict } = require('pdf-lib');
         try {
             const bytes = await fs.readFile(inputPath);
-            const pdfDoc = await PDFDocument.load(bytes);
-            
-            const form = pdfDoc.getForm();
+            const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+
+            const hasAcroForm = pdfDoc.catalog.has(PDFName.of('AcroForm'));
+            let hasXfa = false;
             let fieldsBefore = 0;
-            let flattened = false;
-            let hasAcroForm = pdfDoc.catalog.has(PDFName.of('AcroForm'));
 
             if (hasAcroForm) {
-                fieldsBefore = form.getFields().length;
-                try {
-                    form.flatten();
-                    flattened = true;
-                } catch(e) {
-                    // if flatten fails, we'll try to just remove the AcroForm entry
+                const acroForm = pdfDoc.catalog.lookup(PDFName.of('AcroForm'));
+                if (acroForm instanceof PDFDict && acroForm.has(PDFName.of('XFA'))) {
+                    hasXfa = true;
                 }
-                
-                pdfDoc.catalog.delete(PDFName.of('AcroForm'));
             }
+
+            if (!hasAcroForm) {
+                return {
+                    success: true,
+                    status: 'NO_CHANGE',
+                    code: 'FLATTEN_FORMS',
+                    description: 'No AcroForm present; no action needed.',
+                    output: null,
+                    output_path: null,
+                    requires_human_review: false,
+                    evidence: {
+                        forms_detected_count: 0,
+                        forms_flattened_count: 0,
+                        output_pdf_valid: false,
+                        warnings: [],
+                        limitations: []
+                    }
+                };
+            }
+
+            if (hasXfa && !options.forceUnsafeFlatten) {
+                return {
+                    success: false,
+                    status: 'SKIPPED_UNSUPPORTED',
+                    code: 'FLATTEN_FORMS',
+                    error: 'XFA_FLATTENING_NOT_SAFE',
+                    evidence: {
+                        forms_detected_count: 1,
+                        forms_flattened_count: 0,
+                        output_pdf_valid: false,
+                        reason: 'XFA forms cannot be safely flattened without a verified rendering pipeline; appearance preservation cannot be proven.',
+                        warnings: ['XFA flattening was skipped to avoid silent appearance loss.'],
+                        limitations: ['pdf-lib does not support XFA form rendering/flattening.']
+                    }
+                };
+            }
+
+            const form = pdfDoc.getForm();
+            fieldsBefore = form.getFields().length;
+            let flattened = false;
+            let flattenError = null;
+            try {
+                form.flatten();
+                flattened = true;
+            } catch (e) {
+                flattenError = e.message;
+            }
+
+            if (!flattened) {
+                return {
+                    success: false,
+                    status: 'SKIPPED_UNSUPPORTED',
+                    code: 'FLATTEN_FORMS',
+                    error: 'FORM_FLATTEN_NOT_VERIFIABLE',
+                    evidence: {
+                        forms_detected_count: 1,
+                        form_fields_detected: fieldsBefore,
+                        forms_flattened_count: 0,
+                        output_pdf_valid: false,
+                        reason: 'Form field appearances could not be physically flattened by the toolchain.',
+                        warnings: [flattenError || 'pdf-lib form.flatten() failed.'],
+                        limitations: ['Form was not modified to avoid claiming a flatten that did not occur.']
+                    }
+                };
+            }
+
+            pdfDoc.catalog.delete(PDFName.of('AcroForm'));
 
             const modifiedBytes = await pdfDoc.save();
             await fs.writeFile(outputPath, modifiedBytes);
+
+            const verification = await this._verifyOutputPdf(outputPath);
+            if (!verification.valid) {
+                return { success: false, status: 'FAILED', code: 'FLATTEN_FORMS', error: verification.reason };
+            }
 
             return {
                 success: true,
                 status: 'APPLIED',
                 code: 'FLATTEN_FORMS',
                 strategy: 'pdf_lib_acroform_flatten',
-                description: 'AcroForm fields flattened/removed to reduce print-production risk.',
+                description: 'AcroForm fields were physically flattened into page content.',
                 output: outputPath,
-                risk_level: 'LOW',
+                risk_level: 'MEDIUM',
                 requires_human_review: true,
                 production_safe: false,
-                message: 'AcroForm fields flattened/removed to reduce print-production risk.',
+                destructive: true,
+                security_sensitive: true,
+                visually_sensitive: true,
+                compliance_claim_allowed: false,
+                standard_certified: false,
+                pdfx_compliance_claimed: false,
+                pdfa_compliance_claimed: false,
+                message: 'AcroForm fields were flattened into the page content and the AcroForm dictionary was removed.',
                 evidence: {
+                    forms_detected_count: 1,
                     form_fields_before: fieldsBefore,
                     form_fields_after: 0,
-                    acroform_present_before: hasAcroForm,
+                    forms_flattened_count: 1,
+                    acroform_present_before: true,
                     acroform_present_after: false,
-                    flattened: flattened,
-                    limitations: flattened ? [] : ["Form appearances may not have been fully visually flattened."]
+                    flattened: true,
+                    output_pdf_valid: true,
+                    warnings: [],
+                    limitations: ["Visual fidelity depends on pdf-lib's appearance-stream rendering for each field type."]
                 }
             };
         } catch (e) {
-            return { success: false, error: e.message };
+            return { success: false, status: 'FAILED', code: 'FLATTEN_FORMS', error: e.message, evidence: { error: e.message } };
         }
     }
 

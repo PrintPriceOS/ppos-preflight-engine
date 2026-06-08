@@ -1,0 +1,52 @@
+{
+  "generated_at": "2026-06-08T14:27:02.728Z",
+  "phase": "phase63a",
+  "category": "pdf_security_interactivity",
+  "fixtures": [
+    {
+      "filename": "javascript_action.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\javascript_action.pdf",
+      "expected": "javascript_present"
+    },
+    {
+      "filename": "launch_action.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\launch_action.pdf",
+      "expected": "launch_action_present"
+    },
+    {
+      "filename": "embedded_file.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\embedded_file.pdf",
+      "expected": "embedded_files_present"
+    },
+    {
+      "filename": "document_open_action.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\document_open_action.pdf",
+      "expected": "document_open_action_present"
+    },
+    {
+      "filename": "page_open_action.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\page_open_action.pdf",
+      "expected": "page_open_action_present"
+    },
+    {
+      "filename": "annotations_basic.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\annotations_basic.pdf",
+      "expected": "annotations_present_safe_to_flatten"
+    },
+    {
+      "filename": "acroform_basic.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\acroform_basic.pdf",
+      "expected": "acroform_present"
+    },
+    {
+      "filename": "mixed_interactive_content.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\mixed_interactive_content.pdf",
+      "expected": "mixed_interactive_content"
+    },
+    {
+      "filename": "clean_control.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase63a\\clean_control.pdf",
+      "expected": "clean"
+    }
+  ]
+}

@@ -37,6 +37,26 @@ class FixPlanner {
                 rawStrategy = 'NORMALIZE_PAGE_MARKS';
             } else if (rawStrategy === 'REGISTRATION_MARKS_PRESENT' || rawStrategy === 'IND_MARK_007') {
                 rawStrategy = 'REMOVE_REGISTRATION_MARKS';
+            } else if (rawStrategy === 'PDF_JAVASCRIPT_PRESENT' || rawStrategy === 'IND_SEC_001' || rawStrategy === 'STRUCT_JAVASCRIPT_DETECTED' || rawStrategy === 'IND_STRUCT_003') {
+                rawStrategy = 'STRIP_JAVASCRIPT';
+            } else if (rawStrategy === 'PDF_LAUNCH_ACTION_PRESENT' || rawStrategy === 'IND_SEC_002') {
+                rawStrategy = 'REMOVE_LAUNCH_ACTIONS';
+            } else if (rawStrategy === 'PDF_EMBEDDED_FILES_PRESENT' || rawStrategy === 'IND_SEC_003') {
+                rawStrategy = 'REMOVE_EMBEDDED_FILES';
+            } else if (rawStrategy === 'PDF_DOCUMENT_OPEN_ACTION_PRESENT' || rawStrategy === 'IND_SEC_004') {
+                rawStrategy = 'REMOVE_DOCUMENT_OPEN_ACTIONS';
+            } else if (rawStrategy === 'PDF_PAGE_OPEN_ACTION_PRESENT' || rawStrategy === 'IND_SEC_005') {
+                rawStrategy = 'REMOVE_PAGE_OPEN_ACTIONS';
+            } else if (rawStrategy === 'PDF_ANNOTATIONS_PRESENT' || rawStrategy === 'IND_SEC_006' ||
+                       rawStrategy === 'ANNOTATION_FLATTENING_REQUIRED' || rawStrategy === 'IND_SEC_012' ||
+                       rawStrategy === 'STRUCT_ANNOTATIONS_DETECTED' || rawStrategy === 'IND_STRUCT_001') {
+                rawStrategy = 'FLATTEN_ANNOTATIONS';
+            } else if (rawStrategy === 'PDF_ACROFORMS_PRESENT' || rawStrategy === 'IND_SEC_007' ||
+                       rawStrategy === 'FORM_FLATTENING_REQUIRED' || rawStrategy === 'IND_SEC_013' ||
+                       rawStrategy === 'STRUCT_ACROFORM_DETECTED' || rawStrategy === 'IND_STRUCT_002') {
+                rawStrategy = 'FLATTEN_FORMS';
+            } else if (rawStrategy === 'PDF_XFA_FORMS_PRESENT' || rawStrategy === 'IND_SEC_008') {
+                rawStrategy = 'FLATTEN_FORMS';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -70,6 +90,16 @@ class FixPlanner {
                         autofixable = false;
                     }
                 }
+
+                // Phase 63A: PDF Security / Interactive Object guardrails
+                if (cap.category === 'pdf_security_interactivity') {
+                    if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
+                        (issue.id === 'INTERACTIVE_CONTENT_UNSAFE_TO_FLATTEN' || issue.id === 'IND_SEC_014' ||
+                         issue.id === 'PDF_XFA_FORMS_PRESENT' || issue.id === 'IND_SEC_008' ||
+                         issue.id === 'PDF_UNSAFE_INTERACTIVE_OBJECTS' || issue.id === 'IND_SEC_016')) {
+                        autofixable = false;
+                    }
+                }
                 
                 const planned = implemented && autofixable && isUserFixable;
                 const skipped = !planned;
@@ -85,6 +115,12 @@ class FixPlanner {
                         else if (issue.id === 'TRIMBOX_REQUIRED_FOR_MARKS' || issue.id === 'IND_MARK_012') skipReason = "TRIMBOX_MISSING";
                         else if (issue.id === 'PAGE_MARKS_UNCERTAIN_GEOMETRY' || issue.id === 'IND_MARK_011') skipReason = "UNCERTAIN_GEOMETRY";
                         else skipReason = "POLICY_MODE_RESTRICTION";
+                    } else if (cap.category === 'pdf_security_interactivity' &&
+                               (fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
+                               (issue.id === 'INTERACTIVE_CONTENT_UNSAFE_TO_FLATTEN' || issue.id === 'IND_SEC_014' ||
+                                issue.id === 'PDF_XFA_FORMS_PRESENT' || issue.id === 'IND_SEC_008' ||
+                                issue.id === 'PDF_UNSAFE_INTERACTIVE_OBJECTS' || issue.id === 'IND_SEC_016')) {
+                        skipReason = "UNSAFE_TO_FLATTEN";
                     } else skipReason = "POLICY_MODE_RESTRICTION";
                 }
 
