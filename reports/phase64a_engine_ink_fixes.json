@@ -1,0 +1,254 @@
+{
+  "generated_at": "2026-06-08T18:37:09.097Z",
+  "phase": "64A",
+  "repo": "ppos-preflight-engine",
+  "category": "ink_governance",
+  "smoke_passed": true,
+  "core_principle": "Ink/color fixes are visually destructive, review-required, and production_safe=false. No physical ink change is made without a rendering pipeline and evidence. No standards/production certification is ever claimed.",
+  "target_fixes": [
+    "REDUCE_TOTAL_INK_COVERAGE",
+    "MAP_RICH_BLACK_TEXT_TO_K_ONLY",
+    "MAP_REGISTRATION_COLOR_TO_BLACK",
+    "NORMALIZE_BLACK_TEXT",
+    "DETECT_SMALL_TEXT_RICH_BLACK"
+  ],
+  "finding_codes": [
+    "IND_INK_001",
+    "IND_INK_002",
+    "IND_INK_003",
+    "IND_INK_004",
+    "IND_INK_005"
+  ],
+  "forbidden_overclaims_checked": [
+    "compliance_claim_allowed=true",
+    "standard_certified=true",
+    "pdfx_compliance_claimed=true",
+    "pdfa_compliance_claimed=true",
+    "production_certified=true",
+    "production_safe=true",
+    "status=APPLIED without rendering pipeline evidence"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry ink_governance capabilities check",
+      "fixture": null,
+      "capability": "REDUCE_TOTAL_INK_COVERAGE, MAP_RICH_BLACK_TEXT_TO_K_ONLY, MAP_REGISTRATION_COLOR_TO_BLACK, NORMALIZE_BLACK_TEXT, DETECT_SMALL_TEXT_RICH_BLACK",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All ink_governance capabilities registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 64A ink codes",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 64A IND_INK_* codes registered correctly."
+      ]
+    },
+    {
+      "scenario": "IssueNormalizer ink governance routing",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "IssueNormalizer correctly routes all IND_INK_* and legacy IND_COLOR_* ink codes to ink governance fixes with safeToAutofix=false."
+      ]
+    },
+    {
+      "scenario": "FixPlanner ink governance guardrails",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all ink_governance fixes from being planned/executable in any policy mode."
+      ]
+    },
+    {
+      "scenario": "REDUCE_TOTAL_INK_COVERAGE returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "high_tac.pdf",
+      "capability": "REDUCE_TOTAL_INK_COVERAGE",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: ink fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "MAP_RICH_BLACK_TEXT_TO_K_ONLY returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "rich_black_text.pdf",
+      "capability": "MAP_RICH_BLACK_TEXT_TO_K_ONLY",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: ink fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "DETECT_SMALL_TEXT_RICH_BLACK returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "small_text_rich_black.pdf",
+      "capability": "DETECT_SMALL_TEXT_RICH_BLACK",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: ink fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "MAP_REGISTRATION_COLOR_TO_BLACK returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "registration_color_misuse.pdf",
+      "capability": "MAP_REGISTRATION_COLOR_TO_BLACK",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: ink fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "NORMALIZE_BLACK_TEXT returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "black_text_not_k_only.pdf",
+      "capability": "NORMALIZE_BLACK_TEXT",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: ink fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "REDUCE_TOTAL_INK_COVERAGE on clean control — honest skip",
+      "fixture": "clean_control.pdf",
+      "capability": "REDUCE_TOTAL_INK_COVERAGE",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED",
+        "NO_CHANGE"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: ink fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "Ink governance overclaim regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No ink governance fix produced a standards, PDF/X, PDF/A, production certification, or production_safe claim."
+      ]
+    },
+    {
+      "scenario": "Ink governance no-APPLIED regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No ink governance fix produced an APPLIED result without a rendering pipeline — correctly deferred to SKIPPED_UNSUPPORTED."
+      ]
+    },
+    {
+      "scenario": "Ink governance review_required signal (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All ink governance results signal requires_human_review=true as required by policy."
+      ]
+    }
+  ]
+}

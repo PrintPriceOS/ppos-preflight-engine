@@ -75,6 +75,7 @@ class IssueNormalizer {
                 normalized.safeToAutofix = false;
             }
 
+            if (rawCode?.startsWith('IND_INK')) normalized.category = 'INK';
             if (rawCode?.startsWith('IND_COLOR')) normalized.category = 'COLOR';
             if (rawCode?.startsWith('IND_FONT')) normalized.category = 'FONT';
             if (rawCode?.startsWith('IND_IMG')) normalized.category = 'IMAGE';
@@ -84,6 +85,89 @@ class IssueNormalizer {
             if (rawCode?.startsWith('IND_COMPLIANCE')) normalized.category = 'COMPLIANCE';
             if (rawCode?.startsWith('IND_STRUCT')) normalized.category = 'STRUCTURAL';
             if (rawCode?.includes('INTEGRITY')) normalized.category = 'INTEGRITY';
+
+            // Phase 64A: Ink governance findings — runs after prefix checks to ensure INK category
+            // takes precedence over generic IND_COLOR prefix assignment for ink-specific codes.
+            const inkGovernanceCodes = [
+                'INK_TOTAL_COVERAGE_EXCESSIVE', 'IND_INK_001',
+                'TOTAL_INK_COVERAGE_EXCESSIVE', 'COLOR_TOTAL_INK_COVERAGE_EXCEEDED', 'IND_COLOR_005'
+            ];
+            const richBlackCodes = [
+                'INK_RICH_BLACK_TEXT', 'IND_INK_002', 'RICH_BLACK_TEXT',
+                'COLOR_RICH_BLACK_TEXT', 'IND_COLOR_008'
+            ];
+            const smallTextRichBlackCodes = ['INK_SMALL_TEXT_RICH_BLACK', 'IND_INK_003', 'SMALL_TEXT_RICH_BLACK'];
+            const registrationColorCodes = [
+                'INK_REGISTRATION_COLOR_MISUSE', 'IND_INK_004', 'REGISTRATION_COLOR_MISUSE',
+                'COLOR_REGISTRATION_ABUSE', 'IND_COLOR_009'
+            ];
+            const blackTextCodes = ['INK_BLACK_TEXT_NOT_K_ONLY', 'IND_INK_005', 'BLACK_TEXT_NOT_K_ONLY'];
+
+            if (inkGovernanceCodes.includes(rawCode) || inkGovernanceCodes.includes(mappedCode)) {
+                normalized.category = 'INK';
+                normalized.fixable = false;
+                normalized.fix_method = 'REDUCE_TOTAL_INK_COVERAGE';
+                normalized.recommended_fix = 'REDUCE_TOTAL_INK_COVERAGE';
+                normalized.repairStrategy = 'REDUCE_TOTAL_INK_COVERAGE';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (richBlackCodes.includes(rawCode) || richBlackCodes.includes(mappedCode)) {
+                normalized.category = 'INK';
+                normalized.fixable = false;
+                normalized.fix_method = 'MAP_RICH_BLACK_TEXT_TO_K_ONLY';
+                normalized.recommended_fix = 'MAP_RICH_BLACK_TEXT_TO_K_ONLY';
+                normalized.repairStrategy = 'MAP_RICH_BLACK_TEXT_TO_K_ONLY';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (smallTextRichBlackCodes.includes(rawCode) || smallTextRichBlackCodes.includes(mappedCode)) {
+                normalized.category = 'INK';
+                normalized.fixable = false;
+                normalized.fix_method = 'DETECT_SMALL_TEXT_RICH_BLACK';
+                normalized.recommended_fix = 'DETECT_SMALL_TEXT_RICH_BLACK';
+                normalized.repairStrategy = 'DETECT_SMALL_TEXT_RICH_BLACK';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'MEDIUM';
+            }
+            if (registrationColorCodes.includes(rawCode) || registrationColorCodes.includes(mappedCode)) {
+                normalized.category = 'INK';
+                normalized.fixable = false;
+                normalized.fix_method = 'MAP_REGISTRATION_COLOR_TO_BLACK';
+                normalized.recommended_fix = 'MAP_REGISTRATION_COLOR_TO_BLACK';
+                normalized.repairStrategy = 'MAP_REGISTRATION_COLOR_TO_BLACK';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (blackTextCodes.includes(rawCode) || blackTextCodes.includes(mappedCode)) {
+                normalized.category = 'INK';
+                normalized.fixable = false;
+                normalized.fix_method = 'NORMALIZE_BLACK_TEXT';
+                normalized.recommended_fix = 'NORMALIZE_BLACK_TEXT';
+                normalized.repairStrategy = 'NORMALIZE_BLACK_TEXT';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
 
             return normalized;
         });
@@ -141,6 +225,18 @@ class IssueNormalizer {
             'IND_STRUCT_003': 'JavaScript Embedded Action Detected',
             'IND_STRUCT_004': 'Broken XREF / Incremental Save Anomaly',
             'IND_STRUCT_005': 'Object Stream / Cross-Reference Issue',
+            // Phase 64A ink governance
+            'IND_INK_001': 'Total Ink Coverage Excessive',
+            'IND_INK_002': 'Rich Black Text Detected',
+            'IND_INK_003': 'Small Text Using Rich Black',
+            'IND_INK_004': 'Registration Color Misuse Detected',
+            'IND_INK_005': 'Black Text Not K-Only',
+            'TOTAL_INK_COVERAGE_EXCESSIVE': 'Total Ink Coverage Excessive',
+            'RICH_BLACK_TEXT': 'Rich Black Text Detected',
+            'SMALL_TEXT_RICH_BLACK': 'Small Text Using Rich Black',
+            'REGISTRATION_COLOR_MISUSE': 'Registration Color Misuse Detected',
+            'BLACK_TEXT_NOT_K_ONLY': 'Black Text Not K-Only',
+
             'IND_INTEGRITY_DEGRADED': 'Forensic Extraction Degraded',
             'IND_INTEGRITY_EXTRACTION_ERROR': 'Extraction Probe Failure',
             'IND_INTEGRITY_MISSING_TOOL': 'Required Industrial Tool Missing'

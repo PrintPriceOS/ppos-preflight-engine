@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-06-08T18:34:33.376Z",
+  "phase": "phase64a",
+  "category": "ink_governance",
+  "note": "Fixtures are metadata-annotated PDFs representing ink governance scenarios. Physical TAC/color extraction requires a rendering pipeline not available in pdf-lib.",
+  "fixtures": [
+    {
+      "filename": "high_tac.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase64a\\high_tac.pdf",
+      "expected": "total_ink_coverage_excessive"
+    },
+    {
+      "filename": "rich_black_text.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase64a\\rich_black_text.pdf",
+      "expected": "rich_black_text"
+    },
+    {
+      "filename": "small_text_rich_black.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase64a\\small_text_rich_black.pdf",
+      "expected": "small_text_rich_black"
+    },
+    {
+      "filename": "registration_color_misuse.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase64a\\registration_color_misuse.pdf",
+      "expected": "registration_color_misuse"
+    },
+    {
+      "filename": "black_text_not_k_only.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase64a\\black_text_not_k_only.pdf",
+      "expected": "black_text_not_k_only"
+    },
+    {
+      "filename": "clean_control.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase64a\\clean_control.pdf",
+      "expected": "clean"
+    }
+  ]
+}

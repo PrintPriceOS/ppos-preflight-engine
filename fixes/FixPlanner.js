@@ -57,6 +57,24 @@ class FixPlanner {
                 rawStrategy = 'FLATTEN_FORMS';
             } else if (rawStrategy === 'PDF_XFA_FORMS_PRESENT' || rawStrategy === 'IND_SEC_008') {
                 rawStrategy = 'FLATTEN_FORMS';
+            } else if (rawStrategy === 'COLOR_TOTAL_INK_COVERAGE_EXCEEDED' || rawStrategy === 'IND_COLOR_005' ||
+                       rawStrategy === 'INK_TOTAL_COVERAGE_EXCESSIVE' || rawStrategy === 'IND_INK_001' ||
+                       rawStrategy === 'TOTAL_INK_COVERAGE_EXCESSIVE' || rawStrategy === 'REDUCE_TAC') {
+                rawStrategy = 'REDUCE_TOTAL_INK_COVERAGE';
+            } else if (rawStrategy === 'COLOR_RICH_BLACK_TEXT' || rawStrategy === 'IND_COLOR_008' ||
+                       rawStrategy === 'INK_RICH_BLACK_TEXT' || rawStrategy === 'IND_INK_002' ||
+                       rawStrategy === 'RICH_BLACK_TEXT') {
+                rawStrategy = 'MAP_RICH_BLACK_TEXT_TO_K_ONLY';
+            } else if (rawStrategy === 'INK_SMALL_TEXT_RICH_BLACK' || rawStrategy === 'IND_INK_003' ||
+                       rawStrategy === 'SMALL_TEXT_RICH_BLACK') {
+                rawStrategy = 'DETECT_SMALL_TEXT_RICH_BLACK';
+            } else if (rawStrategy === 'COLOR_REGISTRATION_ABUSE' || rawStrategy === 'IND_COLOR_009' ||
+                       rawStrategy === 'INK_REGISTRATION_COLOR_MISUSE' || rawStrategy === 'IND_INK_004' ||
+                       rawStrategy === 'REGISTRATION_COLOR_MISUSE') {
+                rawStrategy = 'MAP_REGISTRATION_COLOR_TO_BLACK';
+            } else if (rawStrategy === 'INK_BLACK_TEXT_NOT_K_ONLY' || rawStrategy === 'IND_INK_005' ||
+                       rawStrategy === 'BLACK_TEXT_NOT_K_ONLY') {
+                rawStrategy = 'NORMALIZE_BLACK_TEXT';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -91,6 +109,11 @@ class FixPlanner {
                     }
                 }
 
+                // Phase 64A: Ink governance guardrails — all ink_governance fixes are never auto-applied
+                if (cap.category === 'ink_governance') {
+                    autofixable = false; // No ink/color fix is safe without evidence-backed visual review
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -108,7 +131,8 @@ class FixPlanner {
                 if (!implemented) skipReason = "FIX_NOT_IMPLEMENTED";
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
                 else if (!autofixable) {
-                    if (cap.category === 'standards_certification' || cap.category === 'standards') skipReason = "VALIDATOR_REQUIRED";
+                    if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
+                    else if (cap.category === 'standards_certification' || cap.category === 'standards') skipReason = "VALIDATOR_REQUIRED";
                     else if (cap.category === 'page_marks') {
                         if (policyMode === "SAFE") skipReason = "SAFE_MODE_RESTRICTION";
                         else if (issue.id === 'INSUFFICIENT_MARGIN_FOR_CROP_MARKS' || issue.id === 'IND_MARK_013') skipReason = "INSUFFICIENT_MARGIN";

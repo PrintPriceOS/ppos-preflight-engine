@@ -1567,11 +1567,100 @@ class PdfFixEngine {
             }
         };
     }
-    async detectTotalInkCoverage(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("DETECT_TOTAL_INK_COVERAGE"); }
-    async mapRichBlackTextToKOnly(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("MAP_RICH_BLACK_TEXT_TO_K_ONLY"); }
-    async mapRegistrationColorToBlack(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("MAP_REGISTRATION_COLOR_TO_BLACK"); }
+    // --- Phase 64A: Ink / TAC / Black / Registration Color Fixes ---
+
+    _scaffoldUnsupportedInkGovernance(fixId, message) {
+        return {
+            success: false,
+            code: fixId,
+            status: "SKIPPED_UNSUPPORTED",
+            strategy: "UNSUPPORTED_INK_GOVERNANCE_FIX",
+            risk_level: "HIGH",
+            requires_human_review: true,
+            production_safe: false,
+            visually_sensitive: true,
+            destructive: true,
+            executable: false,
+            visual_change_expected: true,
+            review_required: true,
+            production_certified: false,
+            compliance_claim_allowed: false,
+            evidence: {
+                reason: message || "Ink/color visual fixes cannot be safely automated without a rendering pipeline and evidence-backed visual verification.",
+                tac_reduction_attempted: false,
+                tac_reduction_applied: false,
+                rich_black_text_mapped: false,
+                registration_color_mapped: false,
+                visual_change_expected: true,
+                review_required: true,
+                production_certified: false,
+                limitations: [
+                    "Ink/color content stream editing requires access to individual color operators and cannot be safely done without font/color pipeline.",
+                    "No physical ink reduction or color remapping was performed.",
+                    "Human review and operator correction are required."
+                ],
+                warnings: []
+            }
+        };
+    }
+
+    async detectTotalInkCoverage(inputPath, outputPath, options = {}) {
+        return this._scaffoldUnsupportedInkGovernance("DETECT_TOTAL_INK_COVERAGE", "TAC detection requires rendering pipeline access; currently scaffolded.");
+    }
+
+    async reduceTotalInkCoverage(inputPath, outputPath, options = {}) {
+        return this._scaffoldUnsupportedInkGovernance("REDUCE_TOTAL_INK_COVERAGE", "TAC reduction cannot be safely performed without a color rendering pipeline and before/after visual evidence.");
+    }
+
+    async mapRichBlackTextToKOnly(inputPath, outputPath, options = {}) {
+        return this._scaffoldUnsupportedInkGovernance("MAP_RICH_BLACK_TEXT_TO_K_ONLY", "Mapping rich black text to K-only requires color content stream editing; not safely automatable without visual evidence.");
+    }
+
+    async mapRegistrationColorToBlack(inputPath, outputPath, options = {}) {
+        return this._scaffoldUnsupportedInkGovernance("MAP_REGISTRATION_COLOR_TO_BLACK", "Mapping registration color to black requires color content stream editing; not safely automatable without visual evidence.");
+    }
+
+    async normalizeBlackText(inputPath, outputPath, options = {}) {
+        return this._scaffoldUnsupportedInkGovernance("NORMALIZE_BLACK_TEXT", "Normalizing black text to K-only requires color content stream editing; not safely automatable without visual evidence.");
+    }
+
+    async detectSmallTextRichBlack(inputPath, outputPath, options = {}) {
+        return {
+            success: false,
+            code: "DETECT_SMALL_TEXT_RICH_BLACK",
+            status: "SKIPPED_UNSUPPORTED",
+            strategy: "UNSUPPORTED_INK_GOVERNANCE_FIX",
+            risk_level: "MEDIUM",
+            requires_human_review: true,
+            production_safe: false,
+            visually_sensitive: true,
+            destructive: false,
+            executable: false,
+            visual_change_expected: false,
+            review_required: true,
+            production_certified: false,
+            compliance_claim_allowed: false,
+            evidence: {
+                reason: "Detection of small text using rich black requires text extraction and color space inspection; currently scaffolded.",
+                tac_reduction_attempted: false,
+                tac_reduction_applied: false,
+                rich_black_text_mapped: false,
+                registration_color_mapped: false,
+                visual_change_expected: false,
+                review_required: true,
+                production_certified: false,
+                limitations: [
+                    "Small rich-black text detection requires glyph-level color analysis not currently available.",
+                    "No physical correction was performed.",
+                    "Human review required."
+                ],
+                warnings: []
+            }
+        };
+    }
+
     async normalizeIccProfile(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("NORMALIZE_ICC_PROFILE"); }
-    async reduceTac(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REDUCE_TAC"); }
+    async reduceTac(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedInkGovernance("REDUCE_TAC", "Legacy TAC fix. Use REDUCE_TOTAL_INK_COVERAGE. TAC reduction requires rendering pipeline."); }
     async optimizeExcessiveImageResolution(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("OPTIMIZE_EXCESSIVE_IMAGE_RESOLUTION"); }
     async visualBleedExtension(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("VISUAL_BLEED_EXTENSION"); }
     async _scaffoldUnsupportedImageQuality(fixId) {
