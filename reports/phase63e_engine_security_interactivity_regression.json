@@ -1,0 +1,424 @@
+{
+  "generated_at": "2026-06-08T15:27:32.170Z",
+  "phase": "63E.1",
+  "repo": "ppos-preflight-engine",
+  "category": "pdf_security_interactivity",
+  "smoke_passed": true,
+  "core_principle": "End-to-end: security/interactivity cleanup must never imply PDF/X compliance, PDF/A compliance, standards certification, production certification, print-ready status, or certified.pdf trust — from Engine through Control Plane.",
+  "forbidden_overclaims_checked": [
+    "compliance_claim_allowed=true",
+    "standard_certified=true",
+    "pdfx_compliance_claimed=true",
+    "pdfa_compliance_claimed=true",
+    "production_certified=true",
+    "certified.pdf trusted by filename",
+    "customer-facing \"Print-ready\" / \"Certified PDF\" / \"PDF/X validated\" / \"PDF/A validated\" wording"
+  ],
+  "results": [
+    {
+      "scenario": "STRIP_JAVASCRIPT removes or skips honestly",
+      "fixture": "javascript_action.pdf",
+      "capability": "STRIP_JAVASCRIPT",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "objects_scanned": 6,
+        "removed_catalog_open_action": true,
+        "removed_catalog_additional_actions": false,
+        "javascript_removed_count": 2,
+        "actions_removed_count": 2,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Embedded JavaScript inside content streams or third-party annotations may not be fully enumerable."
+        ]
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "REMOVE_LAUNCH_ACTIONS removes or skips honestly",
+      "fixture": "launch_action.pdf",
+      "capability": "REMOVE_LAUNCH_ACTIONS",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "objects_scanned": 2,
+        "actions_removed_count": 2,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Action enumeration is limited to standard catalog/page/annotation action dictionaries."
+        ],
+        "launch_actions_removed_count": 2
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "REMOVE_EMBEDDED_FILES removes or skips honestly",
+      "fixture": "embedded_file.pdf",
+      "capability": "REMOVE_EMBEDDED_FILES",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "objects_scanned": 2,
+        "removed_embedded_files_name_tree": true,
+        "file_attachment_annotations_removed": 1,
+        "embedded_files_removed_count": 2,
+        "objects_removed_count": 2,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Embedded file specifications referenced only from custom/private dictionaries may not be enumerable."
+        ]
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "REMOVE_DOCUMENT_OPEN_ACTIONS removes or skips honestly",
+      "fixture": "document_open_action.pdf",
+      "capability": "REMOVE_DOCUMENT_OPEN_ACTIONS",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "objects_scanned": 1,
+        "removed_open_action": true,
+        "removed_additional_actions": true,
+        "document_actions_removed_count": 2,
+        "actions_removed_count": 2,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": []
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "REMOVE_PAGE_OPEN_ACTIONS removes or skips honestly",
+      "fixture": "page_open_action.pdf",
+      "capability": "REMOVE_PAGE_OPEN_ACTIONS",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "objects_scanned": 1,
+        "pages_scanned": 1,
+        "page_actions_removed_count": 2,
+        "actions_removed_count": 2,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": []
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "FLATTEN_ANNOTATIONS applies only if safe, otherwise SKIPPED_UNSUPPORTED",
+      "fixture": "annotations_basic.pdf",
+      "capability": "FLATTEN_ANNOTATIONS",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "pages_scanned": 1,
+        "annotations_detected_count": 1,
+        "annotations_flattened_count": 1,
+        "unsupported_objects": [],
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Annotation references were removed; no appearance stream was physically rendered because none was visually significant."
+        ]
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "FLATTEN_FORMS applies only if safe, otherwise SKIPPED_UNSUPPORTED",
+      "fixture": "acroform_basic.pdf",
+      "capability": "FLATTEN_FORMS",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED_UNSUPPORTED",
+        "NO_CHANGE"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "forms_detected_count": 1,
+        "form_fields_before": 1,
+        "form_fields_after": 0,
+        "forms_flattened_count": 1,
+        "acroform_present_before": true,
+        "acroform_present_after": false,
+        "flattened": true,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Visual fidelity depends on pdf-lib's appearance-stream rendering for each field type."
+        ]
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "mixed_interactive_content preserves evidence (STRIP_JAVASCRIPT)",
+      "fixture": "mixed_interactive_content.pdf",
+      "capability": "STRIP_JAVASCRIPT",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "objects_scanned": 15,
+        "removed_catalog_open_action": true,
+        "removed_catalog_additional_actions": false,
+        "javascript_removed_count": 1,
+        "actions_removed_count": 1,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Embedded JavaScript inside content streams or third-party annotations may not be fully enumerable."
+        ]
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "mixed_interactive_content preserves evidence (FLATTEN_FORMS)",
+      "fixture": "mixed_interactive_content.pdf",
+      "capability": "FLATTEN_FORMS",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "SKIPPED_UNSUPPORTED",
+        "NO_CHANGE"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "forms_detected_count": 1,
+        "form_fields_before": 1,
+        "form_fields_after": 0,
+        "forms_flattened_count": 1,
+        "acroform_present_before": true,
+        "acroform_present_after": false,
+        "flattened": true,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Visual fidelity depends on pdf-lib's appearance-stream rendering for each field type."
+        ]
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "clean_control returns no action with evidence (STRIP_JAVASCRIPT)",
+      "fixture": "clean_control.pdf",
+      "capability": "STRIP_JAVASCRIPT",
+      "status": "APPLIED",
+      "allowed_statuses": [
+        "APPLIED",
+        "NO_CHANGE",
+        "SKIPPED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "objects_scanned": 6,
+        "removed_catalog_open_action": false,
+        "removed_catalog_additional_actions": false,
+        "javascript_removed_count": 0,
+        "actions_removed_count": 0,
+        "output_pdf_valid": true,
+        "warnings": [],
+        "limitations": [
+          "Embedded JavaScript inside content streams or third-party annotations may not be fully enumerable."
+        ]
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "clean_control returns no action with evidence (FLATTEN_FORMS)",
+      "fixture": "clean_control.pdf",
+      "capability": "FLATTEN_FORMS",
+      "status": "NO_CHANGE",
+      "allowed_statuses": [
+        "NO_CHANGE",
+        "SKIPPED",
+        "SKIPPED_UNSUPPORTED"
+      ],
+      "output_pdf_valid": true,
+      "evidence": {
+        "forms_detected_count": 0,
+        "forms_flattened_count": 0,
+        "output_pdf_valid": false,
+        "warnings": [],
+        "limitations": []
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": false,
+      "security_sensitive": false,
+      "visually_sensitive": false,
+      "pass": true,
+      "notes": []
+    },
+    {
+      "scenario": "Standards overclaim regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No security/interactivity fix produced a standards, PDF/X, PDF/A, or production certification claim end-to-end."
+      ]
+    },
+    {
+      "scenario": "certified.pdf filename trust regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No result treats certified.pdf as trusted by filename alone; artifact_trust must remain authoritative downstream."
+      ]
+    },
+    {
+      "scenario": "APPLIED output validity regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "10 APPLIED result(s) verified valid, start with %PDF, and are reparseable."
+      ]
+    }
+  ]
+}
