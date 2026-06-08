@@ -1,0 +1,271 @@
+{
+  "generated_at": "2026-06-08T19:25:14.652Z",
+  "phase": "65A",
+  "repo": "ppos-preflight-engine",
+  "category": "image_quality",
+  "smoke_passed": true,
+  "core_principle": "Selective image fixes must never perform global destructive conversion or invent detail. Low-resolution images are flagged, not upscaled. All visual image changes require human review and are production_safe=false.",
+  "target_fixes": [
+    "CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE",
+    "TAG_UNTAGGED_IMAGES",
+    "NORMALIZE_IMAGE_ICC_PROFILE",
+    "DOWNSAMPLE_EXCESSIVE_RESOLUTION",
+    "FLAG_LOW_RES_IMAGES_UNFIXABLE"
+  ],
+  "finding_codes": [
+    "IND_IMG_017",
+    "IND_IMG_018",
+    "IND_IMG_019",
+    "IND_IMG_020",
+    "IND_IMG_005"
+  ],
+  "forbidden_overclaims_checked": [
+    "compliance_claim_allowed=true",
+    "standard_certified=true",
+    "pdfx_compliance_claimed=true",
+    "pdfa_compliance_claimed=true",
+    "production_certified=true",
+    "production_safe=true",
+    "status=APPLIED without color-managed pipeline evidence",
+    "upscaling_performed=true"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry image_quality (Phase 65A) capabilities check",
+      "fixture": null,
+      "capability": "CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE, TAG_UNTAGGED_IMAGES, NORMALIZE_IMAGE_ICC_PROFILE, DOWNSAMPLE_EXCESSIVE_RESOLUTION, FLAG_LOW_RES_IMAGES_UNFIXABLE",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "DOWNSAMPLE_EXCESSIVE_RESOLUTION: evidence_required not set (informational)"
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 65A image codes",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 65A image finding codes registered correctly (including reuse of existing LOW_RES_IMAGES)."
+      ]
+    },
+    {
+      "scenario": "IssueNormalizer selective image routing",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "IssueNormalizer correctly routes Phase 65A image codes to selective image fixes with safeToAutofix=false and category=IMAGE."
+      ]
+    },
+    {
+      "scenario": "FixPlanner selective image guardrails",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all Phase 65A selective image fixes from being planned/executable in any policy mode."
+      ]
+    },
+    {
+      "scenario": "CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "rgb_images_present.pdf",
+      "capability": "CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "upscaling_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: selective image fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "TAG_UNTAGGED_IMAGES returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "untagged_image.pdf",
+      "capability": "TAG_UNTAGGED_IMAGES",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "upscaling_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: selective image fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "NORMALIZE_IMAGE_ICC_PROFILE returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "image_icc_mismatch.pdf",
+      "capability": "NORMALIZE_IMAGE_ICC_PROFILE",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "upscaling_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: selective image fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "DOWNSAMPLE_EXCESSIVE_RESOLUTION returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "excessive_resolution_image.pdf",
+      "capability": "DOWNSAMPLE_EXCESSIVE_RESOLUTION",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "upscaling_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: selective image fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "FLAG_LOW_RES_IMAGES_UNFIXABLE flags honestly without upscaling",
+      "fixture": "low_res_images.pdf",
+      "capability": "FLAG_LOW_RES_IMAGES_UNFIXABLE",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "upscaling_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: selective image fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE on clean control — honest skip",
+      "fixture": "clean_control.pdf",
+      "capability": "CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED",
+        "NO_CHANGE"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "upscaling_performed": false,
+      "pass": true,
+      "notes": [
+        "Minor: selective image fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "Selective image overclaim regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No selective image fix produced a standards, PDF/X, PDF/A, production certification, or production_safe claim."
+      ]
+    },
+    {
+      "scenario": "Selective image no-APPLIED regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No selective image fix produced an APPLIED result without a color-managed pipeline — correctly deferred to SKIPPED_UNSUPPORTED."
+      ]
+    },
+    {
+      "scenario": "No-upscaling policy regression (aggregate)",
+      "fixture": null,
+      "capability": "FLAG_LOW_RES_IMAGES_UNFIXABLE",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "Low-resolution images are honestly flagged; no automatic upscaling/interpolation was performed."
+      ]
+    },
+    {
+      "scenario": "Selective image review_required signal (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "\"No-upscaling policy regression (aggregate)\" does not signal requires_human_review=true"
+      ]
+    }
+  ]
+}

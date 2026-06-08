@@ -1698,6 +1698,82 @@ class PdfFixEngine {
     async vectorizeBitmapText(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("VECTORIZE_BITMAP_TEXT"); }
     async restoreRasterizedVector(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedImageQuality("RESTORE_RASTERIZED_VECTOR"); }
 
+    // --- Phase 65A Selective Image Fixes ---
+
+    _scaffoldSelectiveImageFix(fixId, message, evidenceOverrides = {}) {
+        return {
+            success: false,
+            code: fixId,
+            status: "SKIPPED_UNSUPPORTED",
+            strategy: "UNSUPPORTED_SELECTIVE_IMAGE_FIX",
+            risk_level: evidenceOverrides.risk_level || "HIGH",
+            requires_human_review: true,
+            production_safe: false,
+            visually_sensitive: evidenceOverrides.visually_sensitive !== undefined ? evidenceOverrides.visually_sensitive : true,
+            destructive: evidenceOverrides.destructive !== undefined ? evidenceOverrides.destructive : true,
+            executable: false,
+            visual_change_expected: evidenceOverrides.visual_change_expected !== undefined ? evidenceOverrides.visual_change_expected : true,
+            review_required: true,
+            production_certified: false,
+            compliance_claim_allowed: false,
+            evidence: {
+                reason: message || "Selective image transformations cannot be safely automated without a color-managed rendering pipeline and before/after visual evidence.",
+                images_scanned: 0,
+                rgb_images_converted_count: 0,
+                images_tagged_count: 0,
+                icc_profiles_normalized_count: 0,
+                images_downsampled_count: 0,
+                low_res_images_flagged_count: 0,
+                upscaling_performed: false,
+                visual_change_expected: evidenceOverrides.visual_change_expected !== undefined ? evidenceOverrides.visual_change_expected : true,
+                review_required: true,
+                production_certified: false,
+                limitations: evidenceOverrides.limitations || [
+                    "Selective per-image stream replacement requires a color-managed rendering pipeline not currently available.",
+                    "No global or destructive image conversion was performed.",
+                    "Human review and source assets/customer approval are required."
+                ],
+                warnings: []
+            }
+        };
+    }
+
+    async convertImageRgbToCmykSelective(inputPath, outputPath, options = {}) {
+        return this._scaffoldSelectiveImageFix(
+            "CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE",
+            "Selective RGB-to-CMYK image conversion requires per-image color-managed stream replacement; not safely automatable without a rendering pipeline and visual evidence. Global conversion is never performed."
+        );
+    }
+
+    async tagUntaggedImages(inputPath, outputPath, options = {}) {
+        return this._scaffoldSelectiveImageFix(
+            "TAG_UNTAGGED_IMAGES",
+            "Assigning an ICC profile to an untagged image changes color interpretation; the correct profile cannot be safely inferred without source/intent evidence.",
+            { risk_level: "MEDIUM" }
+        );
+    }
+
+    async normalizeImageIccProfile(inputPath, outputPath, options = {}) {
+        return this._scaffoldSelectiveImageFix(
+            "NORMALIZE_IMAGE_ICC_PROFILE",
+            "Replacing or remapping an embedded image ICC profile changes color rendering; requires a color-managed pipeline and visual verification not currently available."
+        );
+    }
+
+    async flagLowResImagesUnfixable(inputPath, outputPath, options = {}) {
+        return this._scaffoldSelectiveImageFix(
+            "FLAG_LOW_RES_IMAGES_UNFIXABLE",
+            "Low-resolution images are flagged for review only. Automatic upscaling would invent visual detail and is never performed; source assets or customer approval are required.",
+            { risk_level: "LOW", destructive: false, visually_sensitive: false, visual_change_expected: false,
+              limitations: [
+                  "Low-resolution images cannot be safely improved automatically.",
+                  "Upscaling/interpolation is never performed because it would invent detail not present in the source.",
+                  "Source assets or customer approval are required to resolve."
+              ]
+            }
+        );
+    }
+
     // --- Phase 62A Page Marks Fixes ---
 
     async addCropMarks(inputPath, outputPath, options = {}) {

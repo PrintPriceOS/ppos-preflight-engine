@@ -75,6 +75,20 @@ class FixPlanner {
             } else if (rawStrategy === 'INK_BLACK_TEXT_NOT_K_ONLY' || rawStrategy === 'IND_INK_005' ||
                        rawStrategy === 'BLACK_TEXT_NOT_K_ONLY') {
                 rawStrategy = 'NORMALIZE_BLACK_TEXT';
+            } else if (rawStrategy === 'RGB_IMAGES_PRESENT' || rawStrategy === 'IND_IMG_017' ||
+                       rawStrategy === 'IMG_RGB_IMAGE_DETECTED' || rawStrategy === 'IND_IMG_004') {
+                rawStrategy = 'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE';
+            } else if (rawStrategy === 'UNTAGGED_IMAGE' || rawStrategy === 'IND_IMG_018') {
+                rawStrategy = 'TAG_UNTAGGED_IMAGES';
+            } else if (rawStrategy === 'IMAGE_ICC_MISMATCH' || rawStrategy === 'IND_IMG_019' ||
+                       rawStrategy === 'COLOR_ICC_PROFILE_MISMATCH' || rawStrategy === 'IND_COLOR_007') {
+                rawStrategy = 'NORMALIZE_IMAGE_ICC_PROFILE';
+            } else if (rawStrategy === 'EXCESSIVE_RESOLUTION_IMAGE' || rawStrategy === 'IND_IMG_020' ||
+                       rawStrategy === 'EXCESSIVE_RESOLUTION' || rawStrategy === 'IND_IMG_006') {
+                rawStrategy = 'DOWNSAMPLE_EXCESSIVE_RESOLUTION';
+            } else if (rawStrategy === 'LOW_RES_IMAGES' || rawStrategy === 'IND_IMG_005' ||
+                       rawStrategy === 'IMG_IMAGE_LOW_RESOLUTION' || rawStrategy === 'IND_IMG_001') {
+                rawStrategy = 'FLAG_LOW_RES_IMAGES_UNFIXABLE';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -114,6 +128,15 @@ class FixPlanner {
                     autofixable = false; // No ink/color fix is safe without evidence-backed visual review
                 }
 
+                // Phase 65A: Selective image fix guardrails — visually sensitive image transforms
+                // are never auto-applied without evidence-backed visual review; never upscale.
+                if (cap.category === 'image_quality' &&
+                    (fixId === 'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE' || fixId === 'TAG_UNTAGGED_IMAGES' ||
+                     fixId === 'NORMALIZE_IMAGE_ICC_PROFILE' || fixId === 'DOWNSAMPLE_EXCESSIVE_RESOLUTION' ||
+                     fixId === 'FLAG_LOW_RES_IMAGES_UNFIXABLE')) {
+                    autofixable = false; // Selective image transforms require human visual review evidence
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -132,6 +155,10 @@ class FixPlanner {
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
                 else if (!autofixable) {
                     if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
+                    else if (cap.category === 'image_quality' && fixId === 'FLAG_LOW_RES_IMAGES_UNFIXABLE') skipReason = "LOW_RES_UNFIXABLE_NO_UPSCALE";
+                    else if (cap.category === 'image_quality' &&
+                             (fixId === 'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE' || fixId === 'TAG_UNTAGGED_IMAGES' ||
+                              fixId === 'NORMALIZE_IMAGE_ICC_PROFILE' || fixId === 'DOWNSAMPLE_EXCESSIVE_RESOLUTION')) skipReason = "VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'standards_certification' || cap.category === 'standards') skipReason = "VALIDATOR_REQUIRED";
                     else if (cap.category === 'page_marks') {
                         if (policyMode === "SAFE") skipReason = "SAFE_MODE_RESTRICTION";

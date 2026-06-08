@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-06-08T19:25:14.457Z",
+  "phase": "phase65a",
+  "category": "image_quality",
+  "note": "Fixtures are metadata-annotated PDFs representing selective image quality scenarios. Physical per-image colorspace/resolution extraction requires content-stream/XObject parsing beyond pdf-lib drawing primitives.",
+  "fixtures": [
+    {
+      "filename": "rgb_images_present.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase65a\\rgb_images_present.pdf",
+      "expected": "rgb_images_present"
+    },
+    {
+      "filename": "untagged_image.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase65a\\untagged_image.pdf",
+      "expected": "untagged_image"
+    },
+    {
+      "filename": "image_icc_mismatch.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase65a\\image_icc_mismatch.pdf",
+      "expected": "image_icc_mismatch"
+    },
+    {
+      "filename": "excessive_resolution_image.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase65a\\excessive_resolution_image.pdf",
+      "expected": "excessive_resolution_image"
+    },
+    {
+      "filename": "low_res_images.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase65a\\low_res_images.pdf",
+      "expected": "low_res_images"
+    },
+    {
+      "filename": "clean_control.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase65a\\clean_control.pdf",
+      "expected": "clean"
+    }
+  ]
+}

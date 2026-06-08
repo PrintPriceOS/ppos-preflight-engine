@@ -82,6 +82,10 @@ class AutofixExecutionEngine {
             'REPAIR_DAMAGED_IMAGE_OBJECT': 'repairDamagedImageObject',
             'VECTORIZE_BITMAP_TEXT': 'vectorizeBitmapText',
             'RESTORE_RASTERIZED_VECTOR': 'restoreRasterizedVector',
+            'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE': 'convertImageRgbToCmykSelective',
+            'TAG_UNTAGGED_IMAGES': 'tagUntaggedImages',
+            'NORMALIZE_IMAGE_ICC_PROFILE': 'normalizeImageIccProfile',
+            'FLAG_LOW_RES_IMAGES_UNFIXABLE': 'flagLowResImagesUnfixable',
             'ADD_CROP_MARKS': 'addCropMarks',
             'REMOVE_REGISTRATION_MARKS': 'removeRegistrationMarks',
             'NORMALIZE_PAGE_MARKS': 'normalizePageMarks'

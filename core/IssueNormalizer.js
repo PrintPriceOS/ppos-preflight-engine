@@ -169,6 +169,80 @@ class IssueNormalizer {
                 normalized.destructiveFixRisk = 'HIGH';
             }
 
+            // Phase 65A: Selective image quality findings — runs after prefix checks to ensure
+            // IMAGE category enrichment with selective (non-destructive-by-default) fix routing.
+            const rgbImagesCodes = ['RGB_IMAGES_PRESENT', 'IND_IMG_017', 'IMG_RGB_IMAGE_DETECTED', 'IND_IMG_004'];
+            const untaggedImageCodes = ['UNTAGGED_IMAGE', 'IND_IMG_018'];
+            const imageIccMismatchCodes = ['IMAGE_ICC_MISMATCH', 'IND_IMG_019', 'COLOR_ICC_PROFILE_MISMATCH', 'IND_COLOR_007'];
+            const excessiveResolutionImageCodes = ['EXCESSIVE_RESOLUTION_IMAGE', 'IND_IMG_020', 'EXCESSIVE_RESOLUTION', 'IND_IMG_006', 'IMG_IMAGE_EXCESSIVE_RESOLUTION', 'IND_IMG_002'];
+            const lowResImagesCodes = ['LOW_RES_IMAGES', 'IND_IMG_005', 'IMG_IMAGE_LOW_RESOLUTION', 'IND_IMG_001'];
+
+            if (rgbImagesCodes.includes(rawCode) || rgbImagesCodes.includes(mappedCode)) {
+                normalized.category = 'IMAGE';
+                normalized.fixable = false;
+                normalized.fix_method = 'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE';
+                normalized.recommended_fix = 'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE';
+                normalized.repairStrategy = 'CONVERT_IMAGE_RGB_TO_CMYK_SELECTIVE';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (untaggedImageCodes.includes(rawCode) || untaggedImageCodes.includes(mappedCode)) {
+                normalized.category = 'IMAGE';
+                normalized.fixable = false;
+                normalized.fix_method = 'TAG_UNTAGGED_IMAGES';
+                normalized.recommended_fix = 'TAG_UNTAGGED_IMAGES';
+                normalized.repairStrategy = 'TAG_UNTAGGED_IMAGES';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'MEDIUM';
+            }
+            if (imageIccMismatchCodes.includes(rawCode) || imageIccMismatchCodes.includes(mappedCode)) {
+                normalized.category = 'IMAGE';
+                normalized.fixable = false;
+                normalized.fix_method = 'NORMALIZE_IMAGE_ICC_PROFILE';
+                normalized.recommended_fix = 'NORMALIZE_IMAGE_ICC_PROFILE';
+                normalized.repairStrategy = 'NORMALIZE_IMAGE_ICC_PROFILE';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (excessiveResolutionImageCodes.includes(rawCode) || excessiveResolutionImageCodes.includes(mappedCode)) {
+                normalized.category = 'IMAGE';
+                normalized.fixable = false;
+                normalized.fix_method = 'DOWNSAMPLE_EXCESSIVE_RESOLUTION';
+                normalized.recommended_fix = 'DOWNSAMPLE_EXCESSIVE_RESOLUTION';
+                normalized.repairStrategy = 'DOWNSAMPLE_EXCESSIVE_RESOLUTION';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'MEDIUM';
+            }
+            if (lowResImagesCodes.includes(rawCode) || lowResImagesCodes.includes(mappedCode)) {
+                normalized.category = 'IMAGE';
+                normalized.fixable = false;
+                normalized.fix_method = 'FLAG_LOW_RES_IMAGES_UNFIXABLE';
+                normalized.recommended_fix = 'FLAG_LOW_RES_IMAGES_UNFIXABLE';
+                normalized.repairStrategy = 'FLAG_LOW_RES_IMAGES_UNFIXABLE';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = false;
+                normalized.destructiveFixRisk = 'LOW';
+            }
+
             return normalized;
         });
     }
@@ -236,6 +310,17 @@ class IssueNormalizer {
             'SMALL_TEXT_RICH_BLACK': 'Small Text Using Rich Black',
             'REGISTRATION_COLOR_MISUSE': 'Registration Color Misuse Detected',
             'BLACK_TEXT_NOT_K_ONLY': 'Black Text Not K-Only',
+
+            // Phase 65A selective image fixes
+            'IND_IMG_017': 'RGB Images Present',
+            'IND_IMG_018': 'Untagged Image Detected',
+            'IND_IMG_019': 'Image ICC Profile Mismatch',
+            'IND_IMG_020': 'Excessive Resolution Image Detected',
+            'RGB_IMAGES_PRESENT': 'RGB Images Present',
+            'UNTAGGED_IMAGE': 'Untagged Image Detected',
+            'IMAGE_ICC_MISMATCH': 'Image ICC Profile Mismatch',
+            'EXCESSIVE_RESOLUTION_IMAGE': 'Excessive Resolution Image Detected',
+            'LOW_RES_IMAGES': 'Low Resolution Images Detected',
 
             'IND_INTEGRITY_DEGRADED': 'Forensic Extraction Degraded',
             'IND_INTEGRITY_EXTRACTION_ERROR': 'Extraction Probe Failure',
