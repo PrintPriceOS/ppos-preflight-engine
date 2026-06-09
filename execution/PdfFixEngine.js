@@ -1721,11 +1721,171 @@ class PdfFixEngine {
         }
     }
 
-    async validatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("VALIDATE_PDFX"); }
-    async validatePdfa(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("VALIDATE_PDFA"); }
+    // --- Phase 68A: Real PDF/X / PDF/A Validator Integration ---
+
+    async validatePdfX(inputPath, outputPath, options = {}) {
+        // veraPDF validates PDF/A, not PDF/X. A dedicated PDF/X validator is required.
+        // We detect veraPDF presence and report it honestly, but skip PDF/X validation
+        // because no authoritative PDF/X validator is integrated.
+        const veraPdf = require('./VeraPdfValidator');
+        const available = await veraPdf.isAvailable();
+        const version = await veraPdf.getVersion();
+
+        const base = {
+            success: false,
+            code: 'VALIDATE_PDFX',
+            requires_human_review: true,
+            production_safe: false,
+            validation_performed: false,
+            validation_passed: false,
+            validator_name: 'verapdf',
+            validator_version: version,
+            standard_detected: null,
+            validation_report_hash: null,
+            compliance_claim_allowed: false,
+            standard_certified: false,
+            pdfx_compliance_claimed: false,
+            pdfa_compliance_claimed: false
+        };
+
+        if (!available) {
+            return {
+                ...base,
+                status: 'SKIPPED_UNSUPPORTED',
+                strategy: 'validator_unavailable',
+                evidence: {
+                    reason: 'VALIDATOR_NOT_FOUND',
+                    validator_available: false,
+                    message: 'No PDF/X or PDF/A validator found. Install veraPDF to enable standards validation.',
+                    review_required: true,
+                    limitations: ['PDF/X validation requires a real validator binary (e.g., callas pdfToolbox).']
+                }
+            };
+        }
+
+        // veraPDF is available but targets PDF/A, not PDF/X.
+        return {
+            ...base,
+            status: 'SKIPPED_UNSUPPORTED',
+            strategy: 'pdfx_validator_not_integrated',
+            evidence: {
+                reason: 'PDFX_VALIDATOR_NOT_INTEGRATED',
+                validator_available: true,
+                validator_name: 'verapdf',
+                validator_version: version,
+                message: 'veraPDF is available but validates PDF/A conformance only. A dedicated PDF/X validator (e.g., callas pdfToolbox) is required for authoritative PDF/X validation. Integration is deferred pending tool selection.',
+                review_required: true,
+                limitations: [
+                    'veraPDF validates PDF/A standards, not PDF/X.',
+                    'PDF/X validation requires a PDF/X-aware validator tool.'
+                ]
+            }
+        };
+    }
+
+    async validatePdfa(inputPath, outputPath, options = {}) {
+        const veraPdf = require('./VeraPdfValidator');
+        const available = await veraPdf.isAvailable();
+
+        const base = {
+            code: 'VALIDATE_PDFA',
+            requires_human_review: true,
+            production_safe: false,
+            standard_certified: false,
+            pdfx_compliance_claimed: false
+        };
+
+        if (!available) {
+            const version = await veraPdf.getVersion();
+            return {
+                ...base,
+                success: false,
+                status: 'SKIPPED_UNSUPPORTED',
+                strategy: 'validator_unavailable',
+                validation_performed: false,
+                validation_passed: false,
+                validator_name: 'verapdf',
+                validator_version: version,
+                standard_detected: null,
+                validation_report_hash: null,
+                compliance_claim_allowed: false,
+                pdfa_compliance_claimed: false,
+                evidence: {
+                    reason: 'VALIDATOR_NOT_FOUND',
+                    validator_available: false,
+                    message: 'veraPDF is not installed or not on PATH. Install veraPDF to enable real PDF/A validation.',
+                    review_required: true,
+                    limitations: ['PDF/A validation requires veraPDF or equivalent.']
+                }
+            };
+        }
+
+        const result = await veraPdf.validate(inputPath, options.flavour || 'auto');
+
+        if (!result.validation_performed) {
+            return {
+                ...base,
+                success: false,
+                status: 'FAILED',
+                strategy: 'verapdf_execution_error',
+                validation_performed: false,
+                validation_passed: false,
+                validator_name: result.validator_name,
+                validator_version: result.validator_version,
+                standard_detected: null,
+                validation_report_hash: null,
+                compliance_claim_allowed: false,
+                pdfa_compliance_claimed: false,
+                evidence: {
+                    reason: result.error || 'VALIDATION_EXECUTION_ERROR',
+                    validator_available: true,
+                    validator_name: result.validator_name,
+                    validator_version: result.validator_version,
+                    error_message: result.error_message,
+                    review_required: true
+                }
+            };
+        }
+
+        const complianceClaimAllowed = result.compliance_claim_allowed === true;
+
+        return {
+            ...base,
+            success: result.validation_passed,
+            status: result.validation_passed ? 'APPLIED' : 'FAILED',
+            strategy: 'verapdf_validation',
+            validation_performed: true,
+            validation_passed: result.validation_passed,
+            validator_name: result.validator_name,
+            validator_version: result.validator_version,
+            standard_detected: result.standard_detected,
+            validation_report_hash: result.validation_report_hash,
+            compliance_claim_allowed: complianceClaimAllowed,
+            pdfa_compliance_claimed: complianceClaimAllowed,
+            evidence: {
+                validator_available: true,
+                validator_name: result.validator_name,
+                validator_version: result.validator_version,
+                validation_performed: true,
+                validation_passed: result.validation_passed,
+                standard_detected: result.standard_detected,
+                profile_name: result.profile_name,
+                passed_rules: result.passed_rules,
+                failed_rules: result.failed_rules,
+                validation_report_hash: result.validation_report_hash,
+                compliance_claim_allowed: complianceClaimAllowed,
+                review_required: true,
+                errors: result.errors || [],
+                limitations: ['Validator evidence must be reviewed by a human before any compliance claim is made.']
+            }
+        };
+    }
+
     async generatePdfX(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("GENERATE_PDFX"); }
     async convertToPdfx(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("CONVERT_TO_PDFX"); }
     async convertToPdfa(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("CONVERT_TO_PDFA"); }
+    async convertToPdfxValidated(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("CONVERT_TO_PDFX_VALIDATED"); }
+    async convertToPdfaValidated(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("CONVERT_TO_PDFA_VALIDATED"); }
     
     async stripInvalidPdfxMetadata(inputPath, outputPath, options = {}) {
         return this._applyMetadataFix(inputPath, outputPath, 'STRIP_INVALID_PDFX_METADATA', 'STRIPPED_PDFX_METADATA', 'Invalid PDF/X metadata was stripped.', (pdfDoc) => {
@@ -1766,7 +1926,54 @@ class PdfFixEngine {
         });
     }
 
-    async generateStandardValidationReport(inputPath, outputPath, options = {}) { return this._scaffoldUnsupportedStandardsCertification("GENERATE_STANDARD_VALIDATION_REPORT"); }
+    async generateStandardValidationReport(inputPath, outputPath, options = {}) {
+        // Phase 68A: attempt real veraPDF-backed report; fall back to honest scaffold.
+        const veraPdf = require('./VeraPdfValidator');
+        const available = await veraPdf.isAvailable();
+
+        if (!available) {
+            return this._scaffoldUnsupportedStandardsCertification("GENERATE_STANDARD_VALIDATION_REPORT");
+        }
+
+        const result = await veraPdf.validate(inputPath, options.flavour || 'auto');
+        const complianceClaimAllowed = result.compliance_claim_allowed === true;
+
+        return {
+            success: result.validation_performed,
+            status: result.validation_performed ? 'APPLIED' : 'FAILED',
+            code: 'GENERATE_STANDARD_VALIDATION_REPORT',
+            strategy: 'verapdf_report',
+            requires_human_review: true,
+            production_safe: false,
+            validation_performed: result.validation_performed,
+            validation_passed: result.validation_passed,
+            validator_name: result.validator_name,
+            validator_version: result.validator_version,
+            standard_detected: result.standard_detected,
+            validation_report_hash: result.validation_report_hash,
+            compliance_claim_allowed: complianceClaimAllowed,
+            standard_certified: false,
+            pdfx_compliance_claimed: false,
+            pdfa_compliance_claimed: complianceClaimAllowed,
+            evidence: {
+                report_type: 'VERAPDF_VALIDATION',
+                validator_available: true,
+                validator_name: result.validator_name,
+                validator_version: result.validator_version,
+                validation_performed: result.validation_performed,
+                validation_passed: result.validation_passed,
+                standard_detected: result.standard_detected,
+                validation_report_hash: result.validation_report_hash,
+                compliance_claim_allowed: complianceClaimAllowed,
+                review_required: true,
+                errors: result.errors || [],
+                limitations: [
+                    'Human review required before acting on validator results.',
+                    'Validator evidence does not confer production certification.'
+                ]
+            }
+        };
+    }
 
     async generateStandardValidationReportInternal(inputPath, outputPath, options = {}) {
         await fs.copy(inputPath, outputPath); // Just pass through the file for internal report action

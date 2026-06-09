@@ -67,6 +67,8 @@ class AutofixExecutionEngine {
             'REVOKE_FALSE_CERTIFICATION': 'revokeFalseCertification',
             'GENERATE_STANDARD_VALIDATION_REPORT': 'generateStandardValidationReport',
             'GENERATE_STANDARD_VALIDATION_REPORT_INTERNAL': 'generateStandardValidationReportInternal',
+            'CONVERT_TO_PDFX_VALIDATED': 'convertToPdfxValidated',
+            'CONVERT_TO_PDFA_VALIDATED': 'convertToPdfaValidated',
             'GENERATE_PDFX': 'generatePdfX',
             'DETECT_TOTAL_INK_COVERAGE': 'detectTotalInkCoverage',
             'REDUCE_TOTAL_INK_COVERAGE': 'reduceTotalInkCoverage',

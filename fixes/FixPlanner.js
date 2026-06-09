@@ -116,11 +116,13 @@ class FixPlanner {
                 let autofixable = isFixAutofixable(fixId, policyMode);
                 const isUserFixable = issue.fixable !== false;
                 
-                // Phase 55A: Standards Certification guardrail
+                // Phase 55A / Phase 68A: Standards Certification guardrail.
+                // All standards_certification fixes require real validator evidence before a
+                // compliance claim is allowed. validator_available may be 'RUNTIME_DETECTED'
+                // (Phase 68A veraPDF), false (scaffolded), or a boolean. In all cases, these
+                // fixes are never auto-applied — compliance claim requires human review.
                 if (cap.category === 'standards_certification' || cap.category === 'standards') {
-                    if (policyMode === "SAFE" && cap.validator_required && !cap.validator_available) {
-                        autofixable = false;
-                    }
+                    autofixable = false; // Never auto-applied; validator evidence + human review required
                 }
                 
                 // Phase 62A: Page Marks guardrails

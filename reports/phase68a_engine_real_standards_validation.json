@@ -1,0 +1,227 @@
+{
+  "generated_at": "2026-06-09T02:09:42.893Z",
+  "phase": "68A",
+  "repo": "ppos-preflight-engine",
+  "category": "standards_certification",
+  "smoke_passed": true,
+  "verapdf_detected": false,
+  "verapdf_version": null,
+  "core_principle": "No compliance claim is allowed without complete validator evidence (validation_performed, validation_passed, validator_name, validator_version, standard_detected, validation_report_hash, compliance_claim_allowed=true). Without complete evidence, compliance_claim_allowed remains false. Engine never sets standard_certified=true or production_certified=true. All standards fixes are review_required=true.",
+  "target_capabilities": [
+    "VALIDATE_PDFX",
+    "VALIDATE_PDFA",
+    "GENERATE_STANDARD_VALIDATION_REPORT",
+    "CONVERT_TO_PDFX_VALIDATED",
+    "CONVERT_TO_PDFA_VALIDATED"
+  ],
+  "required_evidence_fields": [
+    "validation_performed",
+    "validation_passed",
+    "validator_name",
+    "validator_version",
+    "standard_detected",
+    "validation_report_hash",
+    "compliance_claim_allowed"
+  ],
+  "finding_codes_added": [
+    "IND_COMPLIANCE_023 (PDFA_MISSING)",
+    "IND_COMPLIANCE_024 (PDFA_INVALID)",
+    "IND_COMPLIANCE_025 (PDFA_CLAIMED_BUT_NOT_VALIDATED)",
+    "IND_COMPLIANCE_026 (STANDARD_VALIDATION_PASSED)",
+    "IND_COMPLIANCE_027 (VALIDATOR_EVIDENCE_COMPLETE)",
+    "IND_COMPLIANCE_028 (VALIDATOR_EVIDENCE_INCOMPLETE)"
+  ],
+  "forbidden_overclaims_checked": [
+    "compliance_claim_allowed=true without complete evidence",
+    "standard_certified=true",
+    "pdfx_compliance_claimed=true without PDF/X validator",
+    "pdfa_compliance_claimed=true without veraPDF evidence",
+    "production_certified=true",
+    "production_safe=true"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry standards_certification (Phase 68A) capabilities check",
+      "fixture": null,
+      "capability": "VALIDATE_PDFX, VALIDATE_PDFA, GENERATE_STANDARD_VALIDATION_REPORT, CONVERT_TO_PDFX_VALIDATED, CONVERT_TO_PDFA_VALIDATED",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 68A standards_certification capabilities registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 68A compliance codes",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 68A compliance finding codes registered correctly (IND_COMPLIANCE_023-028)."
+      ]
+    },
+    {
+      "scenario": "IssueNormalizer Phase 68A compliance code routing",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "IssueNormalizer correctly categorizes Phase 68A compliance codes as COMPLIANCE."
+      ]
+    },
+    {
+      "scenario": "FixPlanner standards_certification Phase 68A guardrails",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all Phase 68A standards_certification fixes from auto-execution in any policy mode."
+      ]
+    },
+    {
+      "scenario": "veraPDF availability detection",
+      "fixture": null,
+      "capability": "VALIDATE_PDFA",
+      "status": "VERIFIED",
+      "pass": true,
+      "verapdf_available": false,
+      "verapdf_version": null,
+      "notes": [
+        "veraPDF available: false",
+        "veraPDF not found — VALIDATE_PDFA will return SKIPPED_UNSUPPORTED with honest evidence."
+      ]
+    },
+    {
+      "scenario": "VALIDATE_PDFX — honest about PDF/X validator scope",
+      "fixture": "pdfx_claimed.pdf",
+      "capability": "VALIDATE_PDFX",
+      "status": "SKIPPED_UNSUPPORTED",
+      "pdfx_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "evidence": {
+        "reason": "VALIDATOR_NOT_FOUND",
+        "validator_available": false,
+        "message": "No PDF/X or PDF/A validator found. Install veraPDF to enable standards validation.",
+        "review_required": true,
+        "limitations": [
+          "PDF/X validation requires a real validator binary (e.g., callas pdfToolbox)."
+        ]
+      },
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "VALIDATE_PDFX correctly skips without a dedicated PDF/X validator."
+      ]
+    },
+    {
+      "scenario": "VALIDATE_PDFA — veraPDF integration or honest SKIPPED_UNSUPPORTED",
+      "fixture": "pdfa_claimed.pdf",
+      "capability": "VALIDATE_PDFA",
+      "status": "SKIPPED_UNSUPPORTED",
+      "validation_performed": false,
+      "validation_passed": false,
+      "validator_name": null,
+      "validator_version": null,
+      "standard_detected": null,
+      "validation_report_hash": null,
+      "compliance_claim_allowed": false,
+      "evidence": {
+        "reason": "VALIDATOR_NOT_FOUND",
+        "validator_available": false,
+        "message": "veraPDF is not installed or not on PATH. Install veraPDF to enable real PDF/A validation.",
+        "review_required": true,
+        "limitations": [
+          "PDF/A validation requires veraPDF or equivalent."
+        ]
+      },
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "VALIDATE_PDFA returns veraPDF evidence when available, or honest SKIPPED_UNSUPPORTED."
+      ]
+    },
+    {
+      "scenario": "GENERATE_STANDARD_VALIDATION_REPORT — veraPDF-backed or honest scaffold",
+      "fixture": "no_standard_claim.pdf",
+      "capability": "GENERATE_STANDARD_VALIDATION_REPORT",
+      "status": "SKIPPED",
+      "validation_performed": false,
+      "compliance_claim_allowed": false,
+      "evidence": {
+        "reason": "No real standards validator or converter was executed.",
+        "validator_name": null,
+        "validator_version": null,
+        "validation_passed": false,
+        "report_path": null,
+        "pdfx_compliance_claimed": false,
+        "pdfa_compliance_claimed": false,
+        "limitations": [
+          "No PDF/X or PDF/A compliance was claimed.",
+          "OutputIntent presence alone does not prove PDF/X compliance.",
+          "A real validator is required before standards certification."
+        ]
+      },
+      "pass": true,
+      "notes": [
+        "GENERATE_STANDARD_VALIDATION_REPORT runs veraPDF when available, otherwise returns honest SKIPPED_UNSUPPORTED."
+      ]
+    },
+    {
+      "scenario": "CONVERT_TO_PDFX_VALIDATED — scaffolded, always SKIPPED_UNSUPPORTED",
+      "fixture": "pdfx_claimed.pdf",
+      "capability": "CONVERT_TO_PDFX_VALIDATED",
+      "status": "SKIPPED_UNSUPPORTED",
+      "compliance_claim_allowed": false,
+      "pass": true,
+      "notes": [
+        "CONVERT_TO_PDFX_VALIDATED correctly returns SKIPPED_UNSUPPORTED (no PDF/X conversion+validation pipeline available)."
+      ]
+    },
+    {
+      "scenario": "CONVERT_TO_PDFA_VALIDATED — scaffolded, always SKIPPED_UNSUPPORTED",
+      "fixture": "pdfa_claimed.pdf",
+      "capability": "CONVERT_TO_PDFA_VALIDATED",
+      "status": "SKIPPED_UNSUPPORTED",
+      "compliance_claim_allowed": false,
+      "pass": true,
+      "notes": [
+        "CONVERT_TO_PDFA_VALIDATED correctly returns SKIPPED_UNSUPPORTED (no validated conversion pipeline yet)."
+      ]
+    },
+    {
+      "scenario": "VALIDATE_PDFA on clean_control.pdf — honest result regardless of compliance",
+      "fixture": "clean_control.pdf",
+      "capability": "VALIDATE_PDFA",
+      "status": "SKIPPED_UNSUPPORTED",
+      "validation_performed": false,
+      "validation_passed": false,
+      "compliance_claim_allowed": false,
+      "pass": true,
+      "notes": [
+        "Clean PDF results in honest validation result with no overclaims."
+      ]
+    },
+    {
+      "scenario": "Standards certification overclaim regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No Phase 68A fix produced standard_certified, production_certified, or production_safe claims."
+      ]
+    },
+    {
+      "scenario": "compliance_claim_allowed only when evidence complete (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "compliance_claim_allowed=true is only set when all required evidence fields are present."
+      ]
+    }
+  ]
+}
