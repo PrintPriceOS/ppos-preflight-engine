@@ -103,7 +103,11 @@ class AutofixExecutionEngine {
             'GENERATE_PROOF_THUMBNAILS': 'generateProofThumbnails',
             'COMPARE_ORIGINAL_TO_FIXED': 'compareOriginalToFixed',
             'COMPARE_FIXED_TO_CERTIFIED': 'compareFixedToCertified',
-            'GENERATE_VISUAL_CHANGE_REPORT': 'generateVisualChangeReport'
+            'GENERATE_VISUAL_CHANGE_REPORT': 'generateVisualChangeReport',
+            // Phase 70A — Proof Approval Contract Source
+            'GENERATE_PROOF_APPROVAL_CONTRACT': 'generateProofApprovalContract',
+            'GENERATE_PROOF_ARTIFACT_HASHES': 'generateProofArtifactHashes',
+            'GENERATE_PROOF_ID': 'generateProofId'
         };
     }
 

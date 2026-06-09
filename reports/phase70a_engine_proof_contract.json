@@ -1,0 +1,118 @@
+{
+  "generated_at": "2026-06-09T17:13:52.264Z",
+  "phase": "70A",
+  "repo": "ppos-preflight-engine",
+  "category": "proof_approval_contract",
+  "smoke_passed": true,
+  "governance": {
+    "proof_approval_governance": true,
+    "proof_contract_is_evidence_only": true,
+    "proof_id_implies_production_certification": false,
+    "proof_id_implies_print_ready": false,
+    "proof_id_implies_pdfx_compliance": false,
+    "proof_id_implies_pdfa_compliance": false,
+    "emits_raw_paths": false
+  },
+  "core_principle": "Proof approval contract is identity/evidence generation only. proof_id is a deterministic content fingerprint; it does not certify print-readiness, production approval, or standards compliance. No raw filesystem paths are emitted downstream.",
+  "target_capabilities": [
+    "GENERATE_PROOF_APPROVAL_CONTRACT",
+    "GENERATE_PROOF_ARTIFACT_HASHES",
+    "GENERATE_PROOF_ID"
+  ],
+  "finding_codes_added": [
+    "IND_PROOF_001 (PROOF_CONTRACT_GENERATED)",
+    "IND_PROOF_002 (PROOF_APPROVAL_PENDING)",
+    "IND_PROOF_003 (PROOF_ARTIFACT_HASH_MISSING)",
+    "IND_PROOF_004 (PROOF_IDENTITY_STABLE)"
+  ],
+  "forbidden_overclaims_checked": [
+    "\"production_certified\":true",
+    "\"production_safe\":true",
+    "\"print_ready_claim_allowed\":true",
+    "\"compliance_claim_allowed\":true",
+    "\"standard_certified\":true",
+    "\"proof_id_implies_certification\":true"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry Phase 70A proof_approval_contract capabilities check",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 70A proof_approval_contract capabilities registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 70A proof contract codes",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 70A proof contract finding codes registered correctly (IND_PROOF_001-004)."
+      ]
+    },
+    {
+      "scenario": "FixPlanner Phase 70A proof_approval_contract guardrails",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all Phase 70A proof_approval_contract capabilities from auto-execution in any policy mode."
+      ]
+    },
+    {
+      "scenario": "GENERATE_PROOF_ARTIFACT_HASHES — both artifacts present",
+      "status": "APPLIED",
+      "pass": true,
+      "source_artifact_hash": "c6a1b2fff5645dea556a92de1d6f891593960ea6fce6ef583d520f95543d2357",
+      "fixed_artifact_hash": "b7e62fe8d5844c595f60bbc8572087ad55301dc56b01b352549c30561e8d23ec",
+      "notes": [
+        "GENERATE_PROOF_ARTIFACT_HASHES produces valid SHA-256 hashes for both artifacts."
+      ]
+    },
+    {
+      "scenario": "GENERATE_PROOF_ARTIFACT_HASHES — missing source artifact",
+      "status": "APPLIED",
+      "pass": true,
+      "notes": [
+        "GENERATE_PROOF_ARTIFACT_HASHES correctly returns null hash and warning for missing artifact."
+      ]
+    },
+    {
+      "scenario": "GENERATE_PROOF_ID — deterministic output",
+      "status": "VERIFIED",
+      "pass": true,
+      "proof_id_sample": "66fa93456cb49c68...",
+      "notes": [
+        "generateProofId is deterministic and sensitive to all inputs. proof_id sample: 66fa93456cb49c68..."
+      ]
+    },
+    {
+      "scenario": "GENERATE_PROOF_APPROVAL_CONTRACT — full contract",
+      "status": "APPLIED",
+      "pass": true,
+      "proof_id_prefix": "4f19822fe518e1c1...",
+      "source_artifact_hash_prefix": "c6a1b2fff5645dea...",
+      "fixed_artifact_hash_prefix": "b7e62fe8d5844c59...",
+      "rendered_pages": 3,
+      "generated_at": "2026-06-09T17:13:52.260Z",
+      "notes": [
+        "GENERATE_PROOF_APPROVAL_CONTRACT returns complete contract. proof_id: 4f19822fe518e1c1..."
+      ]
+    },
+    {
+      "scenario": "proof_id stability — same inputs produce same proof_id",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "proof_id is stable: same inputs produce the same proof_id across multiple calls."
+      ]
+    },
+    {
+      "scenario": "Proof approval contract governance overclaim regression",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No Phase 70A operation produced production_certified, production_safe, or compliance overclaims."
+      ]
+    }
+  ]
+}

@@ -2872,6 +2872,150 @@ class PdfFixEngine {
     /**
      * Generate a full visual change report: renders original and fixed, computes diff, returns evidence object.
      */
+    // --- Phase 70A — Proof Approval Contract Source ---
+
+    /**
+     * Hash a single file's content using SHA-256.
+     * Returns null (with a warning) if the file does not exist or cannot be read.
+     */
+    async _hashArtifact(filePath) {
+        const crypto = require('crypto');
+        const fs = require('fs-extra');
+        if (!filePath) return { hash: null, warning: 'No path provided' };
+        try {
+            const buf = await fs.readFile(filePath);
+            return { hash: crypto.createHash('sha256').update(buf).digest('hex'), warning: null };
+        } catch (err) {
+            return { hash: null, warning: `Cannot hash artifact: ${err.message}` };
+        }
+    }
+
+    /**
+     * Generate SHA-256 content hashes for source, fixed, and (optionally) diff report artifacts.
+     * diff_report may be a filesystem path or a plain JS object — if an object, it is serialised.
+     * Raw paths are never emitted in the returned payload.
+     */
+    async generateProofArtifactHashes(pathsObj = {}, options = {}) {
+        const crypto = require('crypto');
+        const { source_path, fixed_path, diff_report } = pathsObj;
+        const warnings = [];
+
+        const sourceResult = await this._hashArtifact(source_path);
+        if (sourceResult.warning) warnings.push(`source_artifact: ${sourceResult.warning}`);
+
+        const fixedResult = await this._hashArtifact(fixed_path);
+        if (fixedResult.warning) warnings.push(`fixed_artifact: ${fixedResult.warning}`);
+
+        let diffReportHash = null;
+        if (diff_report) {
+            try {
+                const payload = typeof diff_report === 'string'
+                    ? require('fs-extra').readFileSync(diff_report)
+                    : Buffer.from(JSON.stringify(diff_report));
+                diffReportHash = crypto.createHash('sha256').update(payload).digest('hex');
+            } catch (err) {
+                warnings.push(`diff_report: Cannot hash: ${err.message}`);
+            }
+        }
+
+        const hashes = {
+            source_artifact_hash: sourceResult.hash,
+            fixed_artifact_hash: fixedResult.hash,
+            diff_report_hash: diffReportHash
+        };
+
+        return {
+            success: true,
+            status: 'APPLIED',
+            code: 'GENERATE_PROOF_ARTIFACT_HASHES',
+            requires_human_review: true,
+            production_safe: false,
+            proof_approval_governance: true,
+            evidence: {
+                ...hashes,
+                hash_algorithm: 'sha256',
+                warnings,
+                limitations: [
+                    'Artifact hashes are content fingerprints only.',
+                    'A matching hash does not certify print-readiness or standards compliance.',
+                    'Hashes enable stable downstream reference without raw filesystem paths.'
+                ]
+            }
+        };
+    }
+
+    /**
+     * Derive a stable, deterministic proof_id from content hashes.
+     * proof_id = sha256(sourceHash + "|" + fixedHash + "|" + diffHash)
+     * Deterministic: same inputs always produce the same proof_id across reruns.
+     */
+    generateProofId(sourceHash, fixedHash, diffReportHash) {
+        const crypto = require('crypto');
+        const input = [
+            sourceHash || '',
+            fixedHash || '',
+            diffReportHash || ''
+        ].join('|');
+        return crypto.createHash('sha256').update(input).digest('hex');
+    }
+
+    /**
+     * Generate the full proof approval contract:
+     * proof_id, artifact hashes, rendered_pages, generated_at.
+     * No raw filesystem paths are included in the returned payload.
+     * options.rendered_pages — page count from a prior Phase 69A render result (optional).
+     * options.diff_report — JS object or path to diff report for hashing (optional).
+     */
+    async generateProofApprovalContract(origPath, fixedPath, options = {}) {
+        const { rendered_pages = null, diff_report = null } = options;
+        const warnings = [];
+
+        const hashResult = await this.generateProofArtifactHashes(
+            { source_path: origPath, fixed_path: fixedPath, diff_report },
+            options
+        );
+
+        const { source_artifact_hash, fixed_artifact_hash, diff_report_hash } =
+            hashResult.evidence || {};
+
+        if (!source_artifact_hash) warnings.push('source_artifact_hash is null; proof_id may be unstable');
+        if (!fixed_artifact_hash) warnings.push('fixed_artifact_hash is null; proof_id may be unstable');
+
+        const proof_id = this.generateProofId(source_artifact_hash, fixed_artifact_hash, diff_report_hash);
+
+        const contract = {
+            proof_id,
+            source_artifact_hash: source_artifact_hash || null,
+            fixed_artifact_hash: fixed_artifact_hash || null,
+            diff_report_hash: diff_report_hash || null,
+            rendered_pages: rendered_pages !== null ? rendered_pages : null,
+            generated_at: new Date().toISOString(),
+            hash_algorithm: 'sha256',
+            proof_id_algorithm: 'sha256(source_hash|fixed_hash|diff_hash)',
+            warnings: [
+                ...(hashResult.evidence && hashResult.evidence.warnings ? hashResult.evidence.warnings : []),
+                ...warnings
+            ],
+            limitations: [
+                'Proof contract is identity/evidence generation only.',
+                'proof_id does not certify print-readiness, production approval, or standards compliance.',
+                'Artifact hashes are content fingerprints; matching hashes do not imply visual or standards equivalence.',
+                'No raw filesystem paths are included in this contract.'
+            ]
+        };
+
+        return {
+            success: true,
+            status: 'APPLIED',
+            code: 'GENERATE_PROOF_APPROVAL_CONTRACT',
+            requires_human_review: true,
+            production_safe: false,
+            production_certified: false,
+            proof_approval_governance: true,
+            evidence: contract
+        };
+    }
+
     async generateVisualChangeReport(origPath, fixedPath, options = {}) {
         const toolInfo = await this._detectRenderTool();
         const diffResult = await this.generateVisualDiff(origPath, fixedPath, options);

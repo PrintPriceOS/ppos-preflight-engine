@@ -115,6 +115,12 @@ class FixPlanner {
                 rawStrategy = 'RENDER_PDF_PAGES';
             } else if (rawStrategy === 'RENDERED_PROOF_GENERATED' || rawStrategy === 'IND_VISUAL_005') {
                 rawStrategy = 'GENERATE_PROOF_THUMBNAILS';
+            } else if (rawStrategy === 'PROOF_CONTRACT_GENERATED' || rawStrategy === 'IND_PROOF_001' ||
+                       rawStrategy === 'PROOF_IDENTITY_STABLE' || rawStrategy === 'IND_PROOF_004') {
+                rawStrategy = 'GENERATE_PROOF_APPROVAL_CONTRACT';
+            } else if (rawStrategy === 'PROOF_APPROVAL_PENDING' || rawStrategy === 'IND_PROOF_002' ||
+                       rawStrategy === 'PROOF_ARTIFACT_HASH_MISSING' || rawStrategy === 'IND_PROOF_003') {
+                rawStrategy = 'GENERATE_PROOF_ARTIFACT_HASHES';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -186,6 +192,13 @@ class FixPlanner {
                     autofixable = false;
                 }
 
+                // Phase 70A: Proof approval contract guardrails.
+                // Proof contract / artifact hash capabilities are identity and evidence generation only:
+                // never auto-applied, never imply production certification, print-readiness, or standards compliance.
+                if (cap.category === 'proof_approval_contract') {
+                    autofixable = false;
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -203,7 +216,8 @@ class FixPlanner {
                 if (!implemented) skipReason = "FIX_NOT_IMPLEMENTED";
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
                 else if (!autofixable) {
-                    if (cap.category === 'visual_proofing') skipReason = "VISUAL_PROOFING_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
+                    if (cap.category === 'proof_approval_contract') skipReason = "PROOF_CONTRACT_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
+                    else if (cap.category === 'visual_proofing') skipReason = "VISUAL_PROOFING_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
                     else if (cap.category === 'transparency_overprint') skipReason = "TRANSPARENCY_OVERPRINT_VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'font_governance' && fixId === 'FLAG_MISSING_GLYPHS_UNFIXABLE') skipReason = "MISSING_GLYPHS_UNFIXABLE_NO_SYNTHESIS";

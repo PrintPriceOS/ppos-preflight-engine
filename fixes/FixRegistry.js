@@ -1586,6 +1586,83 @@ const REGISTRY = {
         print_ready_claim_allowed: false,
         visual_diff_governance: true,
         phase: "69A"
+    },
+
+    // Phase 70A — Proof Approval Contract Source
+    // Governance: Proof approval contract is identity/evidence generation only.
+    // A proof contract does not certify print-readiness, production approval, or standards compliance.
+    // proof_id is stable and deterministic; no raw local paths are emitted downstream.
+    "GENERATE_PROOF_APPROVAL_CONTRACT": {
+        fix_id: "GENERATE_PROOF_APPROVAL_CONTRACT",
+        label: "Generate proof approval contract",
+        category: "proof_approval_contract",
+        implemented: true,
+        detectable: true,
+        autofixable: false,
+        risk_level: "LOW",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: false,
+        toolchain: ["crypto"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "A proof approval contract was generated to uniquely identify this proof for downstream review.",
+        operator_message: "Phase 70A: generates stable proof_id and artifact hashes for downstream approval tracking. Evidence only; never implies production certification or standards compliance.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        production_safe: false,
+        print_ready_claim_allowed: false,
+        proof_approval_governance: true,
+        emits_raw_paths: false,
+        phase: "70A"
+    },
+    "GENERATE_PROOF_ARTIFACT_HASHES": {
+        fix_id: "GENERATE_PROOF_ARTIFACT_HASHES",
+        label: "Generate proof artifact content hashes",
+        category: "proof_approval_contract",
+        implemented: true,
+        detectable: true,
+        autofixable: false,
+        risk_level: "LOW",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: false,
+        toolchain: ["crypto"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "Artifact hashes were generated to ensure downstream references are stable and path-independent.",
+        operator_message: "Phase 70A: SHA-256 content hashes for source, fixed, and diff report artifacts. Enables safe downstream reference without raw filesystem paths.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        production_safe: false,
+        print_ready_claim_allowed: false,
+        proof_approval_governance: true,
+        emits_raw_paths: false,
+        phase: "70A"
+    },
+    "GENERATE_PROOF_ID": {
+        fix_id: "GENERATE_PROOF_ID",
+        label: "Generate stable proof identifier",
+        category: "proof_approval_contract",
+        implemented: true,
+        detectable: true,
+        autofixable: false,
+        risk_level: "LOW",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: false,
+        toolchain: ["crypto"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "A stable proof identifier was generated for tracking this proof through the review workflow.",
+        operator_message: "Phase 70A: deterministic proof_id derived from content hashes. Stable across reruns on same content; no UUID dependency.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        production_safe: false,
+        print_ready_claim_allowed: false,
+        proof_approval_governance: true,
+        emits_raw_paths: false,
+        phase: "70A"
     }
 };
 
