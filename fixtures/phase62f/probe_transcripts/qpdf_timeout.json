@@ -1,0 +1,13 @@
+{
+  "tool": "qpdf",
+  "command": "qpdf --check heavy_file.pdf",
+  "exitCode": null,
+  "stdout": "",
+  "stderr": "",
+  "timedOut": true,
+  "signal": "SIGTERM",
+  "killed": true,
+  "durationMs": 3000,
+  "outputAvailable": false,
+  "scenario": "qpdf timed out on 853 MB PDF after 3000ms"
+}

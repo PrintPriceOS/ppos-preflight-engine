@@ -27,6 +27,39 @@ class ImageAnalyzer {
             };
         }
 
+        // Phase 62F-A: emit probe warning findings for pdfimages WARNING_ONLY but do not block image analysis.
+        const pdfimagesSemantic = metadata.analysisIntegrity?.probeSemantics?.tools?.pdfimages;
+        if (pdfimagesSemantic && (pdfimagesSemantic.semantic_status === 'WARNING_ONLY' || pdfimagesSemantic.semantic_status === 'SUCCESS_WITH_WARNINGS')) {
+            const warningClasses = pdfimagesSemantic.warning_classes || [];
+            if (warningClasses.includes('PDF_FONT_WEIGHT_WARNING')) {
+                findings.push({
+                    page: 1,
+                    code: CODES.PDF_FONT_WEIGHT_WARNING,
+                    severity: 'warning',
+                    category: 'IMAGE',
+                    analyzer: 'ImageAnalyzer',
+                    confidence: 0.95,
+                    fixable: false,
+                    recommended_fix: null,
+                    message: 'pdfimages: Syntax Warning — Invalid Font Weight (non-fatal; image extraction continued).',
+                    evidence: { tool: 'pdfimages', source: 'CLI_PROBE', page: 1, confidence: 0.95, raw: pdfimagesSemantic.evidence?.stderr_excerpt || 'PDF_FONT_WEIGHT_WARNING' }
+                });
+            } else if (warningClasses.length > 0) {
+                findings.push({
+                    page: 1,
+                    code: CODES.PDF_IMAGE_LIST_WARNING,
+                    severity: 'warning',
+                    category: 'IMAGE',
+                    analyzer: 'ImageAnalyzer',
+                    confidence: 0.9,
+                    fixable: false,
+                    recommended_fix: null,
+                    message: `pdfimages: probe warning during image extraction (${warningClasses.join(', ')}). Image analysis continued.`,
+                    evidence: { tool: 'pdfimages', source: 'CLI_PROBE', page: 1, confidence: 0.9, raw: warningClasses.join(', ') }
+                });
+            }
+        }
+
         const strContext = `${toolOutputs.pdfimages || ''} ${toolOutputs.mutool || ''} ${toolOutputs.gs || ''}`.toLowerCase();
 
         const findEvidence = (keywords) => {

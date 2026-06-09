@@ -58,7 +58,8 @@ class PreflightEngine {
                 pdfVersion: techResult.pdfVersion || 'unknown',
                 environmentFailure: isEnvironmentFailure,
                 probeResults,
-                availableTools
+                availableTools,
+                heavyPdfDetected: techResult.heavyPdfDetected || false
             };
 
             if (isEnvironmentFailure) {

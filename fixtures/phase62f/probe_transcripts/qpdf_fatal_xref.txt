@@ -1,0 +1,4 @@
+checking damaged.pdf
+qpdf: damaged.pdf: ERROR: unable to find trailer dictionary while recovering damaged file
+qpdf: damaged.pdf: ERROR: invalid xref table -- trying to reconstruct
+qpdf: damaged.pdf: errors found while checking this file; this file may not be usable

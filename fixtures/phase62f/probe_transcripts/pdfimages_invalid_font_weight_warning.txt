@@ -1,0 +1,6 @@
+page   num  type   width height color comp bpc  enc interp  object ID x-ppi y-ppi size ratio
+--------------------------------------------------------------------------------------------
+Syntax Warning: Invalid Font Weight
+   1     0 image    3508   4961  cmyk    4   8  jpeg   no         7  0   300   300  1.2M 1.8%
+   1     1 image    3508   4961  cmyk    4   8  jpeg   no        10  0   300   300  1.1M 1.6%
+   2     0 image    1754   2480  cmyk    4   8  jpeg   no        15  0   150   150 523K 3.0%

@@ -37,28 +37,64 @@ class PdfIntegrityAnalyzer {
         }
 
         if (hasExtractionErrors) {
-            // Only emit EXTRACTION_ERROR for tools that were found but crashed (FAILED).
-            // Tools that were simply not installed (MISSING) are covered by IND_INTEGRITY_MISSING_TOOL below.
+            // Only emit findings for tools that were found but failed (FAILED), not MISSING (covered below).
+            // Phase 62F-A: use probe semantics to emit precise finding codes instead of generic EXTRACTION_ERROR.
             const nonMissingErrors = integrity.extractionErrors.filter(e => e.probeStatus !== 'MISSING');
             nonMissingErrors.forEach(err => {
-                findings.push({
-                    page: 1,
-                    code: 'IND_INTEGRITY_EXTRACTION_ERROR',
-                    severity: "error",
-                    category: "INTEGRITY",
-                    analyzer: "PdfIntegrityAnalyzer",
-                    confidence: 1.0,
-                    fixable: false,
-                    recommended_fix: null,
-                    message: `Extraction probe failure in parser: ${err.parser}`,
-                    evidence: {
-                        tool: err.parser,
-                        source: 'CLI_PROBE',
-                        page: 1,
-                        confidence: 1.0,
-                        raw: err.error || 'Binary extraction probe returned fatal exit status'
+                const probeSem = integrity.probeSemantics?.tools?.[err.parser];
+                const semanticStatus = probeSem?.semantic_status || err.semanticStatus || 'FAILED_UNCLASSIFIED';
+                const warningClasses = probeSem?.warning_classes || [];
+                const evidenceBase = { tool: err.parser, source: 'CLI_PROBE', page: 1, confidence: 1.0, stderr_excerpt: probeSem?.evidence?.stderr_excerpt || '', stdout_excerpt: probeSem?.evidence?.stdout_excerpt || '' };
+
+                if (err.parser === 'qpdf') {
+                    if (semanticStatus === 'WARNING_ONLY' || semanticStatus === 'SUCCESS_WITH_WARNINGS') {
+                        // Emit per-class structural warning findings (non-fatal)
+                        if (warningClasses.includes('PDF_LINEARIZATION_HINT_WARNING')) {
+                            findings.push({ page: 1, code: CODES.PDF_LINEARIZATION_HINT_WARNING, severity: 'warning', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.98, fixable: false, safeToAutofix: false, recommended_fix: null, message: 'qpdf: linearization hint-table inconsistency detected (non-fatal).', evidence: { ...evidenceBase, raw: 'PDF_LINEARIZATION_HINT_WARNING' } });
+                        }
+                        if (warningClasses.includes('PDF_SHARED_OBJECT_HINT_MISMATCH')) {
+                            findings.push({ page: 1, code: CODES.PDF_SHARED_OBJECT_HINT_MISMATCH, severity: 'warning', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.98, fixable: false, safeToAutofix: false, recommended_fix: null, message: 'qpdf: shared-object hint-table mismatch (non-fatal).', evidence: { ...evidenceBase, raw: 'PDF_SHARED_OBJECT_HINT_MISMATCH' } });
+                        }
+                        if (warningClasses.includes('PDF_OBJECT_COUNT_HINT_MISMATCH')) {
+                            findings.push({ page: 1, code: CODES.PDF_OBJECT_COUNT_HINT_MISMATCH, severity: 'warning', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.98, fixable: false, safeToAutofix: false, recommended_fix: null, message: 'qpdf: object count hint-table mismatch (non-fatal).', evidence: { ...evidenceBase, raw: 'PDF_OBJECT_COUNT_HINT_MISMATCH' } });
+                        }
+                        if (warningClasses.length === 0 || warningClasses.includes('PDF_STRUCTURAL_WARNING_NON_FATAL')) {
+                            findings.push({ page: 1, code: CODES.PDF_STRUCTURAL_WARNING_NON_FATAL, severity: 'warning', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.95, fixable: false, safeToAutofix: false, recommended_fix: null, message: 'qpdf: structural warning (non-fatal) — document is readable.', evidence: { ...evidenceBase, raw: 'PDF_STRUCTURAL_WARNING_NON_FATAL' } });
+                        }
+                        findings.push({ page: 1, code: CODES.HEAVY_PDF_PROBE_SEMANTICS_CLASSIFIED, severity: 'info', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: `qpdf probe semantics classified as ${semanticStatus}. Warning classes: ${warningClasses.join(', ') || 'none'}.`, evidence: { ...evidenceBase, raw: `semantic_status=${semanticStatus}` } });
+                    } else if (semanticStatus === 'FAILED_TIMEOUT') {
+                        findings.push({ page: 1, code: CODES.PROBE_TIMEOUT, severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: 'qpdf --check timed out.', evidence: evidenceBase });
+                    } else if (semanticStatus === 'FAILED_OOM') {
+                        findings.push({ page: 1, code: CODES.PROBE_OOM, severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: 'qpdf killed (out-of-memory or SIGKILL).', evidence: evidenceBase });
+                    } else if (semanticStatus === 'FAILED_FATAL' || semanticStatus === 'FAILED_NO_OUTPUT' || semanticStatus === 'FAILED_UNCLASSIFIED' || semanticStatus === 'PARTIAL_SUCCESS') {
+                        findings.push({ page: 1, code: CODES.PDF_STRUCTURAL_ERROR_FATAL, severity: 'error', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.98, fixable: false, recommended_fix: null, message: `qpdf reported a fatal structural error (${semanticStatus}). Re-exporting the PDF is recommended.`, evidence: { ...evidenceBase, raw: probeSem?.evidence?.stderr_excerpt || err.message } });
+                    } else {
+                        findings.push({ page: 1, code: 'IND_INTEGRITY_EXTRACTION_ERROR', severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: `qpdf probe failure: ${semanticStatus}`, evidence: evidenceBase });
                     }
-                });
+                } else if (err.parser === 'pdfimages') {
+                    if (semanticStatus === 'WARNING_ONLY' || semanticStatus === 'SUCCESS_WITH_WARNINGS') {
+                        if (warningClasses.includes('PDF_FONT_WEIGHT_WARNING')) {
+                            findings.push({ page: 1, code: CODES.PDF_FONT_WEIGHT_WARNING, severity: 'warning', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.95, fixable: false, safeToAutofix: false, recommended_fix: null, message: 'pdfimages: Syntax Warning — Invalid Font Weight detected (non-fatal).', evidence: { ...evidenceBase, raw: 'PDF_FONT_WEIGHT_WARNING' } });
+                        } else {
+                            findings.push({ page: 1, code: CODES.PROBE_WARNING_PDFIMAGES, severity: 'warning', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.95, fixable: false, recommended_fix: null, message: `pdfimages: probe warning during image extraction (${warningClasses.join(', ') || 'unclassified'}).`, evidence: evidenceBase });
+                        }
+                    } else if (semanticStatus === 'FAILED_TIMEOUT') {
+                        findings.push({ page: 1, code: CODES.PROBE_TIMEOUT, severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: 'pdfimages -list timed out.', evidence: evidenceBase });
+                    } else if (semanticStatus === 'FAILED_OOM') {
+                        findings.push({ page: 1, code: CODES.PROBE_OOM, severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: 'pdfimages killed (out-of-memory or SIGKILL).', evidence: evidenceBase });
+                    } else if (semanticStatus === 'FAILED_FATAL' || semanticStatus === 'FAILED_NO_OUTPUT') {
+                        findings.push({ page: 1, code: CODES.PROBE_FATAL, severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.98, fixable: false, recommended_fix: null, message: `pdfimages probe failed fatally (${semanticStatus}).`, evidence: evidenceBase });
+                    } else {
+                        findings.push({ page: 1, code: 'IND_INTEGRITY_EXTRACTION_ERROR', severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: `pdfimages probe failure: ${semanticStatus}`, evidence: evidenceBase });
+                    }
+                } else {
+                    // Other tools — use semantic status to decide severity
+                    if (semanticStatus === 'WARNING_ONLY' || semanticStatus === 'SUCCESS_WITH_WARNINGS') {
+                        findings.push({ page: 1, code: CODES.PDF_STRUCTURAL_WARNING_NON_FATAL, severity: 'warning', category: 'STRUCTURAL', analyzer: 'PdfIntegrityAnalyzer', confidence: 0.9, fixable: false, recommended_fix: null, message: `${err.parser} probe: non-fatal warning output.`, evidence: evidenceBase });
+                    } else {
+                        findings.push({ page: 1, code: 'IND_INTEGRITY_EXTRACTION_ERROR', severity: 'error', category: 'INTEGRITY', analyzer: 'PdfIntegrityAnalyzer', confidence: 1.0, fixable: false, recommended_fix: null, message: `Extraction probe failure in parser: ${err.parser}`, evidence: { ...evidenceBase, raw: err.message || 'Binary extraction probe returned fatal exit status' } });
+                    }
+                }
             });
         }
 

@@ -1,0 +1,7 @@
+checking heavy_test.pdf
+  qpdf: heavy_test.pdf (C linearization data: hint table: shared object 11 in hint table but not in computed list of 11 shared objects for this page: ignoring)
+  qpdf: heavy_test.pdf (C linearization data: hint table: shared object 12 in hint table but not in computed list of 12 shared objects for this page: ignoring)
+  qpdf: heavy_test.pdf (C linearization data: hint table: page 0 has 1 shared identifier entries, and the hint table has 1 shared object entries, but 2 objects are associated with this page; assuming hint table is wrong; ignoring)
+  qpdf: heavy_test.pdf (W hint table has object count 253 vs computed count 254: ignoring)
+No syntax or stream encoding errors found.
+WARNING: this file contains linearization data but the data is inconsistent

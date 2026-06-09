@@ -1,0 +1,142 @@
+{
+  "phase": "62F-A",
+  "title": "Engine Heavy PDF Probe Semantics",
+  "generated": "2026-06-09T19:09:40.698Z",
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "total": 11,
+    "overall": "PASS"
+  },
+  "scenarios": [
+    {
+      "scenario": "1. qpdf hint-table → WARNING_ONLY",
+      "result": "PASS",
+      "notes": "",
+      "tool": "qpdf",
+      "semantic_status": "WARNING_ONLY",
+      "severity": "warning",
+      "usable_output": true,
+      "fatal": false,
+      "structural_warning": true,
+      "structural_fatal": false,
+      "warning_classes": [
+        "PDF_LINEARIZATION_HINT_WARNING",
+        "PDF_SHARED_OBJECT_HINT_MISMATCH",
+        "PDF_OBJECT_COUNT_HINT_MISMATCH",
+        "PDF_STRUCTURAL_WARNING_NON_FATAL"
+      ],
+      "fatal_classes": [],
+      "overclaim_guard_passed": true,
+      "heavy_pdf_probe_governance_present": true
+    },
+    {
+      "scenario": "2. qpdf fatal xref → FAILED_FATAL",
+      "result": "PASS",
+      "notes": "",
+      "tool": "qpdf",
+      "semantic_status": "FAILED_FATAL",
+      "severity": "error",
+      "usable_output": false,
+      "fatal": true,
+      "structural_warning": false,
+      "structural_fatal": true,
+      "warning_classes": [],
+      "fatal_classes": [
+        "PDF_STRUCTURAL_ERROR_FATAL"
+      ],
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "3. qpdf timeout → FAILED_TIMEOUT",
+      "result": "PASS",
+      "notes": "",
+      "tool": "qpdf",
+      "semantic_status": "FAILED_TIMEOUT",
+      "severity": "error",
+      "usable_output": false,
+      "fatal": true,
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "4. pdfimages Invalid Font Weight → WARNING_ONLY",
+      "result": "PASS",
+      "notes": "",
+      "tool": "pdfimages",
+      "semantic_status": "WARNING_ONLY",
+      "severity": "warning",
+      "usable_output": true,
+      "fatal": false,
+      "structural_warning": true,
+      "structural_fatal": false,
+      "warning_classes": [
+        "PDF_FONT_WEIGHT_WARNING",
+        "PDF_STRUCTURAL_WARNING_NON_FATAL"
+      ],
+      "fatal_classes": [],
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "5. pdfimages no-output non-zero → FAILED_NO_OUTPUT/FAILED_FATAL",
+      "result": "PASS",
+      "notes": "",
+      "tool": "pdfimages",
+      "semantic_status": "FAILED_FATAL",
+      "severity": "error",
+      "usable_output": false,
+      "fatal": true,
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "6. missing command → FAILED_TOOL_MISSING",
+      "result": "PASS",
+      "notes": "",
+      "tool": "mutool",
+      "semantic_status": "FAILED_TOOL_MISSING",
+      "severity": "error",
+      "usable_output": false,
+      "fatal": true,
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "7. SIGKILL/OOM → FAILED_OOM",
+      "result": "PASS",
+      "notes": "",
+      "tool": "gs",
+      "semantic_status": "FAILED_OOM",
+      "severity": "error",
+      "usable_output": false,
+      "fatal": true,
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "8. heavy_pdf_probe_governance present and fields correct",
+      "result": "PASS",
+      "notes": "file_size_bytes=853898611, page_count=64, heavy_pdf_detected=true",
+      "tool": "ReportBuilder",
+      "heavy_pdf_probe_governance_present": true,
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "9. degraded_reasons precise for warning-only probes",
+      "result": "PASS",
+      "notes": "",
+      "tool": "ReportBuilder",
+      "degraded_reason": "PDF_STRUCTURAL_WARNING:qpdf; PDF_FONT_WEIGHT_WARNING:pdfimages",
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "10. No overclaims in heavy_pdf_probe_governance",
+      "result": "PASS",
+      "notes": "production_certified=false, standard_certified=false, pdfx_compliance_claimed=false, pdfa_compliance_claimed=false, compliance_claim_allowed=false",
+      "tool": "ReportBuilder",
+      "overclaim_guard_passed": true
+    },
+    {
+      "scenario": "11. HEAVY_PDF_THRESHOLD_BYTES = 500 MB",
+      "result": "PASS",
+      "notes": "524288000 bytes",
+      "tool": "ProbeSemanticsClassifier"
+    }
+  ]
+}

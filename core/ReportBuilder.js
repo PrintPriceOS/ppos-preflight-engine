@@ -1,7 +1,10 @@
+const { HEAVY_PDF_THRESHOLD_BYTES } = require('../utils/ProbeSemanticsClassifier');
+
 /**
  * ReportBuilder
- * 
+ *
  * Standardizes the output structure of the preflight engine.
+ * Phase 62F-A: adds precise degraded_reasons from probe semantics and heavy_pdf_probe_governance.
  */
 class ReportBuilder {
     build({ issues, riskSummary, metadata, filePath, partial = false, warnings = [], analyzerCoverage = null, options = {} }) {
@@ -86,7 +89,37 @@ class ReportBuilder {
         }
         if (hasExtractionErrors) {
             analysisIntegrity.extractionErrors?.forEach(err => {
-                degraded_reasons.push(`TOOL_EXTRACTION_FAILED:${err.parser}`);
+                // Phase 62F-A: use probe semantics for precise degraded reason instead of generic TOOL_EXTRACTION_FAILED
+                const probeSem = analysisIntegrity.probeSemantics?.tools?.[err.parser];
+                const semanticStatus = probeSem?.semantic_status || err.semanticStatus;
+                const warningClasses = probeSem?.warning_classes || [];
+
+                if (semanticStatus === 'WARNING_ONLY' || semanticStatus === 'SUCCESS_WITH_WARNINGS') {
+                    // Emit specific warning-class reasons when known
+                    let emittedSpecific = false;
+                    if (warningClasses.includes('PDF_FONT_WEIGHT_WARNING')) {
+                        degraded_reasons.push(`PDF_FONT_WEIGHT_WARNING:${err.parser}`);
+                        emittedSpecific = true;
+                    }
+                    if (['PDF_LINEARIZATION_HINT_WARNING','PDF_SHARED_OBJECT_HINT_MISMATCH','PDF_OBJECT_COUNT_HINT_MISMATCH'].some(c => warningClasses.includes(c))) {
+                        degraded_reasons.push(`PDF_STRUCTURAL_WARNING:${err.parser}`);
+                        emittedSpecific = true;
+                    }
+                    if (!emittedSpecific) {
+                        degraded_reasons.push(`TOOL_PROBE_WARNING:${err.parser}`);
+                    }
+                } else if (semanticStatus === 'PARTIAL_SUCCESS') {
+                    degraded_reasons.push(`TOOL_PROBE_PARTIAL:${err.parser}`);
+                } else if (semanticStatus === 'FAILED_TIMEOUT') {
+                    degraded_reasons.push(`TOOL_PROBE_TIMEOUT:${err.parser}`);
+                } else if (semanticStatus === 'FAILED_OOM') {
+                    degraded_reasons.push(`TOOL_PROBE_OOM:${err.parser}`);
+                } else if (semanticStatus === 'FAILED_TOOL_MISSING') {
+                    // covered by MISSING_TOOL: below
+                } else {
+                    // FAILED_FATAL, FAILED_NO_OUTPUT, FAILED_UNCLASSIFIED, or no semantic info
+                    degraded_reasons.push(`TOOL_EXTRACTION_FAILED:${err.parser}`);
+                }
             });
         }
         warnings.forEach(w => {
@@ -133,6 +166,13 @@ class ReportBuilder {
         } else if (hasWarningOrInfo) {
             outcome_category = 'SUCCESS_WITH_FINDINGS';
         }
+
+        const heavyPdfGovernance = this._buildHeavyPdfProbeGovernance({
+            metadata,
+            analysisIntegrity,
+            certifiable: isCertifiable,
+            analysisStatus: analysis_status
+        });
 
         return {
             ok: isOk,
@@ -187,9 +227,106 @@ class ReportBuilder {
                 signature: process.env.GIT_COMMIT?.slice(0, 7) || 'local',
                 strict_forensic_mode: strictMode
             },
+            heavy_pdf_probe_governance: heavyPdfGovernance,
             // Legacy/Upstream Compatibility Aliases
             analysis: { issues: mappedIssues },
             forensics: { findings: mappedIssues, events: forensic_events }
+        };
+    }
+
+    _buildHeavyPdfProbeGovernance({ metadata, analysisIntegrity, certifiable, analysisStatus }) {
+        const fileSizeBytes = metadata.size || 0;
+        const fileSizeMb = parseFloat((fileSizeBytes / (1024 * 1024)).toFixed(2));
+        const pageCount = metadata.pages || 0;
+        const heavyPdfDetected = fileSizeBytes >= HEAVY_PDF_THRESHOLD_BYTES || metadata.heavyPdfDetected === true;
+        const probeSemantics = analysisIntegrity.probeSemantics;
+        const probeSemanticApplied = !!(probeSemantics?.applied);
+        const toolsSemantics = probeSemantics?.tools || {};
+
+        // Build probe_summary counts
+        const probeSummary = { total: 0, success: 0, success_with_warnings: 0, warning_only: 0, partial_success: 0, failed_fatal: 0, failed_timeout: 0, failed_oom: 0, failed_tool_missing: 0, failed_no_output: 0, failed_unclassified: 0 };
+        for (const toolResult of Object.values(toolsSemantics)) {
+            probeSummary.total++;
+            switch (toolResult.semantic_status) {
+                case 'SUCCESS':                probeSummary.success++;               break;
+                case 'SUCCESS_WITH_WARNINGS':  probeSummary.success_with_warnings++; break;
+                case 'WARNING_ONLY':           probeSummary.warning_only++;          break;
+                case 'PARTIAL_SUCCESS':        probeSummary.partial_success++;       break;
+                case 'FAILED_FATAL':           probeSummary.failed_fatal++;          break;
+                case 'FAILED_TIMEOUT':         probeSummary.failed_timeout++;        break;
+                case 'FAILED_OOM':             probeSummary.failed_oom++;            break;
+                case 'FAILED_TOOL_MISSING':    probeSummary.failed_tool_missing++;   break;
+                case 'FAILED_NO_OUTPUT':       probeSummary.failed_no_output++;      break;
+                case 'FAILED_UNCLASSIFIED':    probeSummary.failed_unclassified++;   break;
+            }
+        }
+
+        const hasFatalProbe = Object.values(toolsSemantics).some(t => t.fatal);
+        const hasWarningProbe = Object.values(toolsSemantics).some(t => ['WARNING_ONLY','SUCCESS_WITH_WARNINGS','PARTIAL_SUCCESS'].includes(t.semantic_status));
+        const analysisDegrade = analysisStatus === 'DEGRADED' || analysisStatus === 'FAILED';
+        const fatalDocumentFailure = hasFatalProbe;
+        const degradedButUsable = analysisDegrade && !fatalDocumentFailure && hasWarningProbe;
+        const reviewRequired = fatalDocumentFailure || degradedButUsable;
+
+        // Collect warnings and review reasons
+        const governanceWarnings = [];
+        const reviewReasons = [];
+
+        const qpdfSem = toolsSemantics.qpdf;
+        const pdfimageSem = toolsSemantics.pdfimages;
+
+        if (qpdfSem?.structural_warning) {
+            governanceWarnings.push('qpdf reported structural warnings (linearization, hint-table, or object count mismatch).');
+            reviewReasons.push('QPDF_STRUCTURAL_WARNING');
+        }
+        if (pdfimageSem && ['WARNING_ONLY','SUCCESS_WITH_WARNINGS'].includes(pdfimageSem.semantic_status)) {
+            governanceWarnings.push('pdfimages reported warnings during image extraction.');
+            reviewReasons.push('PDFIMAGES_WARNING');
+        }
+        if (heavyPdfDetected) {
+            governanceWarnings.push('Heavy PDF detected (≥500 MB). Analysis may be incomplete for some probes.');
+            reviewReasons.push('HEAVY_PDF_DETECTED');
+        }
+        if (fatalDocumentFailure) {
+            governanceWarnings.push('A critical probe failure prevents full analysis. Re-exporting or repairing the source PDF is recommended.');
+            reviewReasons.push('FATAL_PROBE_FAILURE');
+        }
+
+        // Build tools governance structure (omit raw evidence details to keep report clean)
+        const toolsGovernance = {};
+        for (const [name, sem] of Object.entries(toolsSemantics)) {
+            toolsGovernance[name] = {
+                raw_status: sem.raw_status,
+                semantic_status: sem.semantic_status,
+                severity: sem.severity,
+                usable_output: sem.usable_output,
+                fatal: sem.fatal,
+                warning_classes: sem.warning_classes || [],
+                fatal_classes: sem.fatal_classes || []
+            };
+        }
+
+        return {
+            heavy_pdf_detected: heavyPdfDetected,
+            file_size_bytes: fileSizeBytes,
+            file_size_mb: fileSizeMb,
+            page_count: pageCount,
+            probe_semantics_applied: probeSemanticApplied,
+            analysis_degraded: analysisDegrade,
+            degraded_but_usable: degradedButUsable,
+            fatal_document_failure: fatalDocumentFailure,
+            certifiable: certifiable && !reviewRequired,
+            review_required: reviewRequired,
+            production_certified: false,
+            standard_certified: false,
+            pdfx_compliance_claimed: false,
+            pdfa_compliance_claimed: false,
+            compliance_claim_allowed: false,
+            probe_summary: probeSummary,
+            tools: toolsGovernance,
+            warnings: governanceWarnings,
+            review_required_reasons: reviewReasons,
+            evidence: {}
         };
     }
 }

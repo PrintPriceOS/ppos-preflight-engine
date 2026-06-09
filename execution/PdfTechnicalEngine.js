@@ -5,6 +5,7 @@ const path = require('path');
 const { execFile } = require('child_process');
 const util = require('util');
 const execFileAsync = util.promisify(execFile);
+const ProbeSemanticsClassifier = require('../utils/ProbeSemanticsClassifier');
 
 /**
  * PdfTechnicalEngine
@@ -139,23 +140,61 @@ class PdfTechnicalEngine {
             const extractionErrors = [];
             const missingTools = [];
             const probeResults = {};
+            const probeSemantics = {};
 
             const runProbe = async (bin, args, outputKey, toolAlias) => {
                 const key = outputKey || bin;
                 const alias = toolAlias || key;
+                const startMs = Date.now();
                 try {
                     const { stdout, stderr } = await execFileAsync(bin, args, { timeout: 3000, shell: true });
-                    toolOutputs[key] = stdout || stderr || '';
+                    const combinedOutput = stdout || stderr || '';
+                    toolOutputs[key] = combinedOutput;
                     probeResults[alias] = 'SUCCESS';
+                    probeSemantics[alias] = ProbeSemanticsClassifier.classifyProbeResult({
+                        tool: alias,
+                        exitCode: 0,
+                        stdout: stdout || '',
+                        stderr: stderr || '',
+                        timedOut: false,
+                        outputAvailable: !!combinedOutput,
+                        durationMs: Date.now() - startMs
+                    });
                 } catch (err) {
+                    const durationMs = Date.now() - startMs;
                     const isNotInstalled = err.code === 'ENOENT' || err.code === 127 ||
                         (err.message && (err.message.includes('ENOENT') || err.message.includes('not found') || err.message.includes('not recognized')));
+                    const timedOut = !!(err.killed && (err.signal === 'SIGTERM' || err.code === 'ETIMEDOUT'));
+
+                    const semantic = ProbeSemanticsClassifier.classifyProbeResult({
+                        tool: alias,
+                        exitCode: err.code,
+                        stdout: err.stdout || '',
+                        stderr: err.stderr || '',
+                        error: err,
+                        timedOut,
+                        signal: err.signal || null,
+                        durationMs,
+                        outputAvailable: !!(err.stdout || err.stderr)
+                    });
+
                     probeResults[alias] = isNotInstalled ? 'MISSING' : 'FAILED';
-                    extractionErrors.push({ parser: alias, message: err.message, probeStatus: probeResults[alias] });
+                    probeSemantics[alias] = semantic;
+                    extractionErrors.push({
+                        parser: alias,
+                        message: err.message,
+                        probeStatus: probeResults[alias],
+                        semanticStatus: semantic.semantic_status
+                    });
+
                     if (isNotInstalled) {
                         missingTools.push(alias);
-                    } else if (err.stdout) {
+                    }
+                    // Capture partial output even on non-zero exit (e.g. pdfimages warning-only with image table in stdout)
+                    if (err.stdout) {
                         toolOutputs[key] = err.stdout;
+                    } else if (err.stderr) {
+                        toolOutputs[key] = err.stderr;
                     }
                 }
             };
@@ -196,6 +235,7 @@ class PdfTechnicalEngine {
             }
 
             const hasMissing = missingTools.length > 0;
+            const heavyPdfDetected = sizeBytes >= ProbeSemanticsClassifier.HEAVY_PDF_THRESHOLD_BYTES;
             return {
                 ok: !hasMissing,
                 status: hasMissing ? 'DEGRADED' : 'SUCCESS',
@@ -204,6 +244,7 @@ class PdfTechnicalEngine {
                 pdfVersion,
                 probeResults,
                 availableTools,
+                heavyPdfDetected,
                 analysisIntegrity: {
                     realExtraction: true,     // pdf-lib geometry succeeded; degradedMode reflects CLI tool gaps
                     fallbackUsed: hasMissing,
@@ -211,7 +252,12 @@ class PdfTechnicalEngine {
                     extractionErrors,
                     missingTools,
                     probeResults,
-                    availableTools
+                    availableTools,
+                    probeSemantics: {
+                        applied: true,
+                        version: 'phase62f',
+                        tools: probeSemantics
+                    }
                 },
                 geometry: {
                     pages,

@@ -1,0 +1,18 @@
+{
+  "tool": "gs",
+  "command": "gs -dNOPAUSE -dBATCH -sDEVICE=nullpage heavy_file.pdf",
+  "exitCode": null,
+  "stdout": "Processing pages 1 through 64.\nPage 1\nPage 2\nPage 3\n",
+  "stderr": "",
+  "error": {
+    "killed": true,
+    "signal": "SIGKILL",
+    "message": "Command failed: gs ... (killed)"
+  },
+  "timedOut": false,
+  "signal": "SIGKILL",
+  "killed": true,
+  "durationMs": 45000,
+  "outputAvailable": true,
+  "scenario": "Ghostscript killed by OOM killer after processing 3 of 64 pages"
+}

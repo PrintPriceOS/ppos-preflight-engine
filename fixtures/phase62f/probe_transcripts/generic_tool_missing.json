@@ -1,0 +1,16 @@
+{
+  "tool": "mutool",
+  "command": "mutool info test.pdf",
+  "exitCode": "ENOENT",
+  "stdout": "",
+  "stderr": "",
+  "error": {
+    "code": "ENOENT",
+    "message": "spawn mutool ENOENT"
+  },
+  "timedOut": false,
+  "signal": null,
+  "durationMs": 1,
+  "outputAvailable": false,
+  "scenario": "mutool not installed — ENOENT"
+}
