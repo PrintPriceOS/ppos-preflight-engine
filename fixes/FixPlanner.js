@@ -89,6 +89,23 @@ class FixPlanner {
             } else if (rawStrategy === 'LOW_RES_IMAGES' || rawStrategy === 'IND_IMG_005' ||
                        rawStrategy === 'IMG_IMAGE_LOW_RESOLUTION' || rawStrategy === 'IND_IMG_001') {
                 rawStrategy = 'FLAG_LOW_RES_IMAGES_UNFIXABLE';
+            } else if (rawStrategy === 'TRANSPARENCY_PRESENT' || rawStrategy === 'TRANS_TRANSPARENCY_DETECTED' ||
+                       rawStrategy === 'TRANSPARENCY_GROUPS' || rawStrategy === 'IND_TRANS_001' ||
+                       rawStrategy === 'IND_TRANS_004' || rawStrategy === 'IND_TRANS_005' ||
+                       rawStrategy === 'IND_TRANS_008' || rawStrategy === 'IND_TRANS_009' ||
+                       rawStrategy === 'RASTERIZATION_RISK' || rawStrategy === 'SOFT_MASK_PRESENT' ||
+                       rawStrategy === 'KNOCKOUT_GROUP_PRESENT' || rawStrategy === 'IND_TRANS_006' ||
+                       rawStrategy === 'TRANS_SOFT_MASK_DETECTED' || rawStrategy === 'IND_TRANS_003') {
+                rawStrategy = 'FLATTEN_TRANSPARENCY';
+            } else if (rawStrategy === 'BLEND_MODE_PRESENT' || rawStrategy === 'TRANS_BLEND_MODE_DETECTED' ||
+                       rawStrategy === 'IND_TRANS_002' || rawStrategy === 'IND_TRANS_007') {
+                rawStrategy = 'NORMALIZE_BLEND_MODES';
+            } else if (rawStrategy === 'OVERPRINT_DETECTED' || rawStrategy === 'OVERPRINT_PRESENT' ||
+                       rawStrategy === 'OVERPRINT_KNOCKOUT_CONFLICT' || rawStrategy === 'IND_OVERPRINT_001' ||
+                       rawStrategy === 'IND_OVERPRINT_002' || rawStrategy === 'IND_OVERPRINT_003') {
+                rawStrategy = 'FLATTEN_OVERPRINT';
+            } else if (rawStrategy === 'OVERPRINT_MODE_PRESENT' || rawStrategy === 'IND_OVERPRINT_004') {
+                rawStrategy = 'SIMULATE_OVERPRINT_PREVIEW';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -144,6 +161,13 @@ class FixPlanner {
                     autofixable = false; // No font fix is safe without an available font source and human visual review
                 }
 
+                // Phase 67A: Transparency / Overprint physical fix guardrails.
+                // All transparency_overprint physical fixes are highly visual/destructive:
+                // always review_required=true, never production_safe=true, never auto-applied.
+                if (cap.category === 'transparency_overprint') {
+                    autofixable = false;
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -161,7 +185,8 @@ class FixPlanner {
                 if (!implemented) skipReason = "FIX_NOT_IMPLEMENTED";
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
                 else if (!autofixable) {
-                    if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
+                    if (cap.category === 'transparency_overprint') skipReason = "TRANSPARENCY_OVERPRINT_VISUAL_REVIEW_REQUIRED";
+                    else if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'font_governance' && fixId === 'FLAG_MISSING_GLYPHS_UNFIXABLE') skipReason = "MISSING_GLYPHS_UNFIXABLE_NO_SYNTHESIS";
                     else if (cap.category === 'font_governance') skipReason = "FONT_SOURCE_EVIDENCE_REQUIRED";
                     else if (cap.category === 'image_quality' && fixId === 'FLAG_LOW_RES_IMAGES_UNFIXABLE') skipReason = "LOW_RES_UNFIXABLE_NO_UPSCALE";

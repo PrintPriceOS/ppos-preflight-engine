@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-06-09T00:01:58.417Z",
+  "phase": "phase67a",
+  "category": "transparency_overprint",
+  "note": "Fixtures are metadata-annotated PDFs representing transparency/overprint fix scenarios. Physical transparency/overprint detection requires content-stream-level parsing beyond pdf-lib drawing primitives.",
+  "fixtures": [
+    {
+      "filename": "transparency_present.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase67a\\transparency_present.pdf",
+      "expected": "transparency_present"
+    },
+    {
+      "filename": "blend_mode_detected.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase67a\\blend_mode_detected.pdf",
+      "expected": "blend_mode_detected"
+    },
+    {
+      "filename": "overprint_detected.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase67a\\overprint_detected.pdf",
+      "expected": "overprint_detected"
+    },
+    {
+      "filename": "overprint_mode_present.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase67a\\overprint_mode_present.pdf",
+      "expected": "overprint_mode_present"
+    },
+    {
+      "filename": "soft_mask_present.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase67a\\soft_mask_present.pdf",
+      "expected": "soft_mask_present"
+    },
+    {
+      "filename": "clean_control.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase67a\\clean_control.pdf",
+      "expected": "clean"
+    }
+  ]
+}

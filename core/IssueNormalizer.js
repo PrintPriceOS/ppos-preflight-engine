@@ -318,6 +318,80 @@ class IssueNormalizer {
                 normalized.destructiveFixRisk = 'LOW';
             }
 
+            // Phase 67A: Transparency / Overprint physical fix findings.
+            // All codes in this group are highly visual/destructive: always review_required=true,
+            // never production_safe=true, never safeToAutofix=true.
+            const transparencyFlattenCodes = [
+                'TRANSPARENCY_PRESENT', 'TRANS_TRANSPARENCY_DETECTED', 'TRANSPARENCY_GROUPS',
+                'IND_TRANS_001', 'IND_TRANS_004', 'IND_TRANS_005', 'IND_TRANS_009',
+                'RASTERIZATION_RISK', 'SOFT_MASK_PRESENT', 'IND_TRANS_006',
+                'TRANS_SOFT_MASK_DETECTED', 'IND_TRANS_003', 'KNOCKOUT_GROUP_PRESENT', 'IND_TRANS_008'
+            ];
+            const blendModeCodes = [
+                'BLEND_MODE_PRESENT', 'TRANS_BLEND_MODE_DETECTED',
+                'IND_TRANS_002', 'IND_TRANS_007'
+            ];
+            const overprintFlattenCodes = [
+                'OVERPRINT_DETECTED', 'OVERPRINT_PRESENT', 'OVERPRINT_KNOCKOUT_CONFLICT',
+                'IND_OVERPRINT_001', 'IND_OVERPRINT_002', 'IND_OVERPRINT_003'
+            ];
+            const overprintModeCodes = [
+                'OVERPRINT_MODE_PRESENT', 'IND_OVERPRINT_004'
+            ];
+
+            if (transparencyFlattenCodes.includes(rawCode) || transparencyFlattenCodes.includes(mappedCode)) {
+                normalized.category = 'TRANSPARENCY';
+                normalized.fixable = false;
+                normalized.fix_method = 'FLATTEN_TRANSPARENCY';
+                normalized.recommended_fix = 'FLATTEN_TRANSPARENCY';
+                normalized.repairStrategy = 'FLATTEN_TRANSPARENCY';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (blendModeCodes.includes(rawCode) || blendModeCodes.includes(mappedCode)) {
+                normalized.category = 'TRANSPARENCY';
+                normalized.fixable = false;
+                normalized.fix_method = 'NORMALIZE_BLEND_MODES';
+                normalized.recommended_fix = 'NORMALIZE_BLEND_MODES';
+                normalized.repairStrategy = 'NORMALIZE_BLEND_MODES';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+            if (overprintFlattenCodes.includes(rawCode) || overprintFlattenCodes.includes(mappedCode)) {
+                normalized.category = 'OVERPRINT';
+                normalized.fixable = false;
+                normalized.fix_method = 'FLATTEN_OVERPRINT';
+                normalized.recommended_fix = 'FLATTEN_OVERPRINT';
+                normalized.repairStrategy = 'FLATTEN_OVERPRINT';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'CRITICAL';
+            }
+            if (overprintModeCodes.includes(rawCode) || overprintModeCodes.includes(mappedCode)) {
+                normalized.category = 'OVERPRINT';
+                normalized.fixable = false;
+                normalized.fix_method = 'SIMULATE_OVERPRINT_PREVIEW';
+                normalized.recommended_fix = 'SIMULATE_OVERPRINT_PREVIEW';
+                normalized.repairStrategy = 'SIMULATE_OVERPRINT_PREVIEW';
+                normalized.safeToAutofix = false;
+                normalized.requires_human_review = true;
+                normalized.review_required = true;
+                normalized.production_safe = false;
+                normalized.visually_sensitive = true;
+                normalized.destructiveFixRisk = 'HIGH';
+            }
+
             return normalized;
         });
     }

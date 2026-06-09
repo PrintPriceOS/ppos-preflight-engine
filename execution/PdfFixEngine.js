@@ -1208,9 +1208,109 @@ class PdfFixEngine {
         }
     }
 
-    async flattenTransparency(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("FLATTEN_TRANSPARENCY"); }
+    // --- Phase 67A: Transparency / Overprint Physical Fixes ---
+
+    _scaffoldTransparencyOverprintPhysicalFix(fixId, message, evidenceOverrides = {}) {
+        return {
+            success: false,
+            code: fixId,
+            status: "SKIPPED_UNSUPPORTED",
+            strategy: "UNSUPPORTED_TRANSPARENCY_OVERPRINT_PHYSICAL_FIX",
+            risk_level: evidenceOverrides.risk_level || "HIGH",
+            requires_human_review: true,
+            production_safe: false,
+            visually_sensitive: true,
+            destructive: true,
+            executable: false,
+            visual_change_expected: true,
+            review_required: true,
+            production_certified: false,
+            compliance_claim_allowed: false,
+            evidence: Object.assign({
+                reason: message || "Transparency/overprint physical fixes are highly visual/destructive and cannot be safely automated without a rendering pipeline and before/after visual evidence.",
+                transparency_detected: false,
+                overprint_detected: false,
+                blend_modes_detected: false,
+                flattening_applied: false,
+                rendering_safety_proven: false,
+                before_render_hash: null,
+                after_render_hash: null,
+                visual_change_expected: true,
+                review_required: true,
+                production_certified: false,
+                limitations: evidenceOverrides.limitations || [
+                    "Transparency/overprint flattening requires a rendering pipeline to prove visual safety before and after.",
+                    "No physical transparency or overprint change was performed.",
+                    "Human visual review is always required regardless of policy mode."
+                ],
+                warnings: []
+            }, evidenceOverrides.evidence || {})
+        };
+    }
+
+    async flattenTransparency(inputPath, outputPath, options = {}) {
+        return this._scaffoldTransparencyOverprintPhysicalFix(
+            "FLATTEN_TRANSPARENCY",
+            "Transparency flattening merges transparent objects into the page and may silently alter rendering. Ghostscript flattening cannot be proven safe without a before/after render comparison.",
+            {
+                evidence: {
+                    transparency_detected: null,
+                    flattening_applied: false,
+                    rendering_safety_proven: false,
+                    skip_code: "SKIPPED_RENDERING_SAFETY_UNPROVEN"
+                }
+            }
+        );
+    }
+
+    async normalizeBlendModes(inputPath, outputPath, options = {}) {
+        return this._scaffoldTransparencyOverprintPhysicalFix(
+            "NORMALIZE_BLEND_MODES",
+            "Normalizing blend modes changes how objects composite on the page. Without a rendering pipeline to compare before/after appearance, safety cannot be proven.",
+            {
+                evidence: {
+                    blend_modes_detected: null,
+                    flattening_applied: false,
+                    rendering_safety_proven: false,
+                    skip_code: "SKIPPED_RENDERING_SAFETY_UNPROVEN"
+                }
+            }
+        );
+    }
+
     async flattenPdf(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("FLATTEN_PDF"); }
-    async flattenOverprint(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("FLATTEN_OVERPRINT"); }
+
+    async flattenOverprint(inputPath, outputPath, options = {}) {
+        return this._scaffoldTransparencyOverprintPhysicalFix(
+            "FLATTEN_OVERPRINT",
+            "Overprint flattening bakes overprint settings into final color values. This is a critical visual change; without a before/after rendered comparison the output cannot be validated.",
+            {
+                risk_level: "CRITICAL",
+                evidence: {
+                    overprint_detected: null,
+                    flattening_applied: false,
+                    rendering_safety_proven: false,
+                    skip_code: "SKIPPED_RENDERING_SAFETY_UNPROVEN"
+                }
+            }
+        );
+    }
+
+    async simulateOverprintPreview(inputPath, outputPath, options = {}) {
+        return this._scaffoldTransparencyOverprintPhysicalFix(
+            "SIMULATE_OVERPRINT_PREVIEW",
+            "Overprint simulation changes how ink colors interact when printed. Ghostscript can apply SimulateOverprint but the visual result requires human verification; safety cannot be proven automatically.",
+            {
+                evidence: {
+                    overprint_detected: null,
+                    flattening_applied: false,
+                    rendering_safety_proven: false,
+                    skip_code: "SKIPPED_RENDERING_SAFETY_UNPROVEN"
+                }
+            }
+        );
+    }
+
     async normalizeOverprint(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("NORMALIZE_OVERPRINT"); }
     async removeSoftMasks(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("REMOVE_SOFT_MASKS"); }
     async rasterizeTransparency(inputPath, outputPath, options = {}) { return this._scaffoldUnsupported("RASTERIZE_TRANSPARENCY"); }

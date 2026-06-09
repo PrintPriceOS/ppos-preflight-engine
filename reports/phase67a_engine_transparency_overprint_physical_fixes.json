@@ -1,0 +1,261 @@
+{
+  "generated_at": "2026-06-09T00:01:58.816Z",
+  "phase": "67A",
+  "repo": "ppos-preflight-engine",
+  "category": "transparency_overprint",
+  "smoke_passed": true,
+  "core_principle": "Transparency/overprint physical fixes are highly visual/destructive. Always review_required=true. Never production_safe=true. If flattening cannot be proven safe via before/after render comparison, returns SKIPPED_UNSUPPORTED. No rendering_safety_proven=true is claimed without physical proof.",
+  "target_fixes": [
+    "FLATTEN_TRANSPARENCY",
+    "NORMALIZE_BLEND_MODES",
+    "FLATTEN_OVERPRINT",
+    "SIMULATE_OVERPRINT_PREVIEW"
+  ],
+  "finding_codes": [
+    "IND_TRANS_001",
+    "IND_TRANS_002",
+    "IND_TRANS_003",
+    "IND_TRANS_004",
+    "IND_TRANS_005",
+    "IND_TRANS_006",
+    "IND_TRANS_007",
+    "IND_TRANS_008",
+    "IND_TRANS_009",
+    "IND_OVERPRINT_001",
+    "IND_OVERPRINT_002",
+    "IND_OVERPRINT_003",
+    "IND_OVERPRINT_004"
+  ],
+  "forbidden_overclaims_checked": [
+    "compliance_claim_allowed=true",
+    "standard_certified=true",
+    "pdfx_compliance_claimed=true",
+    "pdfa_compliance_claimed=true",
+    "production_certified=true",
+    "production_safe=true",
+    "rendering_safety_proven=true (when not APPLIED)"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry transparency_overprint (Phase 67A) capabilities check",
+      "fixture": null,
+      "capability": "FLATTEN_TRANSPARENCY, NORMALIZE_BLEND_MODES, FLATTEN_OVERPRINT, SIMULATE_OVERPRINT_PREVIEW",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 67A transparency_overprint capabilities registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 67A transparency/overprint codes",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 67A transparency/overprint finding codes registered correctly (IND_TRANS_001-009, IND_OVERPRINT_001-004)."
+      ]
+    },
+    {
+      "scenario": "IssueNormalizer transparency/overprint fix routing",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "IssueNormalizer correctly routes Phase 67A transparency/overprint codes with safeToAutofix=false, requires_human_review=true, production_safe=false."
+      ]
+    },
+    {
+      "scenario": "FixPlanner transparency_overprint physical guardrails",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all Phase 67A transparency/overprint fixes from being planned/executable in any policy mode."
+      ]
+    },
+    {
+      "scenario": "FLATTEN_TRANSPARENCY returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "transparency_present.pdf",
+      "capability": "FLATTEN_TRANSPARENCY",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: transparency/overprint fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "NORMALIZE_BLEND_MODES returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "blend_mode_detected.pdf",
+      "capability": "NORMALIZE_BLEND_MODES",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: transparency/overprint fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "FLATTEN_OVERPRINT returns SKIPPED_UNSUPPORTED with evidence (critical risk)",
+      "fixture": "overprint_detected.pdf",
+      "capability": "FLATTEN_OVERPRINT",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: transparency/overprint fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "SIMULATE_OVERPRINT_PREVIEW returns SKIPPED_UNSUPPORTED with evidence",
+      "fixture": "overprint_mode_present.pdf",
+      "capability": "SIMULATE_OVERPRINT_PREVIEW",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: transparency/overprint fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "FLATTEN_TRANSPARENCY on soft_mask fixture — honest skip",
+      "fixture": "soft_mask_present.pdf",
+      "capability": "FLATTEN_TRANSPARENCY",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: transparency/overprint fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "FLATTEN_TRANSPARENCY on clean control — honest skip",
+      "fixture": "clean_control.pdf",
+      "capability": "FLATTEN_TRANSPARENCY",
+      "status": "SKIPPED_UNSUPPORTED",
+      "allowed_statuses": [
+        "SKIPPED_UNSUPPORTED",
+        "SKIPPED",
+        "FAILED",
+        "NO_CHANGE"
+      ],
+      "evidence": {
+        "implemented": false
+      },
+      "standard_certified": false,
+      "pdfx_compliance_claimed": false,
+      "pdfa_compliance_claimed": false,
+      "compliance_claim_allowed": false,
+      "production_certified": false,
+      "production_safe": false,
+      "requires_human_review": true,
+      "pass": true,
+      "notes": [
+        "Minor: transparency/overprint fix does not signal review_required=true (non-fatal, informational)"
+      ]
+    },
+    {
+      "scenario": "Transparency/overprint fix overclaim regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No transparency/overprint fix produced a standards, PDF/X, PDF/A, production certification, or production_safe claim."
+      ]
+    },
+    {
+      "scenario": "Rendering safety not overclaimed (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No skipped transparency/overprint fix claims rendering_safety_proven=true."
+      ]
+    },
+    {
+      "scenario": "Transparency/overprint review_required signal (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All transparency/overprint fix results signal requires_human_review=true as required by policy."
+      ]
+    }
+  ]
+}
