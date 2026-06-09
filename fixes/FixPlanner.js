@@ -106,6 +106,15 @@ class FixPlanner {
                 rawStrategy = 'FLATTEN_OVERPRINT';
             } else if (rawStrategy === 'OVERPRINT_MODE_PRESENT' || rawStrategy === 'IND_OVERPRINT_004') {
                 rawStrategy = 'SIMULATE_OVERPRINT_PREVIEW';
+            } else if (rawStrategy === 'VISUAL_DIFF_REQUIRED' || rawStrategy === 'IND_VISUAL_001' ||
+                       rawStrategy === 'RENDERED_PROOF_REQUIRED' || rawStrategy === 'IND_VISUAL_004') {
+                rawStrategy = 'GENERATE_VISUAL_CHANGE_REPORT';
+            } else if (rawStrategy === 'VISUAL_CHANGE_DETECTED' || rawStrategy === 'IND_VISUAL_002') {
+                rawStrategy = 'COMPARE_ORIGINAL_TO_FIXED';
+            } else if (rawStrategy === 'VISUAL_DIFF_TOOL_UNAVAILABLE' || rawStrategy === 'IND_VISUAL_003') {
+                rawStrategy = 'RENDER_PDF_PAGES';
+            } else if (rawStrategy === 'RENDERED_PROOF_GENERATED' || rawStrategy === 'IND_VISUAL_005') {
+                rawStrategy = 'GENERATE_PROOF_THUMBNAILS';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -170,6 +179,13 @@ class FixPlanner {
                     autofixable = false;
                 }
 
+                // Phase 69A: Visual proofing guardrails.
+                // Visual diff / rendered proof capabilities are evidence generation only:
+                // never auto-applied, never imply production/certification/print-ready status.
+                if (cap.category === 'visual_proofing') {
+                    autofixable = false;
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -187,7 +203,8 @@ class FixPlanner {
                 if (!implemented) skipReason = "FIX_NOT_IMPLEMENTED";
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
                 else if (!autofixable) {
-                    if (cap.category === 'transparency_overprint') skipReason = "TRANSPARENCY_OVERPRINT_VISUAL_REVIEW_REQUIRED";
+                    if (cap.category === 'visual_proofing') skipReason = "VISUAL_PROOFING_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
+                    else if (cap.category === 'transparency_overprint') skipReason = "TRANSPARENCY_OVERPRINT_VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'font_governance' && fixId === 'FLAG_MISSING_GLYPHS_UNFIXABLE') skipReason = "MISSING_GLYPHS_UNFIXABLE_NO_SYNTHESIS";
                     else if (cap.category === 'font_governance') skipReason = "FONT_SOURCE_EVIDENCE_REQUIRED";

@@ -96,7 +96,14 @@ class AutofixExecutionEngine {
             'FLAG_LOW_RES_IMAGES_UNFIXABLE': 'flagLowResImagesUnfixable',
             'ADD_CROP_MARKS': 'addCropMarks',
             'REMOVE_REGISTRATION_MARKS': 'removeRegistrationMarks',
-            'NORMALIZE_PAGE_MARKS': 'normalizePageMarks'
+            'NORMALIZE_PAGE_MARKS': 'normalizePageMarks',
+            // Phase 69A — Visual Diff / Rendered Proof Generation
+            'RENDER_PDF_PAGES': 'renderPdfPages',
+            'GENERATE_VISUAL_DIFF': 'generateVisualDiff',
+            'GENERATE_PROOF_THUMBNAILS': 'generateProofThumbnails',
+            'COMPARE_ORIGINAL_TO_FIXED': 'compareOriginalToFixed',
+            'COMPARE_FIXED_TO_CERTIFIED': 'compareFixedToCertified',
+            'GENERATE_VISUAL_CHANGE_REPORT': 'generateVisualChangeReport'
         };
     }
 

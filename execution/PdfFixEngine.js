@@ -2428,6 +2428,497 @@ class PdfFixEngine {
             }
         };
     }
+
+    // --- Phase 69A: Visual Diff / Rendered Proof Generation ---
+    // Governance: Evidence generation only. Never implies print-ready, production certification,
+    // PDF/X compliance, or PDF/A compliance.
+
+    /**
+     * Detect available rendering tool (Ghostscript or mutool).
+     * Returns { tool, version, available } or { available: false }.
+     */
+    async _detectRenderTool() {
+        const path = require('path');
+        const gsCandidates = process.platform === 'win32'
+            ? ['gswin64c', 'gswin32c', 'gs']
+            : ['gs'];
+
+        for (const gsBin of gsCandidates) {
+            try {
+                const { stdout } = await execFileAsync(gsBin, ['--version'], { timeout: 5000 });
+                const version = (stdout || '').trim();
+                return { tool: 'ghostscript', bin: gsBin, version, available: true };
+            } catch (_) { /* try next */ }
+        }
+
+        try {
+            const { stdout } = await execFileAsync('mutool', ['--version'], { timeout: 5000 });
+            const version = (stdout || '').split('\n')[0].trim();
+            return { tool: 'mutool', bin: 'mutool', version, available: true };
+        } catch (_) { /* not available */ }
+
+        return { tool: null, bin: null, version: null, available: false };
+    }
+
+    /**
+     * Read PNG dimensions from binary header (IHDR chunk).
+     * Returns { width, height } or null if not parseable.
+     */
+    _readPngDimensions(buffer) {
+        try {
+            // PNG signature: 8 bytes, then IHDR chunk:
+            //   4 bytes length, 4 bytes "IHDR", 4 bytes width, 4 bytes height
+            if (buffer.length < 24) return null;
+            const sig = buffer.slice(0, 8).toString('hex');
+            if (!sig.startsWith('89504e47')) return null; // PNG magic bytes
+            const width = buffer.readUInt32BE(16);
+            const height = buffer.readUInt32BE(20);
+            return { width, height };
+        } catch (_) {
+            return null;
+        }
+    }
+
+    /**
+     * Compute a byte-level diff ratio between two PNG buffers as a proxy for changed_pixel_ratio.
+     * This compares compressed bytes — not true per-pixel delta — and is honest about limitations.
+     */
+    _computeBytesDiffRatio(bufA, bufB) {
+        const len = Math.max(bufA.length, bufB.length);
+        if (len === 0) return 0;
+        let diffBytes = Math.abs(bufA.length - bufB.length);
+        const compareLen = Math.min(bufA.length, bufB.length);
+        for (let i = 0; i < compareLen; i++) {
+            if (bufA[i] !== bufB[i]) diffBytes++;
+        }
+        return diffBytes / len;
+    }
+
+    /**
+     * Render PDF pages to PNG files.
+     * Returns structured evidence; SKIPPED_UNSUPPORTED with tool_gap=true if no renderer available.
+     */
+    async renderPdfPages(inputPath, outputDir, options = {}) {
+        const path = require('path');
+        const os = require('os');
+        const dpi = options.dpi || 72;
+        const maxPages = options.maxPages || 10;
+
+        const toolInfo = await this._detectRenderTool();
+
+        if (!toolInfo.available) {
+            return {
+                success: false,
+                status: 'SKIPPED_UNSUPPORTED',
+                code: 'RENDER_PDF_PAGES',
+                render_performed: false,
+                pages_rendered: 0,
+                render_tool: null,
+                render_tool_version: null,
+                tool_gap: true,
+                requires_human_review: true,
+                production_safe: false,
+                print_ready_claim: false,
+                visual_diff_governance: true,
+                evidence: {
+                    render_performed: false,
+                    diff_performed: false,
+                    pages_rendered: 0,
+                    pages_compared: 0,
+                    changed_pixel_ratio_max: null,
+                    changed_pixel_ratio_avg: null,
+                    dimensions_match: null,
+                    render_tool: null,
+                    render_tool_version: null,
+                    diff_images: [],
+                    thumbnails: [],
+                    tool_gap: true,
+                    visual_diff_governance: true,
+                    warnings: ['No rendering tool available (Ghostscript or mutool required).'],
+                    limitations: [
+                        'Visual diff requires Ghostscript or mutool.',
+                        'Install Ghostscript (gs/gswin64c) or mutool to enable rendering.',
+                        'This result does not imply production-ready or production status.'
+                    ]
+                }
+            };
+        }
+
+        const workDir = outputDir || path.join(require('os').tmpdir(), `ppos_render_${Date.now()}`);
+        await fs.ensureDir(workDir);
+
+        const outputPattern = path.join(workDir, 'page_%d.png');
+        const warnings = [];
+        const renderedPaths = [];
+
+        try {
+            if (toolInfo.tool === 'ghostscript') {
+                await execFileAsync(toolInfo.bin, [
+                    '-dBATCH', '-dNOPAUSE', '-dSAFER',
+                    '-sDEVICE=png16m',
+                    `-r${dpi}`,
+                    `-dLastPage=${maxPages}`,
+                    `-sOutputFile=${outputPattern}`,
+                    inputPath
+                ], { timeout: 60000 });
+            } else if (toolInfo.tool === 'mutool') {
+                await execFileAsync('mutool', [
+                    'draw',
+                    '-r', String(dpi),
+                    '-o', outputPattern,
+                    inputPath,
+                    `1-${maxPages}`
+                ], { timeout: 60000 });
+            }
+        } catch (err) {
+            warnings.push(`Render execution warning: ${err.message}`);
+        }
+
+        // Collect rendered files
+        try {
+            const files = await fs.readdir(workDir);
+            for (const f of files.sort()) {
+                if (f.startsWith('page_') && f.endsWith('.png')) {
+                    renderedPaths.push(path.join(workDir, f));
+                }
+            }
+        } catch (_) { /* dir may be empty */ }
+
+        return {
+            success: renderedPaths.length > 0,
+            status: renderedPaths.length > 0 ? 'APPLIED' : 'FAILED',
+            code: 'RENDER_PDF_PAGES',
+            render_performed: renderedPaths.length > 0,
+            pages_rendered: renderedPaths.length,
+            render_tool: toolInfo.tool,
+            render_tool_version: toolInfo.version,
+            output_dir: workDir,
+            rendered_paths: renderedPaths,
+            tool_gap: false,
+            requires_human_review: true,
+            production_safe: false,
+            print_ready_claim: false,
+            visual_diff_governance: true,
+            evidence: {
+                render_performed: renderedPaths.length > 0,
+                diff_performed: false,
+                pages_rendered: renderedPaths.length,
+                pages_compared: 0,
+                changed_pixel_ratio_max: null,
+                changed_pixel_ratio_avg: null,
+                dimensions_match: null,
+                render_tool: toolInfo.tool,
+                render_tool_version: toolInfo.version,
+                diff_images: [],
+                thumbnails: renderedPaths,
+                tool_gap: false,
+                visual_diff_governance: true,
+                warnings,
+                limitations: [
+                    'Rendered images are evidence only.',
+                    'Rendering does not imply production-ready or production status.',
+                    'No standards compliance is claimed.'
+                ]
+            }
+        };
+    }
+
+    /**
+     * Compare two sets of rendered PNG pages and compute diff metrics.
+     * origPaths and fixedPaths are arrays of PNG file paths (matched by index).
+     */
+    async _compareRenderedPages(origPaths, fixedPaths) {
+        const results = [];
+        const compareLen = Math.min(origPaths.length, fixedPaths.length);
+        let maxRatio = 0;
+        let totalRatio = 0;
+        let dimensionsMatch = true;
+
+        for (let i = 0; i < compareLen; i++) {
+            try {
+                const bufA = await fs.readFile(origPaths[i]);
+                const bufB = await fs.readFile(fixedPaths[i]);
+                const dimA = this._readPngDimensions(bufA);
+                const dimB = this._readPngDimensions(bufB);
+                const dimsMatch = dimA && dimB && dimA.width === dimB.width && dimA.height === dimB.height;
+                if (!dimsMatch) dimensionsMatch = false;
+                const ratio = this._computeBytesDiffRatio(bufA, bufB);
+                if (ratio > maxRatio) maxRatio = ratio;
+                totalRatio += ratio;
+                results.push({
+                    page: i + 1,
+                    dim_orig: dimA,
+                    dim_fixed: dimB,
+                    dimensions_match: !!dimsMatch,
+                    changed_pixel_ratio_proxy: ratio
+                });
+            } catch (err) {
+                results.push({ page: i + 1, error: err.message });
+            }
+        }
+
+        return {
+            pages_compared: compareLen,
+            max_pixel_delta_proxy: maxRatio,
+            changed_pixel_ratio_max: maxRatio,
+            changed_pixel_ratio_avg: compareLen > 0 ? totalRatio / compareLen : 0,
+            dimensions_match: dimensionsMatch,
+            per_page: results
+        };
+    }
+
+    /**
+     * Generate a visual diff between two PDFs.
+     * Renders both and computes byte-level diff metrics as a proxy for pixel diff.
+     */
+    async generateVisualDiff(origPath, fixedPath, options = {}) {
+        const path = require('path');
+        const os = require('os');
+        const dpi = options.dpi || 72;
+        const maxPages = options.maxPages || 10;
+
+        const toolInfo = await this._detectRenderTool();
+
+        if (!toolInfo.available) {
+            return {
+                success: false,
+                status: 'SKIPPED_UNSUPPORTED',
+                code: 'GENERATE_VISUAL_DIFF',
+                render_performed: false,
+                diff_performed: false,
+                tool_gap: true,
+                requires_human_review: true,
+                production_safe: false,
+                print_ready_claim: false,
+                visual_diff_governance: true,
+                evidence: {
+                    render_performed: false,
+                    diff_performed: false,
+                    pages_rendered: 0,
+                    pages_compared: 0,
+                    changed_pixel_ratio_max: null,
+                    changed_pixel_ratio_avg: null,
+                    dimensions_match: null,
+                    render_tool: null,
+                    render_tool_version: null,
+                    diff_images: [],
+                    thumbnails: [],
+                    tool_gap: true,
+                    visual_diff_governance: true,
+                    warnings: ['No rendering tool available; visual diff cannot be performed.'],
+                    limitations: [
+                        'Visual diff requires Ghostscript or mutool.',
+                        'Visual diff is evidence generation only; does not imply production-ready or production status.'
+                    ]
+                }
+            };
+        }
+
+        const origDir = path.join(os.tmpdir(), `ppos_orig_${Date.now()}`);
+        const fixedDir = path.join(os.tmpdir(), `ppos_fixed_${Date.now()}`);
+
+        const origResult = await this.renderPdfPages(origPath, origDir, { dpi, maxPages });
+        const fixedResult = await this.renderPdfPages(fixedPath, fixedDir, { dpi, maxPages });
+
+        const warnings = [
+            ...(origResult.evidence.warnings || []).map(w => `orig: ${w}`),
+            ...(fixedResult.evidence.warnings || []).map(w => `fixed: ${w}`)
+        ];
+
+        if (!origResult.render_performed || !fixedResult.render_performed) {
+            return {
+                success: false,
+                status: 'FAILED',
+                code: 'GENERATE_VISUAL_DIFF',
+                render_performed: false,
+                diff_performed: false,
+                tool_gap: false,
+                requires_human_review: true,
+                production_safe: false,
+                print_ready_claim: false,
+                visual_diff_governance: true,
+                evidence: {
+                    render_performed: false,
+                    diff_performed: false,
+                    pages_rendered: 0,
+                    pages_compared: 0,
+                    changed_pixel_ratio_max: null,
+                    changed_pixel_ratio_avg: null,
+                    dimensions_match: null,
+                    render_tool: toolInfo.tool,
+                    render_tool_version: toolInfo.version,
+                    diff_images: [],
+                    thumbnails: [],
+                    tool_gap: false,
+                    visual_diff_governance: true,
+                    warnings,
+                    limitations: [
+                        'One or both PDFs failed to render; diff cannot be computed.',
+                        'Visual diff is evidence generation only.'
+                    ]
+                }
+            };
+        }
+
+        const diff = await this._compareRenderedPages(origResult.rendered_paths, fixedResult.rendered_paths);
+
+        return {
+            success: true,
+            status: 'APPLIED',
+            code: 'GENERATE_VISUAL_DIFF',
+            render_performed: true,
+            diff_performed: true,
+            pages_rendered: origResult.pages_rendered + fixedResult.pages_rendered,
+            pages_compared: diff.pages_compared,
+            changed_pixel_ratio_max: diff.changed_pixel_ratio_max,
+            changed_pixel_ratio_avg: diff.changed_pixel_ratio_avg,
+            dimensions_match: diff.dimensions_match,
+            tool_gap: false,
+            requires_human_review: true,
+            production_safe: false,
+            print_ready_claim: false,
+            visual_diff_governance: true,
+            evidence: {
+                render_performed: true,
+                diff_performed: true,
+                pages_rendered: origResult.pages_rendered + fixedResult.pages_rendered,
+                pages_compared: diff.pages_compared,
+                changed_pixel_ratio_max: diff.changed_pixel_ratio_max,
+                changed_pixel_ratio_avg: diff.changed_pixel_ratio_avg,
+                dimensions_match: diff.dimensions_match,
+                render_tool: toolInfo.tool,
+                render_tool_version: toolInfo.version,
+                diff_images: [],
+                thumbnails: origResult.rendered_paths,
+                per_page_diff: diff.per_page,
+                tool_gap: false,
+                visual_diff_governance: true,
+                warnings,
+                limitations: [
+                    'Pixel diff is computed as a compressed-byte proxy; not a true per-pixel delta.',
+                    'Visual diff is evidence generation only; does not imply production-ready or production status.',
+                    'No compliance, production, or standards certification claim is made.'
+                ]
+            }
+        };
+    }
+
+    /**
+     * Generate low-resolution proof thumbnails for a PDF.
+     */
+    async generateProofThumbnails(inputPath, outputDir, options = {}) {
+        const thumbnailDpi = options.thumbnailDpi || 36;
+        const result = await this.renderPdfPages(inputPath, outputDir, { dpi: thumbnailDpi, maxPages: options.maxPages || 10 });
+        return {
+            ...result,
+            code: 'GENERATE_PROOF_THUMBNAILS',
+            evidence: {
+                ...result.evidence,
+                limitations: [
+                    'Thumbnails are low-resolution proofs for visual review only.',
+                    'Thumbnails do not imply print-ready, production-safe, or standards-certified status.',
+                    ...(result.evidence.limitations || [])
+                ]
+            }
+        };
+    }
+
+    /**
+     * Compare original PDF to fixed PDF: render both, compute diff metrics.
+     */
+    async compareOriginalToFixed(origPath, fixedPath, options = {}) {
+        const result = await this.generateVisualDiff(origPath, fixedPath, options);
+        return {
+            ...result,
+            code: 'COMPARE_ORIGINAL_TO_FIXED',
+            evidence: result.evidence
+                ? {
+                    ...result.evidence,
+                    comparison_type: 'original_vs_fixed',
+                    limitations: [
+                        'Visual comparison is evidence only.',
+                        'A passing visual diff does not imply the fixed PDF is print-ready or production-certified.',
+                        ...(result.evidence.limitations || [])
+                    ]
+                }
+                : result.evidence
+        };
+    }
+
+    /**
+     * Compare fixed PDF to a certified reference: render both, compute diff metrics.
+     * Visual similarity does NOT imply certification.
+     */
+    async compareFixedToCertified(fixedPath, certifiedPath, options = {}) {
+        const result = await this.generateVisualDiff(fixedPath, certifiedPath, options);
+        return {
+            ...result,
+            code: 'COMPARE_FIXED_TO_CERTIFIED',
+            evidence: result.evidence
+                ? {
+                    ...result.evidence,
+                    comparison_type: 'fixed_vs_certified_reference',
+                    visual_match_implies_certification: false,
+                    limitations: [
+                        'Visual similarity to a certified reference does NOT imply certification.',
+                        'Certification requires an authoritative validator, not visual comparison.',
+                        ...(result.evidence.limitations || [])
+                    ]
+                }
+                : result.evidence
+        };
+    }
+
+    /**
+     * Generate a full visual change report: renders original and fixed, computes diff, returns evidence object.
+     */
+    async generateVisualChangeReport(origPath, fixedPath, options = {}) {
+        const toolInfo = await this._detectRenderTool();
+        const diffResult = await this.generateVisualDiff(origPath, fixedPath, options);
+        const thumbResult = await this.generateProofThumbnails(origPath, null, { maxPages: options.maxPages || 10 });
+
+        const evidence = {
+            render_performed: diffResult.render_performed || false,
+            diff_performed: diffResult.diff_performed || false,
+            pages_rendered: diffResult.pages_rendered || 0,
+            pages_compared: diffResult.pages_compared || 0,
+            changed_pixel_ratio_max: diffResult.changed_pixel_ratio_max ?? null,
+            changed_pixel_ratio_avg: diffResult.changed_pixel_ratio_avg ?? null,
+            dimensions_match: diffResult.dimensions_match ?? null,
+            render_tool: toolInfo.tool,
+            render_tool_version: toolInfo.version,
+            diff_images: (diffResult.evidence && diffResult.evidence.diff_images) || [],
+            thumbnails: (thumbResult.evidence && thumbResult.evidence.thumbnails) || [],
+            tool_gap: !toolInfo.available,
+            visual_diff_governance: true,
+            per_page_diff: (diffResult.evidence && diffResult.evidence.per_page_diff) || [],
+            warnings: [
+                ...((diffResult.evidence && diffResult.evidence.warnings) || []),
+                ...((thumbResult.evidence && thumbResult.evidence.warnings) || [])
+            ],
+            limitations: [
+                'Visual change report is evidence generation only.',
+                'Visual diff does not imply production-ready status.',
+                'Visual diff does not imply production certification.',
+                'Visual diff does not imply PDF/X or PDF/A compliance.',
+                'Pixel diff values are byte-level proxies; not true per-pixel deltas.'
+            ]
+        };
+
+        return {
+            success: diffResult.success || false,
+            status: diffResult.status || (toolInfo.available ? 'FAILED' : 'SKIPPED_UNSUPPORTED'),
+            code: 'GENERATE_VISUAL_CHANGE_REPORT',
+            render_performed: evidence.render_performed,
+            diff_performed: evidence.diff_performed,
+            tool_gap: evidence.tool_gap,
+            requires_human_review: true,
+            production_safe: false,
+            print_ready_claim: false,
+            visual_diff_governance: true,
+            evidence
+        };
+    }
 }
 
 module.exports = PdfFixEngine;

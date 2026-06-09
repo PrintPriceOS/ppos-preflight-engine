@@ -1,0 +1,220 @@
+{
+  "generated_at": "2026-06-09T13:01:26.673Z",
+  "phase": "69A",
+  "repo": "ppos-preflight-engine",
+  "category": "visual_proofing",
+  "smoke_passed": true,
+  "render_tool_available": true,
+  "render_tool": "ghostscript",
+  "render_tool_version": "10.06.0",
+  "governance": {
+    "visual_diff_governance": true,
+    "visual_diff_is_evidence_only": true,
+    "visual_diff_implies_print_ready": false,
+    "visual_diff_implies_production_certification": false,
+    "visual_diff_implies_pdfx_compliance": false,
+    "visual_diff_implies_pdfa_compliance": false
+  },
+  "core_principle": "Visual diff is evidence generation, not certification. Visual diff does not imply print-ready status, production certification, PDF/X compliance, or PDF/A compliance. If rendering tools are unavailable, SKIPPED_UNSUPPORTED is returned with tool_gap=true. No visual diff is faked.",
+  "target_capabilities": [
+    "RENDER_PDF_PAGES",
+    "GENERATE_VISUAL_DIFF",
+    "GENERATE_PROOF_THUMBNAILS",
+    "COMPARE_ORIGINAL_TO_FIXED",
+    "COMPARE_FIXED_TO_CERTIFIED",
+    "GENERATE_VISUAL_CHANGE_REPORT"
+  ],
+  "required_evidence_fields": [
+    "render_performed",
+    "diff_performed",
+    "pages_rendered",
+    "pages_compared",
+    "changed_pixel_ratio_max",
+    "changed_pixel_ratio_avg",
+    "dimensions_match",
+    "render_tool",
+    "render_tool_version",
+    "diff_images",
+    "thumbnails",
+    "warnings",
+    "limitations"
+  ],
+  "finding_codes_added": [
+    "IND_VISUAL_001 (VISUAL_DIFF_REQUIRED)",
+    "IND_VISUAL_002 (VISUAL_CHANGE_DETECTED)",
+    "IND_VISUAL_003 (VISUAL_DIFF_TOOL_UNAVAILABLE)",
+    "IND_VISUAL_004 (RENDERED_PROOF_REQUIRED)",
+    "IND_VISUAL_005 (RENDERED_PROOF_GENERATED)"
+  ],
+  "forbidden_overclaims_checked": [
+    "print_ready_claim=true",
+    "production_certified=true",
+    "standard_certified=true",
+    "production_safe=true",
+    "compliance_claim_allowed=true",
+    "visual_match_implies_certification=true"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry Phase 69A visual_proofing capabilities check",
+      "fixture": null,
+      "capability": "RENDER_PDF_PAGES, GENERATE_VISUAL_DIFF, GENERATE_PROOF_THUMBNAILS, COMPARE_ORIGINAL_TO_FIXED, COMPARE_FIXED_TO_CERTIFIED, GENERATE_VISUAL_CHANGE_REPORT",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 69A visual_proofing capabilities registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 69A visual diff codes",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 69A visual diff finding codes registered correctly (IND_VISUAL_001-005)."
+      ]
+    },
+    {
+      "scenario": "FixPlanner Phase 69A visual_proofing guardrails",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all Phase 69A visual_proofing capabilities from auto-execution in any policy mode."
+      ]
+    },
+    {
+      "scenario": "Render tool detection (Ghostscript / mutool)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "render_tool_available": true,
+      "render_tool": "ghostscript",
+      "render_tool_version": "10.06.0",
+      "notes": [
+        "Render tool available: true",
+        "Tool: ghostscript (gswin64c), version: 10.06.0"
+      ]
+    },
+    {
+      "scenario": "RENDER_PDF_PAGES — original document",
+      "fixture": "original_document.pdf",
+      "capability": "RENDER_PDF_PAGES",
+      "status": "APPLIED",
+      "render_performed": true,
+      "pages_rendered": 1,
+      "render_tool": "ghostscript",
+      "tool_gap": false,
+      "pass": true,
+      "notes": [
+        "RENDER_PDF_PAGES correctly renders or honestly reports tool gap."
+      ]
+    },
+    {
+      "scenario": "GENERATE_VISUAL_DIFF — original vs fixed (expected changes)",
+      "fixture": "original_document.pdf + fixed_document.pdf",
+      "capability": "GENERATE_VISUAL_DIFF",
+      "status": "APPLIED",
+      "render_performed": true,
+      "diff_performed": true,
+      "pages_compared": 1,
+      "changed_pixel_ratio_max": 0.961117282970957,
+      "changed_pixel_ratio_avg": 0.961117282970957,
+      "dimensions_match": true,
+      "tool_gap": false,
+      "pass": true,
+      "notes": [
+        "GENERATE_VISUAL_DIFF correctly computes diff metrics between original and fixed."
+      ]
+    },
+    {
+      "scenario": "GENERATE_VISUAL_DIFF — original vs identical clone (expected zero/near-zero diff)",
+      "fixture": "original_document.pdf + identical_clone.pdf",
+      "capability": "GENERATE_VISUAL_DIFF",
+      "status": "APPLIED",
+      "render_performed": true,
+      "diff_performed": true,
+      "pages_compared": 1,
+      "changed_pixel_ratio_max": 0,
+      "tool_gap": false,
+      "pass": true,
+      "notes": [
+        "GENERATE_VISUAL_DIFF correctly reports zero or near-zero diff for identical clone."
+      ]
+    },
+    {
+      "scenario": "GENERATE_PROOF_THUMBNAILS — multi-page document",
+      "fixture": "multi_page.pdf",
+      "capability": "GENERATE_PROOF_THUMBNAILS",
+      "status": "APPLIED",
+      "render_performed": true,
+      "pages_rendered": 3,
+      "tool_gap": false,
+      "pass": true,
+      "notes": [
+        "GENERATE_PROOF_THUMBNAILS correctly renders thumbnails or reports tool gap."
+      ]
+    },
+    {
+      "scenario": "COMPARE_ORIGINAL_TO_FIXED — evidence type correct",
+      "fixture": "original_document.pdf + fixed_document.pdf",
+      "capability": "COMPARE_ORIGINAL_TO_FIXED",
+      "status": "APPLIED",
+      "comparison_type": "original_vs_fixed",
+      "tool_gap": false,
+      "pass": true,
+      "notes": [
+        "COMPARE_ORIGINAL_TO_FIXED returns correct evidence with comparison_type."
+      ]
+    },
+    {
+      "scenario": "COMPARE_FIXED_TO_CERTIFIED — visual match does not imply certification",
+      "fixture": "fixed_document.pdf + clean_control.pdf",
+      "capability": "COMPARE_FIXED_TO_CERTIFIED",
+      "status": "APPLIED",
+      "visual_match_implies_certification": false,
+      "tool_gap": false,
+      "pass": true,
+      "notes": [
+        "COMPARE_FIXED_TO_CERTIFIED correctly sets visual_match_implies_certification=false."
+      ]
+    },
+    {
+      "scenario": "GENERATE_VISUAL_CHANGE_REPORT — full evidence structure",
+      "fixture": "original_document.pdf + fixed_document.pdf",
+      "capability": "GENERATE_VISUAL_CHANGE_REPORT",
+      "status": "APPLIED",
+      "render_performed": true,
+      "diff_performed": true,
+      "pages_rendered": 2,
+      "pages_compared": 1,
+      "changed_pixel_ratio_max": 0.961117282970957,
+      "changed_pixel_ratio_avg": 0.961117282970957,
+      "dimensions_match": true,
+      "render_tool": "ghostscript",
+      "render_tool_version": "10.06.0",
+      "diff_images": [],
+      "thumbnails": [
+        "C:\\Users\\braul\\AppData\\Local\\Temp\\ppos_render_1781010086354\\page_1.png"
+      ],
+      "tool_gap": false,
+      "pass": true,
+      "notes": [
+        "GENERATE_VISUAL_CHANGE_REPORT returns complete evidence structure."
+      ]
+    },
+    {
+      "scenario": "Visual diff governance overclaim regression (aggregate)",
+      "fixture": null,
+      "capability": null,
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No Phase 69A operation produced production_certified, standard_certified, production_safe, compliance_claim_allowed, or print_ready_claim=true."
+      ]
+    }
+  ]
+}

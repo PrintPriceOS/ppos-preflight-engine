@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-06-09T12:49:00.721Z",
+  "phase": "phase69a",
+  "category": "visual_proofing",
+  "governance": "Visual diff is evidence generation only. Visual diff does not imply print-ready, production certification, PDF/X compliance, or PDF/A compliance.",
+  "fixtures": [
+    {
+      "filename": "original_document.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase69a\\original_document.pdf",
+      "role": "baseline"
+    },
+    {
+      "filename": "fixed_document.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase69a\\fixed_document.pdf",
+      "role": "fixed_document"
+    },
+    {
+      "filename": "identical_clone.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase69a\\identical_clone.pdf",
+      "role": "identical_clone"
+    },
+    {
+      "filename": "multi_page.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase69a\\multi_page.pdf",
+      "role": "multi_page"
+    },
+    {
+      "filename": "clean_control.pdf",
+      "path": "C:\\Users\\braul\\Documents\\ppp\\ppos-preflight-engine\\fixtures\\phase69a\\clean_control.pdf",
+      "role": "clean_control"
+    }
+  ]
+}
