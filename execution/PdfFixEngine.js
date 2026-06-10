@@ -3016,6 +3016,126 @@ class PdfFixEngine {
         };
     }
 
+    // --- Phase 71A — Production Package Evidence Source ---
+
+    /**
+     * Hash an artifact reference which may be a filesystem path (string) or an
+     * in-memory JS object/payload (e.g. a fix_audit or validation_report object).
+     * Returns null (with a warning) if the input is missing or cannot be hashed.
+     */
+    async _hashArtifactOrPayload(input) {
+        const crypto = require('crypto');
+        if (input === null || input === undefined) {
+            return { hash: null, warning: 'No path or payload provided' };
+        }
+        if (typeof input === 'string') {
+            return this._hashArtifact(input);
+        }
+        try {
+            const payload = Buffer.from(JSON.stringify(input));
+            return { hash: crypto.createHash('sha256').update(payload).digest('hex'), warning: null };
+        } catch (err) {
+            return { hash: null, warning: `Cannot hash payload: ${err.message}` };
+        }
+    }
+
+    /**
+     * Generate SHA-256 content hashes for the artifacts relevant to a production
+     * handoff package: original, fixed, review, certified, fix_audit, and
+     * validation_report. Each input may be a filesystem path or an in-memory object
+     * (fix_audit / validation_report). No raw filesystem paths are emitted in the
+     * returned payload, and a present hash never implies trust, certification, or
+     * production approval — trust must never be inferred from filenames.
+     */
+    async generateArtifactHashManifest(pathsObj = {}, options = {}) {
+        const {
+            original_path = null,
+            fixed_path = null,
+            review_path = null,
+            certified_path = null,
+            fix_audit = null,
+            validation_report = null
+        } = pathsObj;
+
+        const sources = {
+            original_artifact_hash: ['original_artifact', original_path],
+            fixed_artifact_hash: ['fixed_artifact', fixed_path],
+            review_artifact_hash: ['review_artifact', review_path],
+            certified_artifact_hash: ['certified_artifact', certified_path],
+            fix_audit_hash: ['fix_audit', fix_audit],
+            validation_report_hash: ['validation_report', validation_report]
+        };
+
+        const warnings = [];
+        const hashes = {};
+        for (const [field, [label, value]] of Object.entries(sources)) {
+            const result = await this._hashArtifactOrPayload(value);
+            hashes[field] = result.hash;
+            if (result.warning && (value !== null && value !== undefined)) {
+                warnings.push(`${label}: ${result.warning}`);
+            }
+        }
+
+        const missing = Object.entries(hashes)
+            .filter(([, hash]) => hash === null)
+            .map(([field]) => field);
+
+        return {
+            success: true,
+            status: 'APPLIED',
+            code: 'GENERATE_ARTIFACT_HASH_MANIFEST',
+            requires_human_review: true,
+            production_safe: false,
+            production_certified: false,
+            production_package_evidence_governance: true,
+            evidence: {
+                ...hashes,
+                hash_algorithm: 'sha256',
+                generated_at: new Date().toISOString(),
+                missing_hashes: missing,
+                warnings,
+                limitations: [
+                    'Artifact hashes are content fingerprints only.',
+                    'A present hash does not imply trust, certification, production approval, or standards compliance.',
+                    'Trust must be derived from governance evidence, not from filenames, paths, or hash presence alone.',
+                    'Missing hashes indicate the corresponding artifact was not available at generation time.'
+                ]
+            }
+        };
+    }
+
+    /**
+     * Verify that a candidate artifact (filesystem path or in-memory payload) matches
+     * an expected SHA-256 hash. Used for hash-based artifact identity verification —
+     * never as a substitute for filename-based trust, and a match never implies
+     * certification or production approval.
+     */
+    async verifyArtifactHash(input, expectedHash) {
+        const result = await this._hashArtifactOrPayload(input);
+        const matches = !!(result.hash && expectedHash && result.hash === expectedHash);
+
+        return {
+            success: true,
+            status: matches ? 'VERIFIED' : 'MISMATCH',
+            code: 'VERIFY_ARTIFACT_HASH',
+            requires_human_review: true,
+            production_safe: false,
+            production_certified: false,
+            production_package_evidence_governance: true,
+            evidence: {
+                actual_hash: result.hash,
+                expected_hash: expectedHash || null,
+                matches,
+                hash_algorithm: 'sha256',
+                warnings: result.warning ? [result.warning] : [],
+                limitations: [
+                    'A hash match confirms content identity only.',
+                    'A hash match does not imply certification, production approval, or standards compliance.'
+                ]
+            }
+        };
+    }
+
     async generateVisualChangeReport(origPath, fixedPath, options = {}) {
         const toolInfo = await this._detectRenderTool();
         const diffResult = await this.generateVisualDiff(origPath, fixedPath, options);

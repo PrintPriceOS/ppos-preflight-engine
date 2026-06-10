@@ -1,0 +1,117 @@
+{
+  "generated_at": "2026-06-10T13:52:06.816Z",
+  "phase": "71A",
+  "repo": "ppos-preflight-engine",
+  "category": "production_package_evidence",
+  "smoke_passed": true,
+  "governance": {
+    "production_package_evidence_governance": true,
+    "artifact_hash_manifest_is_evidence_only": true,
+    "hash_presence_implies_trust": false,
+    "hash_match_implies_certification": false,
+    "trust_inferred_from_filenames": false,
+    "emits_raw_paths": false
+  },
+  "core_principle": "Production package evidence is identity/evidence generation only. Stable SHA-256 content hashes for original, fixed, review, certified, fix_audit, and validation_report artifacts enable downstream packaging without inferring trust from filenames or paths. Hash presence or a hash match never certifies print-readiness, production approval, or standards compliance.",
+  "target_capabilities": [
+    "GENERATE_ARTIFACT_HASH_MANIFEST",
+    "VERIFY_ARTIFACT_HASH"
+  ],
+  "finding_codes_added": [
+    "IND_PKG_001 (ARTIFACT_HASH_MANIFEST_GENERATED)",
+    "IND_PKG_002 (ARTIFACT_HASH_MANIFEST_INCOMPLETE)",
+    "IND_PKG_003 (ARTIFACT_HASH_VERIFIED)",
+    "IND_PKG_004 (ARTIFACT_HASH_MISMATCH)"
+  ],
+  "forbidden_overclaims_checked": [
+    "\"production_certified\":true",
+    "\"production_safe\":true",
+    "\"print_ready_claim_allowed\":true",
+    "\"compliance_claim_allowed\":true",
+    "\"standard_certified\":true",
+    "\"trust_inferred_from_filename\":true"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry Phase 71A production_package_evidence capabilities check",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 71A production_package_evidence capabilities registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 71A production package evidence codes",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 71A production package evidence finding codes registered correctly (IND_PKG_001-004)."
+      ]
+    },
+    {
+      "scenario": "FixPlanner Phase 71A production_package_evidence guardrails",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks all Phase 71A production_package_evidence capabilities from auto-execution in any policy mode."
+      ]
+    },
+    {
+      "scenario": "GENERATE_ARTIFACT_HASH_MANIFEST — full set of artifacts",
+      "status": "APPLIED",
+      "pass": true,
+      "evidence_sample": {
+        "original_artifact_hash": "c6a1b2fff5645dea...",
+        "fixed_artifact_hash": "b7e62fe8d5844c59...",
+        "fix_audit_hash": "9e8d1d24ce572748...",
+        "validation_report_hash": "b9715724c7486983...",
+        "missing_hashes": [
+          "certified_artifact_hash"
+        ]
+      },
+      "notes": [
+        "GENERATE_ARTIFACT_HASH_MANIFEST produces stable SHA-256 hashes for file and in-memory artifacts, with missing artifacts flagged."
+      ]
+    },
+    {
+      "scenario": "GENERATE_ARTIFACT_HASH_MANIFEST — all artifacts missing",
+      "status": "APPLIED",
+      "pass": true,
+      "notes": [
+        "GENERATE_ARTIFACT_HASH_MANIFEST correctly returns null hashes and a complete missing_hashes list when no artifacts are provided."
+      ]
+    },
+    {
+      "scenario": "GENERATE_ARTIFACT_HASH_MANIFEST — stability across calls",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "Artifact hashes are stable: identical content produces identical hashes across calls."
+      ]
+    },
+    {
+      "scenario": "VERIFY_ARTIFACT_HASH — match",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "VERIFY_ARTIFACT_HASH correctly confirms a matching artifact hash."
+      ]
+    },
+    {
+      "scenario": "VERIFY_ARTIFACT_HASH — mismatch",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "VERIFY_ARTIFACT_HASH correctly reports a mismatch when the content hash differs from the expected hash."
+      ]
+    },
+    {
+      "scenario": "Production package evidence governance overclaim regression",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No Phase 71A operation produced production_certified, production_safe, or compliance overclaims."
+      ]
+    }
+  ]
+}

@@ -1663,6 +1663,57 @@ const REGISTRY = {
         proof_approval_governance: true,
         emits_raw_paths: false,
         phase: "70A"
+    },
+
+    // Phase 71A — Production Package Evidence Source
+    // Governance: Artifact hash manifest generation is identity/evidence generation only.
+    // Hash presence/match never implies trust, certification, or production approval.
+    // Trust must never be inferred from filenames; only from governance evidence and hashes.
+    "GENERATE_ARTIFACT_HASH_MANIFEST": {
+        fix_id: "GENERATE_ARTIFACT_HASH_MANIFEST",
+        label: "Generate production package artifact hash manifest",
+        category: "production_package_evidence",
+        implemented: true,
+        detectable: true,
+        autofixable: false,
+        risk_level: "LOW",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: false,
+        toolchain: ["crypto"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "A content hash manifest was generated for this job's artifacts to ensure stable, path-independent references.",
+        operator_message: "Phase 71A: SHA-256 content hashes for original, fixed, review, certified, fix_audit, and validation_report artifacts. Enables stable downstream references for production packaging without trusting filenames or paths.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        print_ready_claim_allowed: false,
+        production_package_evidence_governance: true,
+        emits_raw_paths: false,
+        phase: "71A"
+    },
+    "VERIFY_ARTIFACT_HASH": {
+        fix_id: "VERIFY_ARTIFACT_HASH",
+        label: "Verify production package artifact content hash",
+        category: "production_package_evidence",
+        implemented: true,
+        detectable: true,
+        autofixable: false,
+        risk_level: "LOW",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: false,
+        toolchain: ["crypto"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "An artifact's content was verified against its recorded hash before inclusion in the production package.",
+        operator_message: "Phase 71A: verifies a candidate artifact's SHA-256 content hash against an expected hash. Used for hash-based identity verification, never filename-based trust.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        print_ready_claim_allowed: false,
+        production_package_evidence_governance: true,
+        emits_raw_paths: false,
+        phase: "71A"
     }
 };
 

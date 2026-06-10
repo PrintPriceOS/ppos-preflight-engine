@@ -199,6 +199,14 @@ class FixPlanner {
                     autofixable = false;
                 }
 
+                // Phase 71A: Production package evidence guardrails.
+                // Artifact hash manifest / verification capabilities are identity and evidence
+                // generation only: never auto-applied, never imply trust, certification, or
+                // production approval, and trust is never inferred from filenames.
+                if (cap.category === 'production_package_evidence') {
+                    autofixable = false;
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -217,6 +225,7 @@ class FixPlanner {
                 else if (!isUserFixable) skipReason = "FINDING_MARKED_UNFIXABLE";
                 else if (!autofixable) {
                     if (cap.category === 'proof_approval_contract') skipReason = "PROOF_CONTRACT_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
+                    else if (cap.category === 'production_package_evidence') skipReason = "PRODUCTION_PACKAGE_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
                     else if (cap.category === 'visual_proofing') skipReason = "VISUAL_PROOFING_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
                     else if (cap.category === 'transparency_overprint') skipReason = "TRANSPARENCY_OVERPRINT_VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";
