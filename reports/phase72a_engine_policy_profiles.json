@@ -1,0 +1,575 @@
+{
+  "generated_at": "2026-06-10T18:42:59.409Z",
+  "phase": "72A",
+  "repo": "ppos-preflight-engine",
+  "category": "engine_policy_profile_contract",
+  "smoke_passed": true,
+  "governance": {
+    "profile_pass_implies_production_certified": false,
+    "profile_pass_implies_standard_certified": false,
+    "profile_pass_implies_compliance_claim_allowed": false,
+    "profile_is_certification_authority": false,
+    "evaluator_emits_raw_paths": false,
+    "evaluator_emits_pii": false
+  },
+  "built_in_profiles": [
+    "NONE",
+    "OFFSET_STANDARD",
+    "PDFX4_STRICT",
+    "PDFA2B_ARCHIVE",
+    "DIGITAL_SCREEN",
+    "SHEETFED_HIGH_END"
+  ],
+  "summary": {
+    "total": 109,
+    "passed": 109,
+    "failed": 0
+  },
+  "results": [
+    {
+      "label": "1.1 Built-in profile \"NONE\" exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"profile_id\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"label\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"bleed_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"tac_limit\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"color_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"font_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"security_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile NONE has key \"page_marks_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.3 Profile NONE passes shape validation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.1 Built-in profile \"OFFSET_STANDARD\" exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"profile_id\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"label\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"bleed_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"tac_limit\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"color_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"font_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"security_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile OFFSET_STANDARD has key \"page_marks_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.3 Profile OFFSET_STANDARD passes shape validation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.1 Built-in profile \"PDFX4_STRICT\" exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"profile_id\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"label\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"bleed_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"tac_limit\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"color_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"font_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"security_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFX4_STRICT has key \"page_marks_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.3 Profile PDFX4_STRICT passes shape validation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.1 Built-in profile \"PDFA2B_ARCHIVE\" exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"profile_id\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"label\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"bleed_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"tac_limit\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"color_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"font_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"security_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile PDFA2B_ARCHIVE has key \"page_marks_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.3 Profile PDFA2B_ARCHIVE passes shape validation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.1 Built-in profile \"DIGITAL_SCREEN\" exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"profile_id\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"label\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"bleed_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"tac_limit\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"color_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"font_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"security_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile DIGITAL_SCREEN has key \"page_marks_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.3 Profile DIGITAL_SCREEN passes shape validation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.1 Built-in profile \"SHEETFED_HIGH_END\" exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"profile_id\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"label\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"bleed_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"tac_limit\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"color_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"font_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"security_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 Profile SHEETFED_HIGH_END has key \"page_marks_policy\"",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.3 Profile SHEETFED_HIGH_END passes shape validation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.1 resolveProfile by id returns correct profile",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.2 resolveProfile by custom object returns it",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.3 resolveProfile unknown id falls back to NONE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.4 resolveProfile null falls back to NONE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.5 resolveProfile malformed object falls back to NONE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.1 profile_passed is boolean",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.2 profile_blockers is array",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.3 profile_warnings is array",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.4 evaluated_at is string",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.5 production_certified always false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.6 standard_certified always false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.7 compliance_claim_allowed always false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.8 print_ready_claim_allowed always false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.9 NONE profile with no findings: profile_passed=true",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.10 NONE profile: no blockers",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.11 PDFX4_STRICT: production_certified=false even when passed",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.12 PDFX4_STRICT: standard_certified=false even when passed",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.1 Bleed violation → profile_passed=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.1 PROFILE_BLEED_REQUIRED blocker emitted",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.2 TAC finding → profile_passed=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.2 PROFILE_TAC_LIMIT_EXCEEDED blocker",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.3 Measured TAC > limit → profile_passed=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.3 PROFILE_TAC_LIMIT_EXCEEDED via measured",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.4 RGB finding on CMYK-only profile → failed",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.4 PROFILE_CMYK_REQUIRED blocker",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.5 Unembedded font → profile_passed=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.5 PROFILE_FONTS_MUST_BE_EMBEDDED",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.6 PROFILE_TYPE3_FONTS_NOT_ALLOWED",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.7 JS finding on no_javascript profile → failed",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.7 PROFILE_NO_JAVASCRIPT_VIOLATED",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.8 PROFILE_NO_EMBEDDED_FILES_VIOLATED",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.9 PROFILE_NO_LAUNCH_ACTIONS_VIOLATED",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.10 PROFILE_CROP_MARKS_REQUIRED",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.11 PROFILE_STANDARD_MISMATCH",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.12 no PROFILE_STANDARD_MISMATCH when null",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.12 warning emitted",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.13 DIGITAL_SCREEN allows RGB — no CMYK blocker",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.14 NONE profile with findings: profile_passed=true",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.14 NONE profile: no blockers regardless of findings",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.15 No duplicate warnings",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.1 evaluateFromFixAudit detects blockers from findings[]",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.1 bleed blocker from fix_audit.findings",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.1 JS blocker from fix_audit.findings",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.2 bleed blocker from fix_audit.plan[].source_finding",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.2 JS blocker from fix_audit.plan[].source_finding",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.3 evaluateFromFixAudit: production_certified always false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.3 evaluateFromFixAudit: standard_certified always false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "6.1 FixPlanner processes policy_profile_constraint without throwing",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "6.2 No policy_profile_constraint fix is auto-applied",
+      "pass": true,
+      "detail": null
+    }
+  ]
+}

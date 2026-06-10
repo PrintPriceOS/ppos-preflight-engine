@@ -207,6 +207,14 @@ class FixPlanner {
                     autofixable = false;
                 }
 
+                // Phase 72A: Policy profile constraint guardrails.
+                // Findings flagged as policy profile constraint violations are evidence of a
+                // profile mismatch. The profile evaluation is advisory — it never auto-applies
+                // fixes and never implies production certification or standards compliance.
+                if (cap.category === 'policy_profile_constraint') {
+                    autofixable = false;
+                }
+
                 // Phase 63A: PDF Security / Interactive Object guardrails
                 if (cap.category === 'pdf_security_interactivity') {
                     if ((fixId === 'FLATTEN_ANNOTATIONS' || fixId === 'FLATTEN_FORMS') &&
@@ -248,6 +256,8 @@ class FixPlanner {
                                 issue.id === 'PDF_XFA_FORMS_PRESENT' || issue.id === 'IND_SEC_008' ||
                                 issue.id === 'PDF_UNSAFE_INTERACTIVE_OBJECTS' || issue.id === 'IND_SEC_016')) {
                         skipReason = "UNSAFE_TO_FLATTEN";
+                    } else if (cap.category === 'policy_profile_constraint') {
+                        skipReason = "PROFILE_CONSTRAINT_VIOLATION";
                     } else skipReason = "POLICY_MODE_RESTRICTION";
                 }
 
