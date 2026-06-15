@@ -1,5 +1,6 @@
 const { HEAVY_PDF_THRESHOLD_BYTES } = require('../utils/ProbeSemanticsClassifier');
 const { generateMachineCapabilitySignals } = require('../interpretation/MachineCapabilitySignals');
+const { generateRecommendationSignals } = require('../interpretation/RecommendationSignals');
 
 /**
  * ReportBuilder
@@ -176,6 +177,7 @@ class ReportBuilder {
         });
 
         const machineCapabilitySignals = generateMachineCapabilitySignals(metadata, mappedIssues, options);
+        const recommendationSignals = generateRecommendationSignals(metadata, issues);
 
         return {
             ok: isOk,
@@ -232,6 +234,7 @@ class ReportBuilder {
             },
             heavy_pdf_probe_governance: heavyPdfGovernance,
             machine_capability_signals: machineCapabilitySignals,
+            recommendation_signals: recommendationSignals,
             // Legacy/Upstream Compatibility Aliases
             analysis: { issues: mappedIssues },
             forensics: { findings: mappedIssues, events: forensic_events }

@@ -1,0 +1,288 @@
+{
+  "generated_at": "2026-06-15T15:10:03.551Z",
+  "phase": "75A",
+  "repo": "ppos-preflight-engine",
+  "category": "engine_recommendation_signals",
+  "smoke_passed": true,
+  "governance": {
+    "signals_are_advisory_only": true,
+    "recommendation_authority": false,
+    "auto_apply_authority": false,
+    "production_certified": false,
+    "standard_certified": false,
+    "compliance_claim_allowed": false
+  },
+  "signal_fields": [
+    "finding_id",
+    "finding_code",
+    "fix_id",
+    "fixability",
+    "risk_level",
+    "visual_sensitivity",
+    "missing_tool",
+    "validator_required",
+    "operator_review_reason"
+  ],
+  "summary": {
+    "total": 51,
+    "passed": 51,
+    "failed": 0
+  },
+  "results": [
+    {
+      "label": "1.1 generated_at is string",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.2 findings is array",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.3 empty input: findings is empty",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.4 summary is object",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.5 empty input: total_findings=0",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "1.6 governance is object",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.1 TRIMBOX_MISSING -> fixability=FIXABLE_AUTO",
+      "pass": true,
+      "detail": "FIXABLE_AUTO"
+    },
+    {
+      "label": "2.2 fix_id=REBUILD_TRIMBOX",
+      "pass": true,
+      "detail": "REBUILD_TRIMBOX"
+    },
+    {
+      "label": "2.3 risk_level=LOW",
+      "pass": true,
+      "detail": "LOW"
+    },
+    {
+      "label": "2.4 visual_sensitivity=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.5 missing_tool=null",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.6 validator_required=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "2.7 operator_review_reason=null",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "3.1 BLEED_MISSING -> fixability=FIXABLE_REVIEW_REQUIRED",
+      "pass": true,
+      "detail": "FIXABLE_REVIEW_REQUIRED"
+    },
+    {
+      "label": "3.2 fix_id=APPLY_BLEED",
+      "pass": true,
+      "detail": "APPLY_BLEED"
+    },
+    {
+      "label": "3.3 risk_level=MEDIUM",
+      "pass": true,
+      "detail": "MEDIUM"
+    },
+    {
+      "label": "3.4 operator_review_reason=HUMAN_REVIEW_REQUIRED",
+      "pass": true,
+      "detail": "HUMAN_REVIEW_REQUIRED"
+    },
+    {
+      "label": "4.1 PAGE_SIZE_INCONSISTENT -> fixability=NOT_FIXABLE",
+      "pass": true,
+      "detail": "NOT_FIXABLE"
+    },
+    {
+      "label": "4.2 fix_id=null",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "4.3 operator_review_reason=null (no known capability)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.1 TRANSPARENCY_PRESENT -> fixability=NOT_IMPLEMENTED",
+      "pass": true,
+      "detail": "NOT_IMPLEMENTED"
+    },
+    {
+      "label": "5.2 fix_id=FLATTEN_TRANSPARENCY",
+      "pass": true,
+      "detail": "FLATTEN_TRANSPARENCY"
+    },
+    {
+      "label": "5.3 operator_review_reason=FIX_NOT_IMPLEMENTED",
+      "pass": true,
+      "detail": "FIX_NOT_IMPLEMENTED"
+    },
+    {
+      "label": "5.4 visual_sensitivity=true (transparency_overprint)",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "5.5 risk_level=HIGH",
+      "pass": true,
+      "detail": "HIGH"
+    },
+    {
+      "label": "6.1 IND_INK_001 -> visual_sensitivity=true",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "6.2 REDUCE_TOTAL_INK_COVERAGE not implemented -> NOT_IMPLEMENTED",
+      "pass": true,
+      "detail": "NOT_IMPLEMENTED"
+    },
+    {
+      "label": "6.3 risk_level=HIGH (destructiveFixRisk from normalizer)",
+      "pass": true,
+      "detail": "HIGH"
+    },
+    {
+      "label": "6.4 TRIM_MARGIN_WARNING -> visual_sensitivity=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "7.1 VALIDATE_PDFX -> validator_required=true",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "7.2 VALIDATE_PDFX -> fixability=FIXABLE_REVIEW_REQUIRED",
+      "pass": true,
+      "detail": "FIXABLE_REVIEW_REQUIRED"
+    },
+    {
+      "label": "7.3 operator_review_reason=VALIDATOR_REQUIRED",
+      "pass": true,
+      "detail": "VALIDATOR_REQUIRED"
+    },
+    {
+      "label": "8.1 missing_tool=verapdf when toolchain tool unavailable",
+      "pass": true,
+      "detail": "verapdf"
+    },
+    {
+      "label": "8.2 operator_review_reason=MISSING_TOOL:verapdf",
+      "pass": true,
+      "detail": "MISSING_TOOL:verapdf"
+    },
+    {
+      "label": "8.3 fixability=FIXABLE_REVIEW_REQUIRED despite missing tool",
+      "pass": true,
+      "detail": "FIXABLE_REVIEW_REQUIRED"
+    },
+    {
+      "label": "8.4 unrelated missing tool does not affect this finding",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.1 signals_are_advisory_only=true",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.2 recommendation_authority=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.3 auto_apply_authority=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.4 production_certified=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.5 standard_certified=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.6 compliance_claim_allowed=false",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.7 summary.total_findings=3",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "9.8 summary.fixable_auto_count=1 (REBUILD_TRIMBOX)",
+      "pass": true,
+      "detail": 1
+    },
+    {
+      "label": "9.9 summary.not_implemented_count=2",
+      "pass": true,
+      "detail": 2
+    },
+    {
+      "label": "9.10 summary.visual_review_required_count=2 (ink + transparency)",
+      "pass": true,
+      "detail": 2
+    },
+    {
+      "label": "10.1 report includes recommendation_signals",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "10.2 recommendation_signals.findings is array",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "10.3 one finding signal generated",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "label": "10.4 finding signal fixability=FIXABLE_AUTO",
+      "pass": true,
+      "detail": "FIXABLE_AUTO"
+    },
+    {
+      "label": "10.5 governance carried through ReportBuilder",
+      "pass": true,
+      "detail": null
+    }
+  ]
+}
