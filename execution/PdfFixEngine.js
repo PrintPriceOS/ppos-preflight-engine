@@ -3136,6 +3136,111 @@ class PdfFixEngine {
         };
     }
 
+    // --- Phase 74A: Engine Audit Evidence Export ---
+
+    /**
+     * Build a stable audit evidence export manifest combining:
+     *  - findings (normalized issues passed in)
+     *  - fixes (fix plan / fix audit entries passed in)
+     *  - artifact_hashes (Phase 71A SHA-256 content hash manifest)
+     *  - tool_versions (render tool + standards validator, honestly reported)
+     *  - validator_evidence (Phase 68A validation_report / validator_evidence passed in)
+     *
+     * This is evidence generation only. It never implies production certification,
+     * standards compliance, or print-ready status, and never infers trust from
+     * filenames or paths.
+     */
+    async generateAuditEvidenceExport(options = {}) {
+        const {
+            findings = [],
+            fixes = [],
+            original_path = null,
+            fixed_path = null,
+            review_path = null,
+            certified_path = null,
+            fix_audit = null,
+            validation_report = null,
+            validator_evidence = null
+        } = options;
+
+        const hashManifest = await this.generateArtifactHashManifest({
+            original_path, fixed_path, review_path, certified_path, fix_audit, validation_report
+        });
+
+        const renderTool = await this._detectRenderTool();
+        const veraPdf = require('./VeraPdfValidator');
+        const validatorAvailable = await veraPdf.isAvailable();
+        const validatorVersion = await veraPdf.getVersion();
+
+        const tool_versions = {
+            render_tool: renderTool.tool,
+            render_tool_version: renderTool.version,
+            render_tool_available: renderTool.available,
+            validator_name: 'verapdf',
+            validator_version: validatorVersion,
+            validator_available: validatorAvailable
+        };
+
+        const warnings = [...(hashManifest.evidence.warnings || [])];
+        if (!renderTool.available) warnings.push('RENDER_TOOL_UNAVAILABLE');
+        if (!validatorAvailable) warnings.push('VALIDATOR_UNAVAILABLE');
+
+        const validatorEvidence = validator_evidence || validation_report || null;
+        if (!validatorEvidence) warnings.push('VALIDATOR_EVIDENCE_MISSING');
+
+        const findingsExport = findings.map(f => ({
+            id: f.id || f.code || null,
+            code: f.code || f.id || null,
+            severity: f.severity || null,
+            category: f.category || null,
+            message: f.message || null,
+            fixable: !!f.fixable,
+            repairStrategy: f.repairStrategy || f.fix_method || null
+        }));
+
+        const fixesExport = fixes.map(f => ({
+            fix_id: f.fix_id || f.strategy || null,
+            planned: !!f.planned,
+            executable: !!f.executable,
+            skipped: !!f.skipped,
+            skip_reason: f.skip_reason || null,
+            risk_level: f.risk_level || null,
+            requires_human_review: f.requires_human_review !== false,
+            source_finding: f.source_finding || null
+        }));
+
+        const complete = hashManifest.evidence.missing_hashes.length === 0 &&
+            renderTool.available && validatorAvailable && !!validatorEvidence;
+
+        return {
+            success: true,
+            status: complete ? 'APPLIED' : 'INCOMPLETE',
+            code: complete ? 'AUDIT_EVIDENCE_EXPORT_GENERATED' : 'AUDIT_EVIDENCE_EXPORT_INCOMPLETE',
+            requires_human_review: true,
+            production_safe: false,
+            production_certified: false,
+            standard_certified: false,
+            compliance_claim_allowed: false,
+            audit_evidence_export_governance: true,
+            evidence: {
+                generated_at: new Date().toISOString(),
+                findings: findingsExport,
+                fixes: fixesExport,
+                artifact_hashes: hashManifest.evidence,
+                tool_versions,
+                validator_evidence: validatorEvidence,
+                complete,
+                warnings,
+                limitations: [
+                    'This export is a stable evidence manifest only.',
+                    'It does not imply production certification, standards compliance, or print-ready status.',
+                    'Missing tool versions or validator evidence indicate the tool/evidence was unavailable at generation time, not that other evidence is invalid.',
+                    'Artifact hash presence does not imply trust; trust is never inferred from filenames or paths.'
+                ]
+            }
+        };
+    }
+
     async generateVisualChangeReport(origPath, fixedPath, options = {}) {
         const toolInfo = await this._detectRenderTool();
         const diffResult = await this.generateVisualDiff(origPath, fixedPath, options);

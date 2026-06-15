@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-06-15T14:26:45.036Z",
+  "phase": "74A",
+  "repo": "ppos-preflight-engine",
+  "category": "audit_evidence_export",
+  "smoke_passed": true,
+  "governance": {
+    "audit_evidence_export_governance": true,
+    "evidence_export_is_evidence_only": true,
+    "hash_presence_implies_trust": false,
+    "tool_version_absence_implies_invalid": false,
+    "trust_inferred_from_filenames": false,
+    "emits_raw_paths": false
+  },
+  "core_principle": "The audit evidence export is a stable evidence manifest only. Aggregating findings, fixes, Phase 71A artifact content hashes, render/standards-validator tool versions, and Phase 68A validator evidence enables downstream audit bundling without inferring trust from filenames or paths. Missing tool versions or validator evidence are reported honestly as incomplete, never hidden or fabricated, and never imply production certification, standards compliance, or print-ready status.",
+  "target_capabilities": [
+    "GENERATE_AUDIT_EVIDENCE_EXPORT"
+  ],
+  "finding_codes_added": [
+    "IND_AUDIT_001 (AUDIT_EVIDENCE_EXPORT_GENERATED)",
+    "IND_AUDIT_002 (AUDIT_EVIDENCE_EXPORT_INCOMPLETE)",
+    "IND_AUDIT_003 (AUDIT_TOOL_VERSION_UNAVAILABLE)",
+    "IND_AUDIT_004 (AUDIT_VALIDATOR_EVIDENCE_MISSING)"
+  ],
+  "forbidden_overclaims_checked": [
+    "\"production_certified\":true",
+    "\"production_safe\":true",
+    "\"print_ready_claim_allowed\":true",
+    "\"compliance_claim_allowed\":true",
+    "\"standard_certified\":true",
+    "\"trust_inferred_from_filename\":true"
+  ],
+  "results": [
+    {
+      "scenario": "FixRegistry Phase 74A audit_evidence_export capability check",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "Phase 74A audit_evidence_export capability registered with correct policy fields."
+      ]
+    },
+    {
+      "scenario": "IndustrialFindingCodes Phase 74A audit evidence export codes",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "All Phase 74A audit evidence export finding codes registered correctly (IND_AUDIT_001-004)."
+      ]
+    },
+    {
+      "scenario": "FixPlanner Phase 74A audit_evidence_export guardrails",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "FixPlanner correctly blocks GENERATE_AUDIT_EVIDENCE_EXPORT from auto-execution in any policy mode."
+      ]
+    },
+    {
+      "scenario": "GENERATE_AUDIT_EVIDENCE_EXPORT — full inputs",
+      "status": "APPLIED",
+      "pass": true,
+      "evidence_sample": {
+        "code": "AUDIT_EVIDENCE_EXPORT_INCOMPLETE",
+        "status": "INCOMPLETE",
+        "findings_count": 2,
+        "tool_versions": {
+          "render_tool": "ghostscript",
+          "render_tool_version": "10.06.0",
+          "render_tool_available": true,
+          "validator_name": "verapdf",
+          "validator_version": null,
+          "validator_available": false
+        },
+        "complete": false,
+        "warnings": [
+          "VALIDATOR_UNAVAILABLE"
+        ]
+      },
+      "notes": [
+        "GENERATE_AUDIT_EVIDENCE_EXPORT aggregates findings, artifact hashes, tool versions, and validator evidence into one manifest."
+      ]
+    },
+    {
+      "scenario": "GENERATE_AUDIT_EVIDENCE_EXPORT — empty inputs",
+      "status": "APPLIED",
+      "pass": true,
+      "notes": [
+        "GENERATE_AUDIT_EVIDENCE_EXPORT honestly reports an incomplete manifest when no artifacts, fixes, or validator evidence are provided."
+      ]
+    },
+    {
+      "scenario": "GENERATE_AUDIT_EVIDENCE_EXPORT — fixes preserved",
+      "status": "APPLIED",
+      "pass": true,
+      "notes": [
+        "GENERATE_AUDIT_EVIDENCE_EXPORT preserves the fix plan (planned/skipped/skip_reason) for downstream audit consumption."
+      ]
+    },
+    {
+      "scenario": "GENERATE_AUDIT_EVIDENCE_EXPORT — stability across calls",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "Audit evidence export is stable: identical inputs produce identical artifact hashes and findings export across calls."
+      ]
+    },
+    {
+      "scenario": "Audit evidence export governance overclaim regression",
+      "status": "VERIFIED",
+      "pass": true,
+      "notes": [
+        "No Phase 74A operation produced production_certified, production_safe, or compliance overclaims."
+      ]
+    }
+  ]
+}

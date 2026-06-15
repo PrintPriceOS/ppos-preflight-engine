@@ -121,6 +121,11 @@ class FixPlanner {
             } else if (rawStrategy === 'PROOF_APPROVAL_PENDING' || rawStrategy === 'IND_PROOF_002' ||
                        rawStrategy === 'PROOF_ARTIFACT_HASH_MISSING' || rawStrategy === 'IND_PROOF_003') {
                 rawStrategy = 'GENERATE_PROOF_ARTIFACT_HASHES';
+            } else if (rawStrategy === 'AUDIT_EVIDENCE_EXPORT_GENERATED' || rawStrategy === 'IND_AUDIT_001' ||
+                       rawStrategy === 'AUDIT_EVIDENCE_EXPORT_INCOMPLETE' || rawStrategy === 'IND_AUDIT_002' ||
+                       rawStrategy === 'AUDIT_TOOL_VERSION_UNAVAILABLE' || rawStrategy === 'IND_AUDIT_003' ||
+                       rawStrategy === 'AUDIT_VALIDATOR_EVIDENCE_MISSING' || rawStrategy === 'IND_AUDIT_004') {
+                rawStrategy = 'GENERATE_AUDIT_EVIDENCE_EXPORT';
             }
 
             const fixId = normalizeFixId(rawStrategy);
@@ -207,6 +212,15 @@ class FixPlanner {
                     autofixable = false;
                 }
 
+                // Phase 74A: Audit evidence export guardrails.
+                // The audit evidence export aggregates findings, fixes, artifact hashes, tool
+                // versions, and validator evidence into a stable manifest. It is evidence
+                // generation only: never auto-applied, never implies production certification,
+                // standards compliance, or print-ready status.
+                if (cap.category === 'audit_evidence_export') {
+                    autofixable = false;
+                }
+
                 // Phase 72A: Policy profile constraint guardrails.
                 // Findings flagged as policy profile constraint violations are evidence of a
                 // profile mismatch. The profile evaluation is advisory — it never auto-applies
@@ -234,6 +248,7 @@ class FixPlanner {
                 else if (!autofixable) {
                     if (cap.category === 'proof_approval_contract') skipReason = "PROOF_CONTRACT_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
                     else if (cap.category === 'production_package_evidence') skipReason = "PRODUCTION_PACKAGE_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
+                    else if (cap.category === 'audit_evidence_export') skipReason = "AUDIT_EVIDENCE_EXPORT_ONLY_HUMAN_REVIEW_REQUIRED";
                     else if (cap.category === 'visual_proofing') skipReason = "VISUAL_PROOFING_EVIDENCE_ONLY_HUMAN_REVIEW_REQUIRED";
                     else if (cap.category === 'transparency_overprint') skipReason = "TRANSPARENCY_OVERPRINT_VISUAL_REVIEW_REQUIRED";
                     else if (cap.category === 'ink_governance') skipReason = "VISUAL_REVIEW_REQUIRED";

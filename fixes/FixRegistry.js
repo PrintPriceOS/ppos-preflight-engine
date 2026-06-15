@@ -1714,6 +1714,36 @@ const REGISTRY = {
         production_package_evidence_governance: true,
         emits_raw_paths: false,
         phase: "71A"
+    },
+
+    // Phase 74A — Engine Audit Evidence Export
+    // Governance: The audit evidence export is a stable evidence manifest only.
+    // Aggregating findings, fixes, artifact hashes, tool versions, and validator
+    // evidence never implies production certification, standards compliance, or
+    // print-ready status. Missing tool versions or validator evidence are reported
+    // honestly as incomplete, never hidden or fabricated.
+    "GENERATE_AUDIT_EVIDENCE_EXPORT": {
+        fix_id: "GENERATE_AUDIT_EVIDENCE_EXPORT",
+        label: "Generate audit evidence export manifest",
+        category: "audit_evidence_export",
+        implemented: true,
+        detectable: true,
+        autofixable: false,
+        risk_level: "LOW",
+        requires_human_review: true,
+        production_safe: false,
+        destructive: false,
+        toolchain: ["crypto"],
+        supported_modes: ["REVIEW_REQUIRED", "EXPERIMENTAL"],
+        customer_message: "An audit evidence export was generated, combining findings, fixes, artifact hashes, tool versions, and validator evidence for this job.",
+        operator_message: "Phase 74A: aggregates findings, fix plan/audit entries, artifact content hashes (Phase 71A), render/validator tool versions, and validator evidence (Phase 68A) into a single stable evidence manifest. Evidence generation only.",
+        evidence_required: true,
+        compliance_claim_allowed: false,
+        production_certified: false,
+        print_ready_claim_allowed: false,
+        audit_evidence_export_governance: true,
+        emits_raw_paths: false,
+        phase: "74A"
     }
 };
 
